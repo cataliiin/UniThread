@@ -1,0 +1,84 @@
+# =========================
+# Sistem de Operare (OS)
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Editoare & IDE-uri (VSCode, IntelliJ, etc.)
+# =========================
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+.settings/
+.history/
+*~
+.*.sw?
+
+# =========================
+# Securitate & Variabile de Mediu
+# =========================
+.env
+.env.*
+!.env.example
+*.pem
+
+# =========================
+# Backend (Python / FastAPI)
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+# Medii virtuale și dependențe
+venv/
+.venv/
+env/
+env3.*
+Pipfile.lock
+# Baze de date locale
+*.db
+*.sqlite3
+test.db
+# Cache și Teste
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+htmlcov/
+.coverage*
+coverage.xml
+
+# =========================
+# Frontend (SvelteKit / Node.js / Vite)
+# =========================
+node_modules/
+.svelte-kit/
+build/
+dist/
+/package
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+.netlify/
+
+# =========================
+# Build Artifacts, Cache & Log-uri Generale
+# =========================
+.cache/
+.codspeed/
+*.log
+*.map
+*.o
+*.d
+*.a
+*.dep
+*.su
+*.bak
+*.tmp
+*.cyclo
+docs_build/
+site_build/
+site/
+docs.zip
+archive.zip
