@@ -18,6 +18,7 @@ Thumbs.db
 *~
 .*.sw?
 .vscode/
+.notes
 # =========================
 # Securitate & Variabile de Mediu
 # =========================
