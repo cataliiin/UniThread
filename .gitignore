@@ -17,7 +17,7 @@ Thumbs.db
 .history/
 *~
 .*.sw?
-
+.vscode/
 # =========================
 # Securitate & Variabile de Mediu
 # =========================

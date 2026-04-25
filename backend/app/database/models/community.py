@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, UniqueConstraint, func, text
 from sqlalchemy.dialects.postgresql import UUID
@@ -7,6 +8,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.models.base import Base
 from app.database.models.enums import CommunityType, MemberStatus, InvitationStatus
+
+if TYPE_CHECKING:
+    from app.database.models.university import University
+    from app.database.models.user import User
+    from app.database.models.post import Post
 
 
 class Community(Base):
