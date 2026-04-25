@@ -18,6 +18,8 @@ class Config(BaseSettings):
     MINIO_SECRET_KEY: str = "minioadmin"
     MINIO_SECURE: bool = False
 
+    HEALTH_CHECK_INTERVAL: int = 60
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

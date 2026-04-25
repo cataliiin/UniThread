@@ -10,6 +10,15 @@ from rich.panel import Panel
 from app.database.models.base import Base
 from app.core.config import config
 
+"""
+HELP
+
+python.exe .\dev-utils.py --help
+
+python.exe .\dev-utils.py db --help
+python.exe .\dev-utils.py storage --help
+"""
+
 console = Console()
 app = typer.Typer(
     help="[bold][red]UniThread Command Center[/red][/bold]",

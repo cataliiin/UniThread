@@ -1,21 +1,28 @@
 from contextlib import asynccontextmanager
 
+import asyncio
 import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
 
 from app.core.config import config
-from app.core.dependencies import DbDep
-from app.core.storage import init_minio, check_minio_health
+from app.core.storage import init_minio
+from app.core.health import health_check_worker, perform_health_checks, state
 
 logger = logging.getLogger("uvicorn.error")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_minio()
+    
+    await perform_health_checks()
+    
+    bg_task = asyncio.create_task(health_check_worker())
+    
     yield
+    
+    bg_task.cancel()
 
 app = FastAPI(
     title=config.PROJECT_NAME,
@@ -33,25 +40,16 @@ if config.BACKEND_CORS_ORIGINS:
     )
 
 @app.get("/health", tags=["Health"])
-async def health_check(db: DbDep):
-    minio_ok = check_minio_health()
-    
-    db_ok = False
-    try:
-        await db.execute(text("SELECT 1"))
-        db_ok = True
-    except Exception:
-        pass
+async def health_check():
+    db_ok = state.db_ok
+    minio_ok = state.minio_ok
     
     if db_ok and minio_ok:
         status = "ok"
-        logger.info("Health check: All services UP")
     elif db_ok and not minio_ok:
         status = "degraded"
-        logger.warning("Health check: MinIO is DOWN, Database is UP")
     else:
         status = "down"
-        logger.error(f"Health check: Database is DOWN! MinIO OK: {minio_ok}")
     
     return {
         "status": status, 
@@ -59,5 +57,6 @@ async def health_check(db: DbDep):
         "services": {
             "database": "up" if db_ok else "down",
             "minio": "up" if minio_ok else "down"
-        }
+        },
+        "last_checked": state.last_checked
     }
