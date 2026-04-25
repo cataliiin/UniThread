@@ -3,12 +3,14 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
 from jose import JWTError, jwt
+from minio import Minio
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import config
 from app.database.models import User
 from app.database.session import AsyncSessionLocal
+from app.core.storage import minio_client
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
@@ -55,3 +57,8 @@ async def get_current_user(
     return user
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+def get_storage() -> Minio:
+    return minio_client
+
+StorageDep = Annotated[Minio, Depends(get_storage)]
