@@ -9,6 +9,7 @@
 - Post score is calculated dynamically from the `votes` table (`SUM`)
 - Ban = row deleted from `community_members` (not a separate status)
 - `invite_code` does not exist on `communities` — managed in `community_invite_links`
+- File columns store only the **MinIO object key** (e.g. `"a1b2c3.webp"`), never the full URL. The URL is assembled at runtime: `{MINIO_PUBLIC_URL}/{bucket}/{key}`. This allows endpoint/CDN changes with zero DB migrations.
 
 ---
 
@@ -67,7 +68,7 @@ CREATE TABLE users (
     email           VARCHAR(255) UNIQUE NOT NULL,
     username        VARCHAR(50)  UNIQUE NOT NULL,
     password_hash   TEXT         NOT NULL,
-    avatar_url      TEXT,        -- URL stored in MinIO (bucket: profile-pictures)
+    avatar_key      TEXT,        -- MinIO object key (bucket: profile-pictures), e.g. "a1b2c3.webp"
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
@@ -95,8 +96,8 @@ CREATE TABLE communities (
     -- If FALSE, author_id = NULL is rejected at the application layer.
     allow_anonymous BOOLEAN        NOT NULL DEFAULT FALSE,
 
-    icon_url        TEXT,          -- community avatar, stored in MinIO
-    banner_url      TEXT,          -- community banner, stored in MinIO
+    icon_key        TEXT,          -- MinIO object key (bucket: communities), e.g. "e5f6g7.png"
+    banner_key      TEXT,          -- MinIO object key (bucket: communities), e.g. "h8i9j0.jpg"
     created_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
 
     -- The same community name can exist at different universities
@@ -261,7 +262,7 @@ CREATE TABLE posts (
 
     title        VARCHAR(300) NOT NULL,
     body         TEXT,         -- optional: a post can be title + image only
-    image_url    TEXT,         -- stored in MinIO (bucket: posts)
+    image_key    TEXT,         -- MinIO object key (bucket: posts), e.g. "m3n4o5.jpg"
 
     created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at   TIMESTAMPTZ  -- NULL if the post has never been edited
