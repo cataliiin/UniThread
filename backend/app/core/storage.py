@@ -1,4 +1,5 @@
 import json
+import urllib.request
 import uuid
 from datetime import timedelta
 
@@ -46,6 +47,18 @@ def init_minio() -> None:
             print(f"Set public-read policy for bucket: {bucket_name}")
         except S3Error as e:
             print(f"Error initializing MinIO bucket {bucket_name}: {e}")
+        except Exception as e:
+            print(f"MinIO connection failed for {bucket_name}. Ensure MinIO is running. Error: {e}")
+            break
+
+def check_minio_health() -> bool:
+    protocol = "https" if config.MINIO_SECURE else "http"
+    url = f"{protocol}://{config.MINIO_ENDPOINT}/minio/health/live"
+    try:
+        urllib.request.urlopen(url, timeout=1.0)
+        return True
+    except Exception:
+        return False
 
 def generate_presigned_upload_url(bucket_name: str, expires_in_minutes: int = 15) -> tuple[str, str]:
     file_key = str(uuid.uuid4())
