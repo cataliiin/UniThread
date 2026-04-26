@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
@@ -96,7 +96,8 @@ async def list_communities(
     """
     List communities within the user's university.
     """
-    offset = (page - 1) * size
+    actual_size = max(1, min(size, 100))
+    offset = (page - 1) * actual_size
 
     # Query communities in user's university
     base_query = select(Community).where(
@@ -129,7 +130,7 @@ async def list_communities(
         select(Community, count_subq, status_subq)
         .where(Community.university_id == current_user.university_id)
         .offset(offset)
-        .limit(size)
+        .limit(actual_size)
     )
 
     rows = (await db.execute(stmt)).all()
@@ -141,9 +142,13 @@ async def list_communities(
         c_resp.user_membership_status = user_membership_status
         items.append(c_resp)
 
-    pages = (total + size - 1) // size if total else 0
+    pages = (total + actual_size - 1) // actual_size if total else 0
     return PaginatedResponse(
-        items=items, total=total or 0, page=page, size=size, pages=pages
+        items=items,
+        total=total or 0,
+        page=page,
+        size=actual_size,
+        pages=pages,
     )
 
 
@@ -271,7 +276,7 @@ async def get_community_posts(
     current_user: CurrentUser,
     db: DbDep,
     page: int = 1,
-    size: int = 20,
+    size: int = Query(20),
     sort: str = "new",
 ):
     """
@@ -299,7 +304,8 @@ async def get_community_posts(
                 "You don't have permission to view posts in this community."
             )
 
-    offset = (page - 1) * size
+    actual_size = max(1, min(size, 100))
+    offset = (page - 1) * actual_size
 
     base_query = select(Post).where(Post.community_id == community_id)
     total = await db.scalar(select(func.count()).select_from(base_query.subquery()))
@@ -323,7 +329,7 @@ async def get_community_posts(
         .where(Post.community_id == community_id)
         .options(selectinload(Post.author), selectinload(Post.community))
         .offset(offset)
-        .limit(size)
+        .limit(actual_size)
     )
 
     if sort.lower() == "top":
@@ -340,9 +346,81 @@ async def get_community_posts(
         p_resp.user_vote = user_vote
         items.append(p_resp)
 
-    pages = (total + size - 1) // size if total else 0
+    pages = (total + actual_size - 1) // actual_size if total else 0
     return PaginatedResponse(
-        items=items, total=total or 0, page=page, size=size, pages=pages
+        items=items,
+        total=total or 0,
+        page=page,
+        size=actual_size,
+        pages=pages,
+    )
+
+
+@router.get("/{community_id}/members", response_model=PaginatedResponse[UserPublic])
+async def list_community_members(
+    community_id: UUID,
+    current_user: CurrentUser,
+    db: DbDep,
+    page: int = 1,
+    size: int = Query(20),
+):
+    """
+    List approved members of a community.
+
+    Security rules:
+    - Public communities: any authenticated user can list members.
+    - Request/invite communities: only approved members can list members.
+    """
+    comm = await db.scalar(
+        select(Community).where(
+            (Community.id == community_id)
+            & (Community.university_id == current_user.university_id)
+        )
+    )
+    if not comm:
+        raise CommunityNotFoundException()
+
+    if comm.type != CommunityType.public:
+        viewer_member = await db.scalar(
+            select(CommunityMember).where(
+                (CommunityMember.community_id == comm.id)
+                & (CommunityMember.user_id == current_user.id)
+            )
+        )
+        if not viewer_member or viewer_member.status != MemberStatus.approved:
+            raise ForbiddenException(
+                "You don't have permission to view members in this community."
+            )
+
+    actual_size = max(1, min(size, 100))
+    offset = (page - 1) * actual_size
+
+    base_query = (
+        select(User)
+        .join(CommunityMember, CommunityMember.user_id == User.id)
+        .where(
+            (CommunityMember.community_id == community_id)
+            & (CommunityMember.status == MemberStatus.approved)
+        )
+    )
+
+    total = await db.scalar(select(func.count()).select_from(base_query.subquery()))
+
+    rows = await db.scalars(
+        base_query
+        .order_by(CommunityMember.joined_at.desc(), User.id.asc())
+        .offset(offset)
+        .limit(actual_size)
+    )
+    items = [UserPublic.model_validate(member_user) for member_user in rows]
+
+    pages = (total + actual_size - 1) // actual_size if total else 0
+    return PaginatedResponse(
+        items=items,
+        total=total or 0,
+        page=page,
+        size=actual_size,
+        pages=pages,
     )
 
 
@@ -461,7 +539,7 @@ async def leave_community(community_id: UUID, current_user: CurrentUser, db: DbD
 
     if comm.owner_id == current_user.id:
         raise NotCommunityAdminException(
-            "The owner cannot leave the community without deleting it."
+            "The owner cannot leave the community without deleting it or transfering ownership."
         )
 
     await db.delete(member)

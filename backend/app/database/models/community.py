@@ -176,7 +176,7 @@ class CommunityInviteLink(Base):
     )
     created_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="RESTRICT"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
     # Randomly generated in the app via secrets.token_urlsafe(16)
@@ -229,7 +229,7 @@ class CommunityInvitation(Base):
     )
     invited_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="RESTRICT"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
     invited_user: Mapped[uuid.UUID] = mapped_column(

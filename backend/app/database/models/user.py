@@ -68,14 +68,16 @@ class User(Base):
         "CommunityInvitation",
         back_populates="inviter",
         foreign_keys="CommunityInvitation.invited_by",
+        passive_deletes=True,
     )
     received_invitations: Mapped[list["CommunityInvitation"]] = relationship(
         "CommunityInvitation",
         back_populates="invited_user_obj",
         foreign_keys="CommunityInvitation.invited_user",
+        passive_deletes=True,
     )
     created_invite_links: Mapped[list["CommunityInviteLink"]] = relationship(
-        "CommunityInviteLink", back_populates="creator"
+        "CommunityInviteLink", back_populates="creator", passive_deletes=True
     )
     join_answers: Mapped[list["CommunityJoinAnswer"]] = relationship(
         "CommunityJoinAnswer", back_populates="user", cascade="all, delete-orphan"

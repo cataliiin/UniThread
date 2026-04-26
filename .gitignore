@@ -84,3 +84,4 @@ site_build/
 site/
 docs.zip
 archive.zip
+.ruff_cache/

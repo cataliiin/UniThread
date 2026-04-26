@@ -34,7 +34,8 @@ async def get_global_feed(
     Get the global feed of posts for the current user's university.
     Supports sorting by 'new' (default) or 'top'.
     """
-    offset = (page - 1) * size
+    actual_size = max(1, min(size, 100))
+    offset = (page - 1) * actual_size
 
     # Exclude posts from non-public communities unless the user is an approved member
 
@@ -88,7 +89,7 @@ async def get_global_feed(
         )
         .options(selectinload(Post.author), selectinload(Post.community))
         .offset(offset)
-        .limit(size)
+        .limit(actual_size)
     )
 
     if sort.lower() == "top":
@@ -105,9 +106,13 @@ async def get_global_feed(
         p_resp.user_vote = user_vote
         items.append(p_resp)
 
-    pages = (total + size - 1) // size if total else 0
+    pages = (total + actual_size - 1) // actual_size if total else 0
     return PaginatedResponse(
-        items=items, total=total or 0, page=page, size=size, pages=pages
+        items=items,
+        total=total or 0,
+        page=page,
+        size=actual_size,
+        pages=pages,
     )
 
 

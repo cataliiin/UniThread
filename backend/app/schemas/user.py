@@ -18,7 +18,12 @@ class UserPublic(BaseModel):
 
 # --- Create & Update ---
 class UserCreate(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50)
+    username: str = Field(
+        ...,
+        min_length=3,
+        max_length=50,
+        pattern=r"^[a-zA-Z0-9_.-]+$",
+    )
     email: EmailStr
     password: str = Field(..., min_length=8)
 
@@ -26,7 +31,12 @@ class UserCreate(BaseModel):
 class UserUpdateProfile(BaseModel):
     """Only for updating non-critical profile info."""
 
-    username: str | None = Field(None, min_length=3, max_length=50)
+    username: str | None = Field(
+        None,
+        min_length=3,
+        max_length=50,
+        pattern=r"^[a-zA-Z0-9_.-]+$",
+    )
     avatar_key: str | None = None
 
 
