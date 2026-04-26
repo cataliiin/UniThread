@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.schemas.community import CommunityPublic
 from app.schemas.user import UserPublic
@@ -24,8 +24,6 @@ class PostUpdate(BaseModel):
     image_key: str | None = None
 
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-
 class PostResponse(PostBase):
     id: UUID
     community_id: UUID
@@ -45,19 +43,21 @@ class PostResponse(PostBase):
 
 class PostFeedResponse(PostResponse):
     """
-    Rich response schema used for feeds. 
+    Rich response schema used for feeds.
     Includes nested relationships to avoid N+1 queries on the frontend.
     """
+
     author: UserPublic | None = None
-    
+
     @model_validator(mode="after")
     def mask_author_feed(self):
         if self.is_anonymous:
             self.author_id = None
             self.author = None
         return self
+
     community: CommunityPublic
-    
+
     # Aggregated/Dynamic fields
     score: int = 0
     user_vote: int | None = None  # 1 for upvote, -1 for downvote, None for no vote

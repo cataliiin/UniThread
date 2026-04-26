@@ -51,4 +51,6 @@ class Vote(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<Vote user_id={self.user_id} post_id={self.post_id} value={self.value}>"
+        return (
+            f"<Vote user_id={self.user_id} post_id={self.post_id} value={self.value}>"
+        )

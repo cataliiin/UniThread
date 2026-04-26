@@ -1,10 +1,11 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Config(BaseSettings):
     PROJECT_NAME: str = "UniThread"
     PROJECT_DESCRIPTION: str
     DEBUG: bool = False
-    
+
     BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
     DATABASE_URL: str
@@ -25,5 +26,6 @@ class Config(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=True,
     )
+
 
 config = Config()

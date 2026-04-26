@@ -38,12 +38,16 @@ class Post(Base):
     )
 
     title: Mapped[str] = mapped_column(String(300), nullable=False)
-    body: Mapped[str | None] = mapped_column(Text, nullable=True)  # a post can be title + image only
+    body: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+    )  # a post can be title + image only
 
     # MinIO object key — bucket: "posts"
     image_key: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    is_anonymous: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    is_anonymous: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -51,7 +55,9 @@ class Post(Base):
         nullable=False,
     )
     # NULL if the post has never been edited
-    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # NOTE: score is NOT stored here — calculated dynamically via:
     # SELECT COALESCE(SUM(value), 0) FROM votes WHERE post_id = <id>
@@ -59,8 +65,12 @@ class Post(Base):
 
     # --- relationships ---
     community: Mapped["Community"] = relationship("Community", back_populates="posts")
-    author: Mapped["User | None"] = relationship("User", back_populates="posts", foreign_keys=[author_id])
-    votes: Mapped[list["Vote"]] = relationship("Vote", back_populates="post", cascade="all, delete-orphan")
+    author: Mapped["User | None"] = relationship(
+        "User", back_populates="posts", foreign_keys=[author_id]
+    )
+    votes: Mapped[list["Vote"]] = relationship(
+        "Vote", back_populates="post", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         # Community feed: sort by date (newest first)
@@ -68,7 +78,11 @@ class Post(Base):
         # Global feed: all recent posts (JOINed with communities to filter by university)
         Index("idx_posts_created_global", text("created_at DESC")),
         # Quick lookup of posts by a specific author (user profile page)
-        Index("idx_posts_author", "author_id", postgresql_where=text("author_id IS NOT NULL")),
+        Index(
+            "idx_posts_author",
+            "author_id",
+            postgresql_where=text("author_id IS NOT NULL"),
+        ),
     )
 
     def __repr__(self) -> str:

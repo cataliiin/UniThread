@@ -6,7 +6,6 @@ Covers: join questions, join request approvals, invite links, direct invitations
 
 import secrets
 from uuid import UUID
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, status
 from sqlalchemy import select
@@ -198,22 +197,30 @@ async def list_join_requests(community_id: UUID, current_user: CurrentUser, db: 
     )
 
     user_ids = [m.user_id for m in pending_members]
-    
+
     # Fetch all answers for these users for this community's questions in one go
     all_answers = []
     if user_ids:
         all_answers = (
-            await db.execute(
-                select(CommunityJoinAnswer)
-                .join(CommunityJoinQuestion, CommunityJoinAnswer.question_id == CommunityJoinQuestion.id)
-                .where(
-                    (CommunityJoinQuestion.community_id == community_id)
-                    & (CommunityJoinAnswer.user_id.in_(user_ids))
+            (
+                await db.execute(
+                    select(CommunityJoinAnswer)
+                    .join(
+                        CommunityJoinQuestion,
+                        CommunityJoinAnswer.question_id == CommunityJoinQuestion.id,
+                    )
+                    .where(
+                        (CommunityJoinQuestion.community_id == community_id)
+                        & (CommunityJoinAnswer.user_id.in_(user_ids))
+                    )
                 )
             )
-        ).scalars().all()
-        
+            .scalars()
+            .all()
+        )
+
     from collections import defaultdict
+
     answers_by_user = defaultdict(list)
     for ans in all_answers:
         answers_by_user[ans.user_id].append(ans)
@@ -224,7 +231,7 @@ async def list_join_requests(community_id: UUID, current_user: CurrentUser, db: 
             JoinRequestResponse(
                 user=UserPublic.model_validate(member.user),
                 answers=[
-                    CommunityJoinAnswerResponse.model_validate(a) 
+                    CommunityJoinAnswerResponse.model_validate(a)
                     for a in answers_by_user[member.user_id]
                 ],
                 requested_at=member.joined_at,
@@ -452,6 +459,7 @@ async def create_direct_invitation(
     )
     if existing_invite:
         from app.core.exceptions import ConflictException
+
         raise ConflictException("A pending invitation for this user already exists.")
 
     new_invitation = CommunityInvitation(
@@ -485,6 +493,7 @@ async def update_member_role(
     # Prevent demoting the owner
     if user_id == comm.owner_id and role_in.is_admin is False:
         from app.core.exceptions import ForbiddenException
+
         raise ForbiddenException("The owner of the community must remain an admin.")
 
     target_member = await db.scalar(
@@ -496,7 +505,10 @@ async def update_member_role(
     )
     if not target_member:
         from app.core.exceptions import NotCommunityMemberException
-        raise NotCommunityMemberException("Target user is not an approved member of this community.")
+
+        raise NotCommunityMemberException(
+            "Target user is not an approved member of this community."
+        )
 
     target_member.is_admin = role_in.is_admin
     db.add(target_member)

@@ -2,7 +2,17 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, UniqueConstraint, func, text
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+    text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -45,7 +55,9 @@ class Community(Base):
 
     # If TRUE, posts with author_id = NULL are allowed.
     # If FALSE, anonymous posts are rejected at the application layer.
-    allow_anonymous: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    allow_anonymous: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
 
     # MinIO object keys — bucket: "communities"
     icon_key: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -58,8 +70,12 @@ class Community(Base):
     )
 
     # --- relationships ---
-    university: Mapped["University"] = relationship("University", back_populates="communities")
-    owner: Mapped["User"] = relationship("User", back_populates="owned_communities", foreign_keys=[owner_id])
+    university: Mapped["University"] = relationship(
+        "University", back_populates="communities"
+    )
+    owner: Mapped["User"] = relationship(
+        "User", back_populates="owned_communities", foreign_keys=[owner_id]
+    )
     members: Mapped[list["CommunityMember"]] = relationship(
         "CommunityMember", back_populates="community", cascade="all, delete-orphan"
     )
@@ -73,7 +89,9 @@ class Community(Base):
         "CommunityInvitation", back_populates="community", cascade="all, delete-orphan"
     )
     join_questions: Mapped[list["CommunityJoinQuestion"]] = relationship(
-        "CommunityJoinQuestion", back_populates="community", cascade="all, delete-orphan"
+        "CommunityJoinQuestion",
+        back_populates="community",
+        cascade="all, delete-orphan",
     )
 
     __table_args__ = (
@@ -113,7 +131,9 @@ class CommunityMember(Base):
 
     # Admin can: approve/reject join requests, toggle anonymous posts,
     # manage invite links and direct invitations
-    is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    is_admin: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
 
     joined_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -127,7 +147,11 @@ class CommunityMember(Base):
 
     __table_args__ = (
         # Partial index: "approved communities of user X" — used by personalized feed + access checks
-        Index("idx_members_user_approved", "user_id", postgresql_where=text("status = 'approved'")),
+        Index(
+            "idx_members_user_approved",
+            "user_id",
+            postgresql_where=text("status = 'approved'"),
+        ),
         # Admin listing all members of a community
         Index("idx_members_community", "community_id", "status"),
     )
@@ -159,9 +183,13 @@ class CommunityInviteLink(Base):
     code: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
 
     # Optional constraints — NULL means unlimited / never expires
-    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     max_uses: Mapped[int | None] = mapped_column(nullable=True)
-    use_count: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0")
+    use_count: Mapped[int] = mapped_column(
+        nullable=False, default=0, server_default="0"
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -170,11 +198,17 @@ class CommunityInviteLink(Base):
     )
 
     # --- relationships ---
-    community: Mapped["Community"] = relationship("Community", back_populates="invite_links")
-    creator: Mapped["User"] = relationship("User", back_populates="created_invite_links")
+    community: Mapped["Community"] = relationship(
+        "Community", back_populates="invite_links"
+    )
+    creator: Mapped["User"] = relationship(
+        "User", back_populates="created_invite_links"
+    )
 
     def __repr__(self) -> str:
-        return f"<CommunityInviteLink code={self.code!r} community_id={self.community_id}>"
+        return (
+            f"<CommunityInviteLink code={self.code!r} community_id={self.community_id}>"
+        )
 
 
 class CommunityInvitation(Base):
@@ -216,15 +250,21 @@ class CommunityInvitation(Base):
     )
 
     # --- relationships ---
-    community: Mapped["Community"] = relationship("Community", back_populates="invitations")
-    inviter: Mapped["User"] = relationship("User", back_populates="sent_invitations", foreign_keys=[invited_by])
+    community: Mapped["Community"] = relationship(
+        "Community", back_populates="invitations"
+    )
+    inviter: Mapped["User"] = relationship(
+        "User", back_populates="sent_invitations", foreign_keys=[invited_by]
+    )
     invited_user_obj: Mapped["User"] = relationship(
         "User", back_populates="received_invitations", foreign_keys=[invited_user]
     )
 
     __table_args__ = (
         # A user cannot be invited twice to the same community
-        UniqueConstraint("community_id", "invited_user", name="uq_invitation_community_user"),
+        UniqueConstraint(
+            "community_id", "invited_user", name="uq_invitation_community_user"
+        ),
         # "pending invitations for user X" — used by notification queries
         Index(
             "idx_invitations_user_pending",
@@ -254,12 +294,18 @@ class CommunityJoinQuestion(Base):
         nullable=False,
     )
     question: Mapped[str] = mapped_column(String(300), nullable=False)
-    is_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
+    is_required: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
     # Controls display order in the join form
-    order_index: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0")
+    order_index: Mapped[int] = mapped_column(
+        nullable=False, default=0, server_default="0"
+    )
 
     # --- relationships ---
-    community: Mapped["Community"] = relationship("Community", back_populates="join_questions")
+    community: Mapped["Community"] = relationship(
+        "Community", back_populates="join_questions"
+    )
     answers: Mapped[list["CommunityJoinAnswer"]] = relationship(
         "CommunityJoinAnswer", back_populates="question", cascade="all, delete-orphan"
     )
@@ -301,7 +347,9 @@ class CommunityJoinAnswer(Base):
     )
 
     # --- relationships ---
-    question: Mapped["CommunityJoinQuestion"] = relationship("CommunityJoinQuestion", back_populates="answers")
+    question: Mapped["CommunityJoinQuestion"] = relationship(
+        "CommunityJoinQuestion", back_populates="answers"
+    )
     user: Mapped["User"] = relationship("User", back_populates="join_answers")
 
     __table_args__ = (

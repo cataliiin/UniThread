@@ -10,6 +10,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
     Generic paginated response schema to wrap list results.
     Prevents overwhelming the client and database with too much data at once.
     """
+
     items: list[T]
     total: int
     page: int

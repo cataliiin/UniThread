@@ -2,6 +2,7 @@
 Invitation & Invite-Link Routes for regular users.
 Covers: preview invite link, join via link, view/accept/decline direct invitations.
 """
+
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -17,7 +18,6 @@ from app.core.exceptions import (
     NotFoundException,
 )
 from app.database.models.community import (
-    Community,
     CommunityInvitation,
     CommunityInviteLink,
     CommunityMember,
@@ -34,6 +34,7 @@ router = APIRouter(tags=["Invitations"])
 
 
 # ── Invite Links (public flow) ────────────────────────────────────────────────
+
 
 @router.get("/invite/{code}", response_model=InviteLinkPreviewResponse)
 async def preview_invite_link(code: str, current_user: CurrentUser, db: DbDep):
@@ -52,8 +53,8 @@ async def preview_invite_link(code: str, current_user: CurrentUser, db: DbDep):
 
     # Validate expiry and capacity without consuming
     now = datetime.now(timezone.utc)
-    expired = (link.expires_at is not None and link.expires_at < now)
-    maxed_out = (link.max_uses is not None and link.use_count >= link.max_uses)
+    expired = link.expires_at is not None and link.expires_at < now
+    maxed_out = link.max_uses is not None and link.use_count >= link.max_uses
     if expired or maxed_out:
         raise InviteLinkExpiredException()
 
@@ -79,8 +80,8 @@ async def join_via_invite_link(code: str, current_user: CurrentUser, db: DbDep):
         raise InviteLinkNotFoundException()
 
     now = datetime.now(timezone.utc)
-    expired = (link.expires_at is not None and link.expires_at < now)
-    maxed_out = (link.max_uses is not None and link.use_count >= link.max_uses)
+    expired = link.expires_at is not None and link.expires_at < now
+    maxed_out = link.max_uses is not None and link.use_count >= link.max_uses
     if expired or maxed_out:
         raise InviteLinkExpiredException()
 
@@ -122,6 +123,7 @@ async def join_via_invite_link(code: str, current_user: CurrentUser, db: DbDep):
 
 # ── Direct Invitations (user side) ───────────────────────────────────────────
 
+
 @router.get("/me/invitations", response_model=list[CommunityInvitationResponse])
 async def list_my_invitations(current_user: CurrentUser, db: DbDep):
     """
@@ -129,17 +131,23 @@ async def list_my_invitations(current_user: CurrentUser, db: DbDep):
     Used to populate the notifications bell in the frontend Navbar.
     """
     invitations = (
-        await db.execute(
-            select(CommunityInvitation).where(
-                (CommunityInvitation.invited_user == current_user.id)
-                & (CommunityInvitation.status == InvitationStatus.pending)
+        (
+            await db.execute(
+                select(CommunityInvitation).where(
+                    (CommunityInvitation.invited_user == current_user.id)
+                    & (CommunityInvitation.status == InvitationStatus.pending)
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     return invitations
 
 
-@router.post("/me/invitations/{invite_id}/accept", response_model=CommunityMemberResponse)
+@router.post(
+    "/me/invitations/{invite_id}/accept", response_model=CommunityMemberResponse
+)
 async def accept_invitation(invite_id: UUID, current_user: CurrentUser, db: DbDep):
     """
     Accept a direct invitation. Instantly approves membership.
@@ -189,7 +197,9 @@ async def accept_invitation(invite_id: UUID, current_user: CurrentUser, db: DbDe
     return new_member
 
 
-@router.post("/me/invitations/{invite_id}/decline", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/me/invitations/{invite_id}/decline", status_code=status.HTTP_204_NO_CONTENT
+)
 async def decline_invitation(invite_id: UUID, current_user: CurrentUser, db: DbDep):
     """
     Decline a direct invitation. Marks it as declined without adding the user to the community.

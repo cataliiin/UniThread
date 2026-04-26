@@ -4,11 +4,13 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.database.models.enums import CommunityType, InvitationStatus, MemberStatus
+from app.schemas.user import UserPublic
 
 
 # --- Shared / Embedded Schemas ---
 class CommunityPublic(BaseModel):
     """Schema used when embedding community data in posts or feeds."""
+
     id: UUID
     name: str
     icon_key: str | None
@@ -53,7 +55,7 @@ class CommunityResponse(CommunityBase):
     university_id: UUID
     owner_id: UUID
     created_at: datetime
-    
+
     # Virtual fields populated by queries
     member_count: int = 0
     # Crucial for the UI: is the current user a member, pending, or not in this community?
@@ -63,6 +65,7 @@ class CommunityResponse(CommunityBase):
 
 
 # ... (Other community schemas remain mostly similar but let's redefine them cleanly)
+
 
 class CommunityMemberResponse(BaseModel):
     user_id: UUID
@@ -152,20 +155,21 @@ class CommunityJoinAnswerResponse(BaseModel):
 
 class CommunityJoinRequestSchema(BaseModel):
     """Payload sent by the user when joining a community (especially type='request')."""
+
     answers: list[CommunityJoinAnswerCreate] | None = Field(default_factory=list)
 
 
 class InviteLinkPreviewResponse(BaseModel):
     """Data sent to the frontend BEFORE a user clicks Join on an invite link."""
+
     community: CommunityPublic
     code: str
     expires_at: datetime | None
 
 
-from app.schemas.user import UserPublic
-
 class JoinRequestResponse(BaseModel):
     """Data sent to the Admin when viewing pending join requests."""
+
     user: UserPublic
     answers: list[CommunityJoinAnswerResponse]
     requested_at: datetime

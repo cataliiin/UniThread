@@ -488,8 +488,7 @@ async def list_community_admins(
         select(User)
         .join(CommunityMember, CommunityMember.user_id == User.id)
         .where(
-            (CommunityMember.community_id == community_id)
-            & (CommunityMember.is_admin == True)
+            (CommunityMember.community_id == community_id) & (CommunityMember.is_admin)
         )
     )
     return [UserPublic.model_validate(admin) for admin in admins]

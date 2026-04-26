@@ -10,9 +10,16 @@ from app.database.models.base import Base
 
 if TYPE_CHECKING:
     from app.database.models.university import University
-    from app.database.models.community import Community, CommunityJoinAnswer, CommunityMember, CommunityInvitation, CommunityInviteLink
+    from app.database.models.community import (
+        Community,
+        CommunityJoinAnswer,
+        CommunityMember,
+        CommunityInvitation,
+        CommunityInviteLink,
+    )
     from app.database.models.post import Post
     from app.database.models.vote import Vote
+
 
 class User(Base):
     __tablename__ = "users"
@@ -42,7 +49,9 @@ class User(Base):
     )
 
     # --- relationships ---
-    university: Mapped["University"] = relationship("University", back_populates="users")
+    university: Mapped["University"] = relationship(
+        "University", back_populates="users"
+    )
     owned_communities: Mapped[list["Community"]] = relationship(
         "Community", back_populates="owner", foreign_keys="Community.owner_id"
     )
@@ -56,10 +65,14 @@ class User(Base):
         "Vote", back_populates="user", cascade="all, delete-orphan"
     )
     sent_invitations: Mapped[list["CommunityInvitation"]] = relationship(
-        "CommunityInvitation", back_populates="inviter", foreign_keys="CommunityInvitation.invited_by"
+        "CommunityInvitation",
+        back_populates="inviter",
+        foreign_keys="CommunityInvitation.invited_by",
     )
     received_invitations: Mapped[list["CommunityInvitation"]] = relationship(
-        "CommunityInvitation", back_populates="invited_user_obj", foreign_keys="CommunityInvitation.invited_user"
+        "CommunityInvitation",
+        back_populates="invited_user_obj",
+        foreign_keys="CommunityInvitation.invited_user",
     )
     created_invite_links: Mapped[list["CommunityInviteLink"]] = relationship(
         "CommunityInviteLink", back_populates="creator"
@@ -68,9 +81,7 @@ class User(Base):
         "CommunityJoinAnswer", back_populates="user", cascade="all, delete-orphan"
     )
 
-    __table_args__ = (
-        Index("idx_users_university", "university_id"),
-    )
+    __table_args__ = (Index("idx_users_university", "university_id"),)
 
     def __repr__(self) -> str:
         return f"<User id={self.id} username={self.username!r}>"

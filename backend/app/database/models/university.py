@@ -28,7 +28,9 @@ class University(Base):
 
     # --- relationships ---
     users: Mapped[list["User"]] = relationship("User", back_populates="university")
-    communities: Mapped[list["Community"]] = relationship("Community", back_populates="university")
+    communities: Mapped[list["Community"]] = relationship(
+        "Community", back_populates="university"
+    )
 
     def __repr__(self) -> str:
         return f"<University id={self.id} domain={self.domain!r}>"

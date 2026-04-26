@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 # --- Shared / Embedded Schemas ---
 class UserPublic(BaseModel):
     """Schema used when embedding user data in posts, comments, etc."""
+
     id: UUID
     username: str
     avatar_key: str | None
@@ -24,6 +25,7 @@ class UserCreate(BaseModel):
 
 class UserUpdateProfile(BaseModel):
     """Only for updating non-critical profile info."""
+
     username: str | None = Field(None, min_length=3, max_length=50)
     avatar_key: str | None = None
 
@@ -36,6 +38,7 @@ class UserChangePassword(BaseModel):
 # --- Responses ---
 class UserProfileResponse(UserPublic):
     """Schema for viewing another user's profile (safe, no email)."""
+
     created_at: datetime
     # We can add dynamic fields later like:
     # post_count: int = 0
@@ -44,4 +47,5 @@ class UserProfileResponse(UserPublic):
 
 class UserResponse(UserProfileResponse):
     """Full user schema for the /users/me endpoint (includes private data)."""
+
     email: EmailStr

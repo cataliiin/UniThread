@@ -5,12 +5,14 @@ from app.core.config import config
 
 _is_sqlite = config.DATABASE_URL.startswith("sqlite")
 
+
 def _resolve_url(url: str) -> str:
     if url.startswith("sqlite:///") and "+aiosqlite" not in url:
         return url.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
     if url.startswith("postgresql://") and "+asyncpg" not in url:
         return url.replace("postgresql://", "postgresql+asyncpg://", 1)
     return url
+
 
 _database_url = _resolve_url(config.DATABASE_URL)
 

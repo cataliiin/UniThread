@@ -39,23 +39,31 @@ def _get_public_read_policy(bucket_name: str) -> str:
     }
     return json.dumps(policy)
 
+
 def init_minio() -> None:
-    buckets_to_create = [BUCKET_USER_ASSETS, BUCKET_COMMUNITY_ASSETS, BUCKET_POST_ASSETS]
+    buckets_to_create = [
+        BUCKET_USER_ASSETS,
+        BUCKET_COMMUNITY_ASSETS,
+        BUCKET_POST_ASSETS,
+    ]
 
     for bucket_name in buckets_to_create:
         try:
             if not minio_client.bucket_exists(bucket_name):
                 minio_client.make_bucket(bucket_name)
                 print(f"Created MinIO bucket: {bucket_name}")
-            
+
             policy = _get_public_read_policy(bucket_name)
             minio_client.set_bucket_policy(bucket_name, policy)
             print(f"Set public-read policy for bucket: {bucket_name}")
         except S3Error as e:
             print(f"Error initializing MinIO bucket {bucket_name}: {e}")
         except Exception as e:
-            print(f"MinIO connection failed for {bucket_name}. Ensure MinIO is running. Error: {e}")
+            print(
+                f"MinIO connection failed for {bucket_name}. Ensure MinIO is running. Error: {e}"
+            )
             break
+
 
 def check_minio_health() -> bool:
     protocol = "https" if config.MINIO_SECURE else "http"
@@ -66,9 +74,12 @@ def check_minio_health() -> bool:
     except Exception:
         return False
 
-def generate_presigned_upload_url(bucket_name: str, expires_in_minutes: int = 15) -> tuple[str, str]:
+
+def generate_presigned_upload_url(
+    bucket_name: str, expires_in_minutes: int = 15
+) -> tuple[str, str]:
     file_key = str(uuid.uuid4())
-    
+
     try:
         url = minio_client.presigned_put_object(
             bucket_name=bucket_name,

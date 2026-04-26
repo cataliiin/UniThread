@@ -11,6 +11,11 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.security import get_password_hash
+from app.database.models import Base, University, User
+from app.database.session import AsyncSessionLocal, engine
+from app.main import app
+
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 TEST_DB_DIR = Path(tempfile.mkdtemp(prefix="unithread-pytest-"))
 TEST_DB_PATH = TEST_DB_DIR / "unithread-test.sqlite3"
@@ -21,11 +26,6 @@ os.environ["DATABASE_URL"] = f"sqlite:///{TEST_DB_PATH}"
 
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
-
-from app.core.security import get_password_hash
-from app.database.models import Base, University, User
-from app.database.session import AsyncSessionLocal, engine
-from app.main import app
 
 
 def run_async(coro):
