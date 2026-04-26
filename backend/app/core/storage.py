@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from minio import Minio
 from minio.error import S3Error
+from urllib3.exceptions import MaxRetryError
 
 from app.core.config import config
 
@@ -18,6 +19,11 @@ minio_client = Minio(
 BUCKET_USER_ASSETS = "user-assets"
 BUCKET_COMMUNITY_ASSETS = "community-assets"
 BUCKET_POST_ASSETS = "post-assets"
+
+
+class StorageServiceUnavailableError(Exception):
+    """Raised when the MinIO service cannot be reached."""
+
 
 def _get_public_read_policy(bucket_name: str) -> str:
     policy = {
@@ -70,6 +76,8 @@ def generate_presigned_upload_url(bucket_name: str, expires_in_minutes: int = 15
             expires=timedelta(minutes=expires_in_minutes),
         )
         return url, file_key
-    except S3Error as e:
+    except (S3Error, MaxRetryError, OSError) as e:
         print(f"Failed to generate presigned URL for {bucket_name}: {e}")
-        raise
+        raise StorageServiceUnavailableError(
+            "Storage service is currently unavailable. Please try again later."
+        ) from e

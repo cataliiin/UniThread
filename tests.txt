@@ -1,0 +1,68 @@
+UniThread Test Report
+Date: 2026-04-26
+Repo: /Users/eduard/Desktop/UniThread/UniThread
+
+Current Verification Scope
+
+- This report supersedes the earlier pre-fix notes for the auth and storage bugs.
+- The current automated coverage is focused on regression testing for the three backend fixes that were just patched.
+- Frontend checks and the older broad exploratory backend pass were not rerun as part of this refresh, so they are intentionally not restated here.
+
+Environment
+
+- Python 3.11 in the repo-local virtual environment: `.venv311`
+- Test runner: `pytest`
+- API harness: FastAPI `TestClient`
+- Database: isolated SQLite database created per test run
+- Storage outage behavior: simulated with mocking rather than relying on a live MinIO failure
+
+Automated Test Files
+
+- `backend/tests/conftest.py`
+- `backend/tests/test_bugfix_regressions.py`
+
+Command Run
+
+- `PYTHONPATH=/Users/eduard/Desktop/UniThread/UniThread/backend /Users/eduard/Desktop/UniThread/UniThread/.venv311/bin/python -m pytest backend/tests/test_bugfix_regressions.py -q`
+
+Result
+
+- `3 passed, 0 failed`
+- Runtime: about `0.21s`
+- Warnings observed:
+  - `passlib` uses Python's deprecated `crypt` module
+  - `passlib` / `argon2-cffi` emits a packaging metadata deprecation warning
+
+Verified Fixes
+
+- Auth Bug 1: JWT `iat` claim fix
+  - Test: `test_login_generates_integer_iat_and_exp_claims`
+  - Verified behavior:
+    - `POST /api/v1/auth/login` returns `200`
+    - the returned JWT contains both `iat` and `exp`
+    - both claims are integers
+    - `exp - iat` matches `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`
+
+- Auth Bug 2: SQLite UUID lookup / invalid token handling
+  - Test: `test_users_me_rejects_invalid_uuid_sub_claim`
+  - Verified behavior:
+    - `GET /api/v1/users/me` with a manually signed token containing `sub="not-a-valid-uuid"` returns `401`
+    - the app does not crash with `500`
+    - the response payload is:
+      - `error.code = HTTP_ERROR`
+      - `error.message = Could not validate credentials`
+
+- Storage robustness gap: graceful MinIO outage handling
+  - Test: `test_presigned_url_returns_503_when_minio_is_unreachable`
+  - Verified behavior:
+    - the MinIO presign call is forced to raise `MaxRetryError`
+    - `POST /api/v1/storage/presigned-url` returns `503`
+    - the response payload contains:
+      - `error.code = STORAGE_UNAVAILABLE`
+      - `error.message = Storage service is currently unavailable. Please try again later.`
+
+Practical Conclusion
+
+- The three targeted backend regressions are now covered by automated pytest tests.
+- The previously reported failures for JWT `iat`, invalid UUID handling, and MinIO-offline storage behavior are no longer reproduced by the current regression suite.
+- Any broader project status beyond these three fixes should be based on a fresh full-suite or exploratory pass, because that broader coverage was not rerun in this update.

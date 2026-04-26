@@ -1,5 +1,6 @@
 from collections.abc import AsyncGenerator
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
 from jose import JWTError, jwt
@@ -42,10 +43,11 @@ async def get_current_user(
             config.JWT_SECRET_KEY, 
             algorithms=[config.JWT_ALGORITHM]
         )
-        user_id: str | None = payload.get("sub")
-        if user_id is None:
+        user_id_raw: str | None = payload.get("sub")
+        if user_id_raw is None:
             raise credentials_exception
-    except JWTError:
+        user_id = UUID(user_id_raw)
+    except (JWTError, ValueError, TypeError):
         raise credentials_exception
         
     result = await db.execute(select(User).where(User.id == user_id))

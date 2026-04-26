@@ -36,6 +36,7 @@ __pycache__/
 # Medii virtuale și dependențe
 venv/
 .venv/
+.venv311/
 env/
 env3.*
 Pipfile.lock

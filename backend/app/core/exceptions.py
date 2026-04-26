@@ -142,3 +142,12 @@ class NotPostAuthorException(ForbiddenException):
 class AnonymousPostNotAllowedException(ForbiddenException):
     def __init__(self, message: str = "This community does not allow anonymous posts."):
         super().__init__(message=message)
+
+
+class StorageUnavailableException(UniThreadException):
+    def __init__(self, message: str = "Storage service is currently unavailable. Please try again later."):
+        super().__init__(
+            message=message,
+            code="STORAGE_UNAVAILABLE",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
