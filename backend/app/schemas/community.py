@@ -140,3 +140,24 @@ class CommunityJoinAnswerResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CommunityJoinRequestSchema(BaseModel):
+    """Payload sent by the user when joining a community (especially type='request')."""
+    answers: list[CommunityJoinAnswerCreate] | None = Field(default_factory=list)
+
+
+class InviteLinkPreviewResponse(BaseModel):
+    """Data sent to the frontend BEFORE a user clicks Join on an invite link."""
+    community: CommunityPublic
+    code: str
+    expires_at: datetime | None
+
+
+from app.schemas.user import UserPublic
+
+class JoinRequestResponse(BaseModel):
+    """Data sent to the Admin when viewing pending join requests."""
+    user: UserPublic
+    answers: list[CommunityJoinAnswerResponse]
+    requested_at: datetime
