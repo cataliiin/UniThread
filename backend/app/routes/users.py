@@ -22,12 +22,13 @@ async def read_users_me(current_user: CurrentUser):
 async def update_user_me(user_in: UserUpdateProfile, current_user: CurrentUser, db: DbDep):
     """
     Update the current user's profile (username, avatar).
+    Only fields explicitly sent in the request body are updated.
     """
-    if user_in.username is not None:
-        current_user.username = user_in.username
-    if user_in.avatar_key is not None:
-        current_user.avatar_key = user_in.avatar_key
-        
+    update_data = user_in.model_dump(exclude_unset=True)
+
+    for field, value in update_data.items():
+        setattr(current_user, field, value)
+
     db.add(current_user)
     await db.commit()
     await db.refresh(current_user)
