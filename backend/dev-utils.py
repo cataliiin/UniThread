@@ -3,11 +3,12 @@ import asyncio
 import json
 from minio import Minio
 from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy import text
+from sqlalchemy import text, insert
 from rich.console import Console
 from rich.panel import Panel
 
 from app.database.models.base import Base
+from app.database.models.university import University
 from app.core.config import config
 
 """
@@ -75,6 +76,23 @@ def db_reset(force: bool = typer.Option(False, "--force", "-f", help="Skip confi
         db_delete(force=True)
         db_create()
         console.print("[bold blue][RESET] DB recreat din stadiul initial.[/bold blue]")
+
+@db_app.command("add-university")
+def db_add_university(
+    name: str = typer.Argument(..., help="Numele universitatii"),
+    domain: str = typer.Argument(..., help="Domeniul de email (ex: unitbv.ro)")
+):
+    """Adauga o universitate noua in baza de date."""
+    async def _op(conn):
+        try:
+            stmt = insert(University).values(name=name, domain=domain)
+            await conn.execute(stmt)
+            console.print(f"[bold green][SUCCESS] Universitatea '{name}' ({domain}) a fost adaugata.[/bold green]")
+        except Exception as e:
+            console.print(f"[bold red][ERROR] Eroare la adaugarea universitatii (posibil duplicat): {e}[/bold red]")
+            raise typer.Exit(1)
+            
+    asyncio.run(run_db_op(_op))
 
 S3_CONFIG = {
     "endpoint": config.MINIO_ENDPOINT, 
