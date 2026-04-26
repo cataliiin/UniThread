@@ -22,9 +22,10 @@ async def perform_health_checks():
     db_ok = False
     try:
         async with AsyncSessionLocal() as session:
-            await session.execute(text("SELECT 1"))
+            await asyncio.wait_for(session.execute(text("SELECT 1")), timeout=3.0)
         db_ok = True
     except Exception as e:
+        logger.error(f"DB health check failed: {e}")
         pass
         
     state.minio_ok = minio_ok
