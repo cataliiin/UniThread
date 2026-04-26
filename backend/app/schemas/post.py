@@ -15,6 +15,7 @@ class PostBase(BaseModel):
 
 class PostCreate(PostBase):
     community_id: UUID
+    is_anonymous: bool = False
 
 
 class PostUpdate(BaseModel):
@@ -23,14 +24,23 @@ class PostUpdate(BaseModel):
     image_key: str | None = None
 
 
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
 class PostResponse(PostBase):
     id: UUID
     community_id: UUID
     author_id: UUID | None
     created_at: datetime
     updated_at: datetime | None
+    is_anonymous: bool
 
     model_config = ConfigDict(from_attributes=True)
+
+    @model_validator(mode="after")
+    def mask_author(self):
+        if self.is_anonymous:
+            self.author_id = None
+        return self
 
 
 class PostFeedResponse(PostResponse):
@@ -39,6 +49,13 @@ class PostFeedResponse(PostResponse):
     Includes nested relationships to avoid N+1 queries on the frontend.
     """
     author: UserPublic | None = None
+    
+    @model_validator(mode="after")
+    def mask_author_feed(self):
+        if self.is_anonymous:
+            self.author_id = None
+            self.author = None
+        return self
     community: CommunityPublic
     
     # Aggregated/Dynamic fields

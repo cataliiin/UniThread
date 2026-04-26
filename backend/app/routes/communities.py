@@ -134,23 +134,35 @@ async def get_community(community_id: UUID, current_user: CurrentUser, db: DbDep
     """
     Get details of a specific community.
     """
-    comm = await db.scalar(select(Community).where(Community.id == community_id))
-    if not comm:
+    count_subq = (
+        select(func.count(CommunityMember.user_id))
+        .where((CommunityMember.community_id == Community.id) & (CommunityMember.status == MemberStatus.approved))
+        .scalar_subquery()
+        .label("member_count")
+    )
+    
+    status_subq = (
+        select(CommunityMember.status)
+        .where((CommunityMember.community_id == Community.id) & (CommunityMember.user_id == current_user.id))
+        .scalar_subquery()
+        .label("user_membership_status")
+    )
+
+    stmt = (
+        select(Community, count_subq, status_subq)
+        .where((Community.id == community_id) & (Community.university_id == current_user.university_id))
+    )
+    
+    row = (await db.execute(stmt)).first()
+    
+    if not row:
         raise CommunityNotFoundException()
         
-    count = await db.scalar(
-        select(func.count(CommunityMember.user_id))
-        .where((CommunityMember.community_id == comm.id) & (CommunityMember.status == MemberStatus.approved))
-    )
-    
-    member = await db.scalar(
-        select(CommunityMember)
-        .where((CommunityMember.community_id == comm.id) & (CommunityMember.user_id == current_user.id))
-    )
+    comm, member_count, user_membership_status = row
     
     c_resp = CommunityResponse.model_validate(comm)
-    c_resp.member_count = count or 0
-    c_resp.user_membership_status = member.status if member else None
+    c_resp.member_count = member_count or 0
+    c_resp.user_membership_status = user_membership_status
     
     return c_resp
 
@@ -160,7 +172,10 @@ async def update_community(community_id: UUID, community_in: CommunityUpdate, cu
     """
     Update community settings (Admin only).
     """
-    comm = await db.scalar(select(Community).where(Community.id == community_id))
+    comm = await db.scalar(
+        select(Community)
+        .where((Community.id == community_id) & (Community.university_id == current_user.university_id))
+    )
     if not comm:
         raise CommunityNotFoundException()
         
@@ -171,6 +186,16 @@ async def update_community(community_id: UUID, community_in: CommunityUpdate, cu
     
     if not member or not member.is_admin:
         raise NotCommunityAdminException()
+        
+    if community_in.name is not None and community_in.name != comm.name:
+        result = await db.execute(
+            select(Community).where(
+                (Community.name == community_in.name) & 
+                (Community.university_id == current_user.university_id)
+            )
+        )
+        if result.first():
+            raise CommunityNameTakenException()
         
     # Update fields
     update_data = community_in.model_dump(exclude_unset=True)
@@ -189,7 +214,10 @@ async def delete_community(community_id: UUID, current_user: CurrentUser, db: Db
     """
     Delete a community (Owner only).
     """
-    comm = await db.scalar(select(Community).where(Community.id == community_id))
+    comm = await db.scalar(
+        select(Community)
+        .where((Community.id == community_id) & (Community.university_id == current_user.university_id))
+    )
     if not comm:
         raise CommunityNotFoundException()
         
@@ -213,10 +241,21 @@ async def get_community_posts(
     Get the feed of posts for a specific community. Highly efficient join load.
     Supports sorting by 'new' (default) or 'top'.
     """
-    comm = await db.scalar(select(Community).where(Community.id == community_id))
+    comm = await db.scalar(
+        select(Community)
+        .where((Community.id == community_id) & (Community.university_id == current_user.university_id))
+    )
     if not comm:
         raise CommunityNotFoundException()
         
+    if comm.type != CommunityType.public:
+        member = await db.scalar(
+            select(CommunityMember)
+            .where((CommunityMember.community_id == comm.id) & (CommunityMember.user_id == current_user.id))
+        )
+        if not member or member.status != MemberStatus.approved:
+            raise ForbiddenException("You don't have permission to view posts in this community.")
+            
     offset = (page - 1) * size
     
     base_query = select(Post).where(Post.community_id == community_id)
@@ -274,7 +313,10 @@ async def join_community(
     - request → answers to required questions are saved, status = pending
     - invite  → rejected with clear message (must use an invite link or direct invitation)
     """
-    comm = await db.scalar(select(Community).where(Community.id == community_id))
+    comm = await db.scalar(
+        select(Community)
+        .where((Community.id == community_id) & (Community.university_id == current_user.university_id))
+    )
     if not comm:
         raise CommunityNotFoundException()
 
@@ -344,7 +386,10 @@ async def leave_community(community_id: UUID, current_user: CurrentUser, db: DbD
     """
     Leave a community.
     """
-    comm = await db.scalar(select(Community).where(Community.id == community_id))
+    comm = await db.scalar(
+        select(Community)
+        .where((Community.id == community_id) & (Community.university_id == current_user.university_id))
+    )
     if not comm:
         raise CommunityNotFoundException()
         

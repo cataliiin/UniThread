@@ -47,7 +47,7 @@ async def preview_invite_link(code: str, current_user: CurrentUser, db: DbDep):
         .where(CommunityInviteLink.code == code)
         .options(selectinload(CommunityInviteLink.community))
     )
-    if not link:
+    if not link or link.community.university_id != current_user.university_id:
         raise InviteLinkNotFoundException()
 
     # Validate expiry and capacity without consuming
@@ -75,7 +75,7 @@ async def join_via_invite_link(code: str, current_user: CurrentUser, db: DbDep):
         .where(CommunityInviteLink.code == code)
         .options(selectinload(CommunityInviteLink.community))
     )
-    if not link:
+    if not link or link.community.university_id != current_user.university_id:
         raise InviteLinkNotFoundException()
 
     now = datetime.now(timezone.utc)

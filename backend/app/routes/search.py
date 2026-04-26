@@ -4,7 +4,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.dependencies import CurrentUser, DbDep
 from app.database.models.community import Community, CommunityMember
-from app.database.models.enums import MemberStatus
+from app.database.models.enums import MemberStatus, CommunityType
 from app.database.models.post import Post
 from app.database.models.user import User
 from app.database.models.vote import Vote
@@ -107,9 +107,17 @@ async def global_search(
         post_stmt = (
             select(Post, score_subq, user_vote_subq)
             .join(Community, Post.community_id == Community.id)
+            .outerjoin(
+                CommunityMember, 
+                (CommunityMember.community_id == Community.id) & (CommunityMember.user_id == current_user.id)
+            )
             .where(
                 (Community.university_id == current_user.university_id) & 
-                ((Post.title.ilike(search_term, escape="\\")) | (Post.body.ilike(search_term, escape="\\")))
+                ((Post.title.ilike(search_term, escape="\\")) | (Post.body.ilike(search_term, escape="\\"))) &
+                (
+                    (Community.type == CommunityType.public) |
+                    (CommunityMember.status == MemberStatus.approved)
+                )
             )
             .order_by(Post.created_at.desc())
             .options(selectinload(Post.author), selectinload(Post.community))

@@ -9,9 +9,10 @@ from app.core.exceptions import (
     NotCommunityMemberException,
     NotPostAuthorException,
     PostNotFoundException,
+    ForbiddenException,
 )
-from app.database.models.community import CommunityMember
-from app.database.models.enums import MemberStatus
+from app.database.models.community import CommunityMember, Community
+from app.database.models.enums import MemberStatus, CommunityType
 from app.database.models.post import Post
 from app.database.models.vote import Vote
 from app.schemas.pagination import PaginatedResponse
@@ -28,13 +29,22 @@ async def get_global_feed(current_user: CurrentUser, db: DbDep, page: int = 1, s
     """
     offset = (page - 1) * size
     
-    # Simple global feed: all posts in the user's university
-    from app.database.models.community import Community
+    # Exclude posts from non-public communities unless the user is an approved member
     
     base_query = (
         select(Post)
         .join(Community, Post.community_id == Community.id)
-        .where(Community.university_id == current_user.university_id)
+        .outerjoin(
+            CommunityMember, 
+            (CommunityMember.community_id == Community.id) & (CommunityMember.user_id == current_user.id)
+        )
+        .where(
+            (Community.university_id == current_user.university_id) &
+            (
+                (Community.type == CommunityType.public) |
+                (CommunityMember.status == MemberStatus.approved)
+            )
+        )
     )
     
     total = await db.scalar(select(func.count()).select_from(base_query.subquery()))
@@ -56,7 +66,17 @@ async def get_global_feed(current_user: CurrentUser, db: DbDep, page: int = 1, s
     stmt = (
         select(Post, score_subq, user_vote_subq)
         .join(Community, Post.community_id == Community.id)
-        .where(Community.university_id == current_user.university_id)
+        .outerjoin(
+            CommunityMember, 
+            (CommunityMember.community_id == Community.id) & (CommunityMember.user_id == current_user.id)
+        )
+        .where(
+            (Community.university_id == current_user.university_id) &
+            (
+                (Community.type == CommunityType.public) |
+                (CommunityMember.status == MemberStatus.approved)
+            )
+        )
         .options(selectinload(Post.author), selectinload(Post.community))
         .offset(offset)
         .limit(size)
@@ -93,12 +113,16 @@ async def create_post(post_in: PostCreate, current_user: CurrentUser, db: DbDep)
     if not member or member.status != MemberStatus.approved:
         raise NotCommunityMemberException()
         
+    if post_in.is_anonymous and not member.community.allow_anonymous:
+        raise ForbiddenException("This community does not allow anonymous posts.")
+
     new_post = Post(
         title=post_in.title,
         body=post_in.body,
         image_key=post_in.image_key,
         community_id=post_in.community_id,
-        author_id=current_user.id
+        author_id=current_user.id,
+        is_anonymous=post_in.is_anonymous
     )
     db.add(new_post)
     await db.commit()
@@ -112,26 +136,44 @@ async def get_post(post_id: UUID, current_user: CurrentUser, db: DbDep):
     """
     Get a single post by its ID. Perfect for deep-linking.
     """
+    score_subq = (
+        select(func.sum(Vote.value))
+        .where(Vote.post_id == Post.id)
+        .scalar_subquery()
+        .label("score")
+    )
+    
+    user_vote_subq = (
+        select(Vote.value)
+        .where((Vote.post_id == Post.id) & (Vote.user_id == current_user.id))
+        .scalar_subquery()
+        .label("user_vote")
+    )
+
     stmt = (
-        select(Post)
+        select(Post, score_subq, user_vote_subq)
         .where(Post.id == post_id)
         .options(selectinload(Post.author), selectinload(Post.community))
     )
-    post = await db.scalar(stmt)
+    row = (await db.execute(stmt)).first()
     
-    if not post:
+    if not row:
         raise PostNotFoundException()
         
+    post, score, user_vote = row
+    
+    if post.community.university_id != current_user.university_id:
+        raise PostNotFoundException()
+        
+    if post.community.type != CommunityType.public:
+        member = await db.scalar(
+            select(CommunityMember)
+            .where((CommunityMember.community_id == post.community_id) & (CommunityMember.user_id == current_user.id))
+        )
+        if not member or member.status != MemberStatus.approved:
+            raise ForbiddenException("You don't have permission to view this post.")
+            
     p_resp = PostFeedResponse.model_validate(post)
-    
-    # Get dynamic score
-    score = await db.scalar(select(func.sum(Vote.value)).where(Vote.post_id == post_id))
-    
-    # Get current user vote
-    user_vote = await db.scalar(
-        select(Vote.value).where((Vote.post_id == post_id) & (Vote.user_id == current_user.id))
-    )
-    
     p_resp.score = score or 0
     p_resp.user_vote = user_vote
     
@@ -183,10 +225,22 @@ async def vote_post(post_id: UUID, vote_in: VoteCreate, current_user: CurrentUse
     """
     Upvote or downvote a post. Returns the updated post with the new score.
     """
-    post = await db.scalar(select(Post).where(Post.id == post_id))
-    if not post:
+    post = await db.scalar(
+        select(Post)
+        .options(selectinload(Post.community))
+        .where(Post.id == post_id)
+    )
+    if not post or post.community.university_id != current_user.university_id:
         raise PostNotFoundException()
         
+    if post.community.type != CommunityType.public:
+        member = await db.scalar(
+            select(CommunityMember)
+            .where((CommunityMember.community_id == post.community_id) & (CommunityMember.user_id == current_user.id))
+        )
+        if not member or member.status != MemberStatus.approved:
+            raise ForbiddenException("You don't have permission to interact with this post.")
+            
     existing_vote = await db.scalar(
         select(Vote).where((Vote.post_id == post_id) & (Vote.user_id == current_user.id))
     )

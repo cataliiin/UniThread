@@ -47,14 +47,14 @@ async def update_password(password_data: UserChangePassword, current_user: Curre
     await db.commit()
 
 @router.get("/{user_id}", response_model=UserProfileResponse)
-async def read_user_profile(user_id: UUID, db: DbDep):
+async def read_user_profile(user_id: UUID, current_user: CurrentUser, db: DbDep):
     """
     Get the public profile of a specific user.
     """
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     
-    if not user:
+    if not user or user.university_id != current_user.university_id:
         raise UserNotFoundException()
         
     return user

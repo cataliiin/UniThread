@@ -257,6 +257,25 @@ async def approve_join_request(
 
     member.status = MemberStatus.approved
     db.add(member)
+
+    answers = (
+        (
+            await db.execute(
+                select(CommunityJoinAnswer)
+                .where(CommunityJoinAnswer.user_id == user_id)
+                .join(
+                    CommunityJoinQuestion,
+                    CommunityJoinAnswer.question_id == CommunityJoinQuestion.id,
+                )
+                .where(CommunityJoinQuestion.community_id == community_id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for answer in answers:
+        await db.delete(answer)
+
     await db.commit()
     await db.refresh(member)
     return member
