@@ -40,6 +40,7 @@ from app.schemas.community import (
     CommunityJoinQuestionResponse,
     CommunityJoinQuestionUpdate,
     CommunityMemberResponse,
+    CommunityRoleUpdate,
     JoinRequestResponse,
 )
 from app.schemas.user import UserPublic
@@ -463,3 +464,43 @@ async def create_direct_invitation(
     await db.commit()
     await db.refresh(new_invitation)
     return new_invitation
+
+
+@router.patch(
+    "/{community_id}/members/{user_id}/role", response_model=CommunityMemberResponse
+)
+async def update_member_role(
+    community_id: UUID,
+    user_id: UUID,
+    role_in: CommunityRoleUpdate,
+    current_user: CurrentUser,
+    db: DbDep,
+):
+    """
+    Promote or demote a community member (Admin only).
+    The owner of the community cannot be demoted.
+    """
+    comm = await _require_admin(community_id, current_user.id, db)
+
+    # Prevent demoting the owner
+    if user_id == comm.owner_id and role_in.is_admin is False:
+        from app.core.exceptions import ForbiddenException
+        raise ForbiddenException("The owner of the community must remain an admin.")
+
+    target_member = await db.scalar(
+        select(CommunityMember).where(
+            (CommunityMember.community_id == community_id)
+            & (CommunityMember.user_id == user_id)
+            & (CommunityMember.status == MemberStatus.approved)
+        )
+    )
+    if not target_member:
+        from app.core.exceptions import NotCommunityMemberException
+        raise NotCommunityMemberException("Target user is not an approved member of this community.")
+
+    target_member.is_admin = role_in.is_admin
+    db.add(target_member)
+    await db.commit()
+    await db.refresh(target_member)
+
+    return target_member

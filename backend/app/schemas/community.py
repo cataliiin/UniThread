@@ -40,6 +40,14 @@ class CommunityUpdate(BaseModel):
     banner_key: str | None = None
 
 
+class CommunityRoleUpdate(BaseModel):
+    is_admin: bool
+
+
+class TransferOwnershipRequest(BaseModel):
+    new_owner_id: UUID
+
+
 class CommunityResponse(CommunityBase):
     id: UUID
     university_id: UUID
