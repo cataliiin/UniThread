@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 
 from app.core import security
+from app.core.config import config
 from app.core.dependencies import DbDep
 from app.core.exceptions import (
     InvalidCredentialsException,
@@ -80,6 +81,7 @@ async def login_for_access_token(
         key="access_token",
         value=access_token,
         httponly=True,
+        secure=config.COOKIE_SECURE,
         max_age=60 * 60 * 24 * 7,  # 7 days
         samesite="lax",
     )

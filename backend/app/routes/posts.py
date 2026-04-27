@@ -1,11 +1,12 @@
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from app.core.dependencies import CurrentUser, DbDep
 from app.core.exceptions import (
+    CommunityNotFoundException,
     NotCommunityMemberException,
     NotPostAuthorException,
     PostNotFoundException,
@@ -26,8 +27,8 @@ router = APIRouter(prefix="/posts", tags=["Posts"])
 async def get_global_feed(
     current_user: CurrentUser,
     db: DbDep,
-    page: int = 1,
-    size: int = 20,
+    page: int = Query(1, ge=1),
+    size: int = Query(20),
     sort: str = "new",
 ):
     """
@@ -121,24 +122,33 @@ async def create_post(post_in: PostCreate, current_user: CurrentUser, db: DbDep)
     """
     Create a new post in a specific community.
     """
+    community = await db.scalar(
+        select(Community).where(
+            (Community.id == post_in.community_id)
+            & (Community.university_id == current_user.university_id)
+        )
+    )
+    if not community:
+        raise CommunityNotFoundException()
+
     # Verify membership
     member = await db.scalar(
         select(CommunityMember).where(
-            (CommunityMember.community_id == post_in.community_id)
+            (CommunityMember.community_id == community.id)
             & (CommunityMember.user_id == current_user.id)
         )
     )
     if not member or member.status != MemberStatus.approved:
         raise NotCommunityMemberException()
 
-    if post_in.is_anonymous and not member.community.allow_anonymous:
+    if post_in.is_anonymous and not community.allow_anonymous:
         raise ForbiddenException("This community does not allow anonymous posts.")
 
     new_post = Post(
         title=post_in.title,
         body=post_in.body,
         image_key=post_in.image_key,
-        community_id=post_in.community_id,
+        community_id=community.id,
         author_id=current_user.id,
         is_anonymous=post_in.is_anonymous,
     )
@@ -207,8 +217,10 @@ async def update_post(
     """
     Update a post's content (Author only).
     """
-    post = await db.scalar(select(Post).where(Post.id == post_id))
-    if not post:
+    post = await db.scalar(
+        select(Post).options(selectinload(Post.community)).where(Post.id == post_id)
+    )
+    if not post or post.community.university_id != current_user.university_id:
         raise PostNotFoundException()
 
     if post.author_id != current_user.id:
@@ -230,8 +242,10 @@ async def delete_post(post_id: UUID, current_user: CurrentUser, db: DbDep):
     """
     Delete a post (Author only).
     """
-    post = await db.scalar(select(Post).where(Post.id == post_id))
-    if not post:
+    post = await db.scalar(
+        select(Post).options(selectinload(Post.community)).where(Post.id == post_id)
+    )
+    if not post or post.community.university_id != current_user.university_id:
         raise PostNotFoundException()
 
     # In a real app, community admins can also delete

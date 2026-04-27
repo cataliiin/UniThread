@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from sqlalchemy import func, select
 
 from app.core.dependencies import DbDep
@@ -13,25 +13,30 @@ router = APIRouter(prefix="/universities", tags=["Universities"])
 
 
 @router.get("", response_model=PaginatedResponse[UniversityResponse])
-async def list_universities(db: DbDep, page: int = 1, size: int = 50):
+async def list_universities(
+    db: DbDep,
+    page: int = Query(1, ge=1),
+    size: int = Query(50),
+):
     """
     List all registered universities.
     """
-    offset = (page - 1) * size
+    actual_size = max(1, min(size, 100))
+    offset = (page - 1) * actual_size
 
     # Get total count
     count_result = await db.execute(select(func.count(University.id)))
     total = count_result.scalar_one()
 
     # Get items
-    result = await db.execute(select(University).offset(offset).limit(size))
+    result = await db.execute(select(University).offset(offset).limit(actual_size))
     items = result.scalars().all()
 
     # Calculate total pages
-    pages = (total + size - 1) // size
+    pages = (total + actual_size - 1) // actual_size if total else 0
 
     return PaginatedResponse(
-        items=list(items), total=total, page=page, size=size, pages=pages
+        items=list(items), total=total, page=page, size=actual_size, pages=pages
     )
 
 

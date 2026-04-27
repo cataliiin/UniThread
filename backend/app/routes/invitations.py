@@ -153,13 +153,18 @@ async def accept_invitation(invite_id: UUID, current_user: CurrentUser, db: DbDe
     Accept a direct invitation. Instantly approves membership.
     """
     invitation = await db.scalar(
-        select(CommunityInvitation).where(
+        select(CommunityInvitation)
+        .where(
             (CommunityInvitation.id == invite_id)
             & (CommunityInvitation.invited_user == current_user.id)
             & (CommunityInvitation.status == InvitationStatus.pending)
         )
+        .options(selectinload(CommunityInvitation.community))
     )
     if not invitation:
+        raise NotFoundException("Invitation not found or already responded to.")
+
+    if invitation.community.university_id != current_user.university_id:
         raise NotFoundException("Invitation not found or already responded to.")
 
     # Prevent double-join

@@ -14,6 +14,7 @@ from app.core.exceptions import (
     JoinRequestPendingException,
     NotCommunityAdminException,
     NotCommunityMemberException,
+    NotFoundException,
 )
 from app.database.models.community import (
     Community,
@@ -91,7 +92,10 @@ async def create_community(
 
 @router.get("", response_model=PaginatedResponse[CommunityResponse])
 async def list_communities(
-    current_user: CurrentUser, db: DbDep, page: int = 1, size: int = 20
+    current_user: CurrentUser,
+    db: DbDep,
+    page: int = Query(1, ge=1),
+    size: int = Query(20),
 ):
     """
     List communities within the user's university.
@@ -129,6 +133,7 @@ async def list_communities(
     stmt = (
         select(Community, count_subq, status_subq)
         .where(Community.university_id == current_user.university_id)
+        .order_by(Community.created_at.desc(), Community.id.asc())
         .offset(offset)
         .limit(actual_size)
     )
@@ -275,7 +280,7 @@ async def get_community_posts(
     community_id: UUID,
     current_user: CurrentUser,
     db: DbDep,
-    page: int = 1,
+    page: int = Query(1, ge=1),
     size: int = Query(20),
     sort: str = "new",
 ):
@@ -361,7 +366,7 @@ async def list_community_members(
     community_id: UUID,
     current_user: CurrentUser,
     db: DbDep,
-    page: int = 1,
+    page: int = Query(1, ge=1),
     size: int = Query(20),
 ):
     """
@@ -470,12 +475,11 @@ async def join_community(
 
     # For 'request' type: validate and save answers to required questions
     if comm.type == CommunityType.request:
-        required_questions = (
+        all_questions = (
             (
                 await db.execute(
                     select(CommunityJoinQuestion).where(
-                        (CommunityJoinQuestion.community_id == comm.id)
-                        & (CommunityJoinQuestion.is_required == True)  # noqa: E712
+                        CommunityJoinQuestion.community_id == comm.id
                     )
                 )
             )
@@ -485,6 +489,17 @@ async def join_community(
 
         answers_list = join_request.answers if join_request else []
         provided_answers = {a.question_id: a.answer for a in answers_list}
+        questions_by_id = {question.id: question for question in all_questions}
+
+        invalid_question_ids = [
+            question_id for question_id in provided_answers if question_id not in questions_by_id
+        ]
+        if invalid_question_ids:
+            raise NotFoundException("Join question not found.")
+
+        required_questions = [
+            question for question in all_questions if question.is_required
+        ]
 
         for q in required_questions:
             if q.id not in provided_answers or not provided_answers[q.id].strip():
@@ -539,7 +554,7 @@ async def leave_community(community_id: UUID, current_user: CurrentUser, db: DbD
 
     if comm.owner_id == current_user.id:
         raise NotCommunityAdminException(
-            "The owner cannot leave the community without deleting it or transfering ownership."
+            "The owner cannot leave the community without deleting it."
         )
 
     await db.delete(member)

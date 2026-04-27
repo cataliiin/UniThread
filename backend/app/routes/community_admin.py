@@ -54,13 +54,23 @@ async def _require_admin(
     community_id: UUID, current_user_id: UUID, db: DbDep
 ) -> Community:
     """Fetch community and verify current user is an admin. Raises on failure."""
-    comm = await db.scalar(select(Community).where(Community.id == community_id))
+    current_user = await db.scalar(select(User).where(User.id == current_user_id))
+    if not current_user:
+        raise CommunityNotFoundException()
+
+    comm = await db.scalar(
+        select(Community).where(
+            (Community.id == community_id)
+            & (Community.university_id == current_user.university_id)
+        )
+    )
     if not comm:
         raise CommunityNotFoundException()
     member = await db.scalar(
         select(CommunityMember).where(
             (CommunityMember.community_id == community_id)
             & (CommunityMember.user_id == current_user_id)
+            & (CommunityMember.status == MemberStatus.approved)
         )
     )
     if not member or not member.is_admin:
@@ -76,7 +86,12 @@ async def _require_admin(
 )
 async def list_join_questions(community_id: UUID, current_user: CurrentUser, db: DbDep):
     """List all join questions for a community (visible to all logged-in users so they can preview before joining)."""
-    comm = await db.scalar(select(Community).where(Community.id == community_id))
+    comm = await db.scalar(
+        select(Community).where(
+            (Community.id == community_id)
+            & (Community.university_id == current_user.university_id)
+        )
+    )
     if not comm:
         raise CommunityNotFoundException()
     questions = (
@@ -430,13 +445,16 @@ async def create_direct_invitation(
     Send a direct invitation to a user (Admin only).
     The invited user will see it in their notifications and can accept or decline.
     """
-    await _require_admin(community_id, current_user.id, db)
+    comm = await _require_admin(community_id, current_user.id, db)
 
     # Verify target user exists
     invited_user = await db.scalar(
         select(User).where(User.id == invitation_in.invited_user)
     )
     if not invited_user:
+        raise UserNotFoundException()
+
+    if invited_user.university_id != comm.university_id:
         raise UserNotFoundException()
 
     # Check they are not already a member
