@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { user } from '$lib/stores/user';
+	import { user } from '$lib/stores/user.svelte';
+	let avatarUrl = $derived(user.avatarUrl);
 </script>
 
 <div class="p-8 max-w-[1200px] mx-auto">
@@ -10,8 +11,12 @@
 		</div>
 		
 		<a href="/profile" class="no-underline transition-transform duration-200 hover:scale-105" title="View Profile">
-			<div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center font-bold text-base shadow-[0_10px_15px_-3px_rgba(79,70,229,0.2)]">
-				{$user.avatarInitials}
+			<div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center font-bold text-base shadow-[0_10px_15px_-3px_rgba(79,70,229,0.2)] overflow-hidden">
+				{#if avatarUrl}
+					<img src={avatarUrl} alt="Avatar" class="w-full h-full object-cover [transform:translateZ(0)] [backface-visibility:hidden]" />
+				{:else}
+					{user.avatarInitials}
+				{/if}
 			</div>
 		</a>
 	</header>

@@ -3,7 +3,7 @@ import type { LayoutLoad } from './$types';
 
 export const load: LayoutLoad = async ({ url }) => {
 	// Set to true to access main page for development purposes
-	const isAuthenticated = false;
+	const isAuthenticated = true;
 	const isLoginPage = url.pathname === '/login';
 
 	if (!isAuthenticated && !isLoginPage) {
