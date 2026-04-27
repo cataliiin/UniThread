@@ -1,3 +1,111 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+
+/* Custom Tokens & Animations */
+:root {
+	--sidebar-width: 280px;
+	--primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+	--sidebar-bg: #0f172a;
+	--sidebar-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Layout Container */
+.layout-container {
+	@apply flex h-screen bg-slate-50 text-slate-900 overflow-hidden;
+}
+
+/* Sidebar */
+.sidebar {
+	@apply flex flex-col h-full bg-slate-950 border-r border-slate-800 transition-all duration-300;
+	width: var(--sidebar-width);
+}
+
+.sidebar-header {
+	@apply p-6 flex items-center gap-4 border-b border-slate-800/50;
+}
+
+.logo-container, .logo-placeholder {
+	@apply w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20;
+}
+
+.logo {
+	@apply w-7 h-7;
+}
+
+.brand-name {
+	@apply text-xl font-bold tracking-tight text-white;
+}
+
+.sidebar-nav {
+	@apply flex-1 overflow-y-auto py-6 px-4 space-y-1;
+}
+
+.nav-link {
+	@apply flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-400;
+	@apply hover:bg-slate-800 hover:text-white;
+}
+
+.nav-link.active {
+	@apply bg-indigo-600/10 text-indigo-400 font-semibold;
+}
+
+.nav-icon {
+	@apply flex items-center justify-center transition-transform duration-200;
+}
+
+.nav-link:hover .nav-icon {
+	@apply scale-110;
+}
+
+.nav-label {
+	@apply text-sm tracking-wide;
+}
+
+.sidebar-footer {
+	@apply p-4 mt-auto border-t border-slate-800/50;
+}
+
+.user-card {
+	@apply flex items-center justify-between p-3 rounded-2xl bg-slate-900 border border-slate-800 transition-all duration-200;
+}
+
+.user-info {
+	@apply flex items-center gap-3;
+}
+
+.user-avatar, .default-avatar {
+	@apply w-9 h-9 rounded-full border border-slate-700 shadow-sm flex items-center justify-center bg-slate-800 text-slate-400;
+}
+
+.user-details {
+	@apply flex flex-col min-w-0;
+}
+
+.user-name {
+	@apply font-semibold text-sm text-white truncate;
+}
+
+.user-username {
+	@apply text-xs text-slate-500 truncate;
+}
+
+.logout-btn {
+	@apply p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-all duration-200;
+}
+
+/* Main Content */
+.main-content {
+	@apply flex-1 overflow-y-auto relative bg-slate-50;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+	.sidebar {
+		@apply fixed inset-y-0 left-0 z-50 -translate-x-full;
+	}
+	
+	.sidebar.open {
+		@apply translate-x-0;
+	}
+}
