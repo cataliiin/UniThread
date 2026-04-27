@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { user } from '$lib/stores/user';
+	import { user } from '$lib/stores/user.svelte';
+
+	let avatarUrl = $derived(user.avatarUrl);
 
 	const navLinks = [
 		{
@@ -82,28 +84,32 @@
 		>
 			<a href="/profile" class="flex items-center gap-3">
 				<div
-					class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-slate-400 shadow-sm"
+					class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-slate-400 shadow-sm overflow-hidden"
 				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="20"
-						height="20"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle
-							cx="12"
-							cy="7"
-							r="4"
-						/></svg
-					>
+					{#if avatarUrl}
+						<img src={avatarUrl} alt="Avatar" class="w-full h-full object-cover [transform:translateZ(0)] [backface-visibility:hidden]" />
+					{:else}
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle
+								cx="12"
+								cy="7"
+								r="4"
+							/></svg
+						>
+					{/if}
 				</div>
 				<div class="flex min-w-0 flex-col">
-					<span class="truncate text-sm font-semibold text-white">{$user.name}</span>
-					<span class="truncate text-xs text-slate-500">@{$user.username}</span>
+					<span class="truncate text-sm font-semibold text-white">{user.name}</span>
+					<span class="truncate text-xs text-slate-500">@{user.username}</span>
 				</div>
 			</a>
 			<button

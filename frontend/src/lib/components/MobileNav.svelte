@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { user } from '$lib/stores/user';
+	import { user } from '$lib/stores/user.svelte';
+
+	let avatarUrl = $derived(user.avatarUrl);
 
 	const navLinks = [
 		{ 
@@ -48,8 +50,12 @@
 			>
 				<span class="flex items-center justify-center">
 					{#if link.isAvatar}
-						<div class="w-6 h-6 rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center">
-							{$user.avatarInitials}
+						<div class="w-6 h-6 rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center overflow-hidden">
+							{#if avatarUrl}
+								<img src={avatarUrl} alt="Avatar" class="w-full h-full object-cover [transform:translateZ(0)] [backface-visibility:hidden]" />
+							{:else}
+								{user.avatarInitials}
+							{/if}
 						</div>
 					{:else}
 						{@html link.icon}
