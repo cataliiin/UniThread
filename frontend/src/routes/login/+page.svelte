@@ -11,7 +11,7 @@
 		<form class="space-y-4">
 			<div>
 				<label for="email" class="block text-sm font-medium text-slate-300 mb-1">Email</label>
-				<input type="email" id="email" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" placeholder="name.surname@unitbv.ro" />
+				<input type="email" id="email" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" placeholder="name.surname@student.unitbv.ro" />
 			</div>
 			<div>
 				<label for="password" class="block text-sm font-medium text-slate-300 mb-1">Password</label>
