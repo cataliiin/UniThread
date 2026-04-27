@@ -11,16 +11,18 @@ from fastapi import APIRouter, status
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from app.core.dependencies import CurrentUser, DbDep
+from app.core.dependencies import (
+    CurrentUser,
+    DbDep,
+    get_community_with_tenant_check,
+    require_community_admin,
+)
 from app.core.exceptions import (
     AlreadyCommunityMemberException,
-    CommunityNotFoundException,
-    NotCommunityAdminException,
     NotFoundException,
     UserNotFoundException,
 )
 from app.database.models.community import (
-    Community,
     CommunityInvitation,
     CommunityInviteLink,
     CommunityJoinAnswer,
@@ -47,37 +49,6 @@ from app.schemas.user import UserPublic
 router = APIRouter(prefix="/communities", tags=["Community Admin"])
 
 
-# ── helpers ──────────────────────────────────────────────────────────────────
-
-
-async def _require_admin(
-    community_id: UUID, current_user_id: UUID, db: DbDep
-) -> Community:
-    """Fetch community and verify current user is an admin. Raises on failure."""
-    current_user = await db.scalar(select(User).where(User.id == current_user_id))
-    if not current_user:
-        raise CommunityNotFoundException()
-
-    comm = await db.scalar(
-        select(Community).where(
-            (Community.id == community_id)
-            & (Community.university_id == current_user.university_id)
-        )
-    )
-    if not comm:
-        raise CommunityNotFoundException()
-    member = await db.scalar(
-        select(CommunityMember).where(
-            (CommunityMember.community_id == community_id)
-            & (CommunityMember.user_id == current_user_id)
-            & (CommunityMember.status == MemberStatus.approved)
-        )
-    )
-    if not member or not member.is_admin:
-        raise NotCommunityAdminException()
-    return comm
-
-
 # ── Join Questions ────────────────────────────────────────────────────────────
 
 
@@ -86,14 +57,7 @@ async def _require_admin(
 )
 async def list_join_questions(community_id: UUID, current_user: CurrentUser, db: DbDep):
     """List all join questions for a community (visible to all logged-in users so they can preview before joining)."""
-    comm = await db.scalar(
-        select(Community).where(
-            (Community.id == community_id)
-            & (Community.university_id == current_user.university_id)
-        )
-    )
-    if not comm:
-        raise CommunityNotFoundException()
+    await get_community_with_tenant_check(community_id, current_user, db)
     questions = (
         (
             await db.execute(
@@ -120,7 +84,7 @@ async def create_join_question(
     db: DbDep,
 ):
     """Add a join question to a community (Admin only)."""
-    await _require_admin(community_id, current_user.id, db)
+    await require_community_admin(community_id, current_user, db)
     new_q = CommunityJoinQuestion(
         community_id=community_id,
         question=question_in.question,
@@ -145,7 +109,7 @@ async def update_join_question(
     db: DbDep,
 ):
     """Update a join question (Admin only)."""
-    await _require_admin(community_id, current_user.id, db)
+    await require_community_admin(community_id, current_user, db)
     q = await db.scalar(
         select(CommunityJoinQuestion).where(
             (CommunityJoinQuestion.id == question_id)
@@ -172,7 +136,7 @@ async def delete_join_question(
     db: DbDep,
 ):
     """Delete a join question (Admin only)."""
-    await _require_admin(community_id, current_user.id, db)
+    await require_community_admin(community_id, current_user, db)
     q = await db.scalar(
         select(CommunityJoinQuestion).where(
             (CommunityJoinQuestion.id == question_id)
@@ -194,7 +158,7 @@ async def list_join_requests(community_id: UUID, current_user: CurrentUser, db: 
     List all pending join requests with their submitted answers.
     Returns user info + answers in one shot to avoid N+1 on the frontend.
     """
-    await _require_admin(community_id, current_user.id, db)
+    await require_community_admin(community_id, current_user, db)
 
     pending_members = (
         (
@@ -266,7 +230,7 @@ async def approve_join_request(
     db: DbDep,
 ):
     """Approve a pending join request (Admin only)."""
-    await _require_admin(community_id, current_user.id, db)
+    await require_community_admin(community_id, current_user, db)
 
     member = await db.scalar(
         select(CommunityMember).where(
@@ -314,7 +278,7 @@ async def reject_join_request(
     db: DbDep,
 ):
     """Reject and delete a pending join request + submitted answers (Admin only)."""
-    await _require_admin(community_id, current_user.id, db)
+    await require_community_admin(community_id, current_user, db)
 
     member = await db.scalar(
         select(CommunityMember).where(
@@ -358,7 +322,7 @@ async def reject_join_request(
 )
 async def list_invite_links(community_id: UUID, current_user: CurrentUser, db: DbDep):
     """List all active invite links for a community (Admin only)."""
-    await _require_admin(community_id, current_user.id, db)
+    await require_community_admin(community_id, current_user, db)
 
     links = (
         (
@@ -386,7 +350,7 @@ async def create_invite_link(
     db: DbDep,
 ):
     """Generate a new invite link with optional expiry and max-use cap (Admin only)."""
-    await _require_admin(community_id, current_user.id, db)
+    await require_community_admin(community_id, current_user, db)
 
     code = secrets.token_urlsafe(16)
     new_link = CommunityInviteLink(
@@ -412,7 +376,7 @@ async def delete_invite_link(
     db: DbDep,
 ):
     """Revoke and delete an invite link (Admin only)."""
-    await _require_admin(community_id, current_user.id, db)
+    await require_community_admin(community_id, current_user, db)
 
     link = await db.scalar(
         select(CommunityInviteLink).where(
@@ -445,7 +409,7 @@ async def create_direct_invitation(
     Send a direct invitation to a user (Admin only).
     The invited user will see it in their notifications and can accept or decline.
     """
-    comm = await _require_admin(community_id, current_user.id, db)
+    comm = await require_community_admin(community_id, current_user, db)
 
     # Verify target user exists
     invited_user = await db.scalar(
@@ -506,7 +470,7 @@ async def update_member_role(
     Promote or demote a community member (Admin only).
     The owner of the community cannot be demoted.
     """
-    comm = await _require_admin(community_id, current_user.id, db)
+    comm = await require_community_admin(community_id, current_user, db)
 
     # Prevent demoting the owner
     if user_id == comm.owner_id and role_in.is_admin is False:

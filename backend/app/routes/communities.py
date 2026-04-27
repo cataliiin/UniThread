@@ -4,12 +4,17 @@ from fastapi import APIRouter, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
-from app.core.dependencies import CurrentUser, DbDep
+from app.core.dependencies import (
+    CurrentUser,
+    DbDep,
+    get_community_with_tenant_check,
+    require_approved_member,
+    require_community_admin,
+)
 from app.core.exceptions import (
     AlreadyCommunityMemberException,
     AnswersRequiredException,
     CommunityNameTakenException,
-    CommunityNotFoundException,
     ForbiddenException,
     JoinRequestPendingException,
     NotCommunityAdminException,
@@ -162,37 +167,27 @@ async def get_community(community_id: UUID, current_user: CurrentUser, db: DbDep
     """
     Get details of a specific community.
     """
-    count_subq = (
-        select(func.count(CommunityMember.user_id))
-        .where(
-            (CommunityMember.community_id == Community.id)
+    comm = await get_community_with_tenant_check(community_id, current_user, db)
+
+    member_count = await db.scalar(
+        select(func.count(CommunityMember.user_id)).where(
+            (CommunityMember.community_id == comm.id)
             & (CommunityMember.status == MemberStatus.approved)
         )
-        .scalar_subquery()
-        .label("member_count")
     )
-
-    status_subq = (
-        select(CommunityMember.status)
-        .where(
-            (CommunityMember.community_id == Community.id)
+    user_membership_status = await db.scalar(
+        select(CommunityMember.status).where(
+            (CommunityMember.community_id == comm.id)
             & (CommunityMember.user_id == current_user.id)
         )
-        .scalar_subquery()
-        .label("user_membership_status")
     )
 
-    stmt = select(Community, count_subq, status_subq).where(
-        (Community.id == community_id)
-        & (Community.university_id == current_user.university_id)
-    )
-
-    row = (await db.execute(stmt)).first()
-
-    if not row:
-        raise CommunityNotFoundException()
-
-    comm, member_count, user_membership_status = row
+    if comm.type == CommunityType.invite:
+        is_owner = comm.owner_id == current_user.id
+        is_approved_member = user_membership_status == MemberStatus.approved
+        if not is_owner and not is_approved_member:
+            # Hide invite-only communities from non-members to reduce enumeration.
+            raise NotFoundException("Community not found.")
 
     c_resp = CommunityResponse.model_validate(comm)
     c_resp.member_count = member_count or 0
@@ -211,24 +206,7 @@ async def update_community(
     """
     Update community settings (Admin only).
     """
-    comm = await db.scalar(
-        select(Community).where(
-            (Community.id == community_id)
-            & (Community.university_id == current_user.university_id)
-        )
-    )
-    if not comm:
-        raise CommunityNotFoundException()
-
-    member = await db.scalar(
-        select(CommunityMember).where(
-            (CommunityMember.community_id == comm.id)
-            & (CommunityMember.user_id == current_user.id)
-        )
-    )
-
-    if not member or not member.is_admin:
-        raise NotCommunityAdminException()
+    comm = await require_community_admin(community_id, current_user, db)
 
     if community_in.name is not None and community_in.name != comm.name:
         result = await db.execute(
@@ -259,14 +237,7 @@ async def delete_community(community_id: UUID, current_user: CurrentUser, db: Db
     """
     Delete a community (Owner only).
     """
-    comm = await db.scalar(
-        select(Community).where(
-            (Community.id == community_id)
-            & (Community.university_id == current_user.university_id)
-        )
-    )
-    if not comm:
-        raise CommunityNotFoundException()
+    comm = await get_community_with_tenant_check(community_id, current_user, db)
 
     if comm.owner_id != current_user.id:
         raise NotCommunityAdminException("Only the owner can delete the community.")
@@ -288,26 +259,10 @@ async def get_community_posts(
     Get the feed of posts for a specific community. Highly efficient join load.
     Supports sorting by 'new' (default) or 'top'.
     """
-    comm = await db.scalar(
-        select(Community).where(
-            (Community.id == community_id)
-            & (Community.university_id == current_user.university_id)
-        )
-    )
-    if not comm:
-        raise CommunityNotFoundException()
+    comm = await get_community_with_tenant_check(community_id, current_user, db)
 
     if comm.type != CommunityType.public:
-        member = await db.scalar(
-            select(CommunityMember).where(
-                (CommunityMember.community_id == comm.id)
-                & (CommunityMember.user_id == current_user.id)
-            )
-        )
-        if not member or member.status != MemberStatus.approved:
-            raise ForbiddenException(
-                "You don't have permission to view posts in this community."
-            )
+        await require_approved_member(community_id, current_user, db)
 
     actual_size = max(1, min(size, 100))
     offset = (page - 1) * actual_size
@@ -376,26 +331,10 @@ async def list_community_members(
     - Public communities: any authenticated user can list members.
     - Request/invite communities: only approved members can list members.
     """
-    comm = await db.scalar(
-        select(Community).where(
-            (Community.id == community_id)
-            & (Community.university_id == current_user.university_id)
-        )
-    )
-    if not comm:
-        raise CommunityNotFoundException()
+    comm = await get_community_with_tenant_check(community_id, current_user, db)
 
     if comm.type != CommunityType.public:
-        viewer_member = await db.scalar(
-            select(CommunityMember).where(
-                (CommunityMember.community_id == comm.id)
-                & (CommunityMember.user_id == current_user.id)
-            )
-        )
-        if not viewer_member or viewer_member.status != MemberStatus.approved:
-            raise ForbiddenException(
-                "You don't have permission to view members in this community."
-            )
+        await require_approved_member(community_id, current_user, db)
 
     actual_size = max(1, min(size, 100))
     offset = (page - 1) * actual_size
@@ -442,14 +381,7 @@ async def join_community(
     - request → answers to required questions are saved, status = pending
     - invite  → rejected with clear message (must use an invite link or direct invitation)
     """
-    comm = await db.scalar(
-        select(Community).where(
-            (Community.id == community_id)
-            & (Community.university_id == current_user.university_id)
-        )
-    )
-    if not comm:
-        raise CommunityNotFoundException()
+    comm = await get_community_with_tenant_check(community_id, current_user, db)
 
     existing_member = await db.scalar(
         select(CommunityMember).where(
@@ -533,14 +465,7 @@ async def leave_community(community_id: UUID, current_user: CurrentUser, db: DbD
     """
     Leave a community.
     """
-    comm = await db.scalar(
-        select(Community).where(
-            (Community.id == community_id)
-            & (Community.university_id == current_user.university_id)
-        )
-    )
-    if not comm:
-        raise CommunityNotFoundException()
+    comm = await get_community_with_tenant_check(community_id, current_user, db)
 
     member = await db.scalar(
         select(CommunityMember).where(
@@ -567,15 +492,15 @@ async def list_community_admins(
 ):
     """
     List all administrators of a community.
+
+    Security rules:
+    - Public communities: any authenticated user can list admins.
+    - Request/invite communities: only approved members or owner can list admins.
     """
-    comm = await db.scalar(
-        select(Community).where(
-            (Community.id == community_id)
-            & (Community.university_id == current_user.university_id)
-        )
-    )
-    if not comm:
-        raise CommunityNotFoundException()
+    comm = await get_community_with_tenant_check(community_id, current_user, db)
+
+    if comm.type in (CommunityType.request, CommunityType.invite):
+        await require_approved_member(community_id, current_user, db)
 
     admins = await db.scalars(
         select(User)
@@ -597,14 +522,7 @@ async def transfer_ownership(
     """
     Transfer ownership of the community to another approved member. (Owner only).
     """
-    comm = await db.scalar(
-        select(Community).where(
-            (Community.id == community_id)
-            & (Community.university_id == current_user.university_id)
-        )
-    )
-    if not comm:
-        raise CommunityNotFoundException()
+    comm = await get_community_with_tenant_check(community_id, current_user, db)
 
     if comm.owner_id != current_user.id:
         raise NotCommunityAdminException(

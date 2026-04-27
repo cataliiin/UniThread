@@ -9,7 +9,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import config
+from app.core.exceptions import (
+    CommunityNotFoundException,
+    ForbiddenException,
+    NotCommunityAdminException,
+)
 from app.database.models import User
+from app.database.models.community import Community, CommunityMember
+from app.database.models.enums import MemberStatus
 from app.database.session import AsyncSessionLocal
 from app.core.storage import minio_client
 
@@ -69,3 +76,71 @@ def get_storage() -> Minio:
 
 
 StorageDep = Annotated[Minio, Depends(get_storage)]
+
+
+async def get_community_with_tenant_check(
+    community_id: UUID,
+    current_user: User,
+    db: AsyncSession,
+) -> Community:
+    community = await db.scalar(
+        select(Community).where(
+            (Community.id == community_id)
+            & (Community.university_id == current_user.university_id)
+        )
+    )
+    if not community:
+        raise CommunityNotFoundException()
+    return community
+
+
+async def require_approved_member(
+    community_id: UUID,
+    current_user: User,
+    db: AsyncSession,
+    *,
+    allow_owner: bool = True,
+) -> CommunityMember | None:
+    community = await get_community_with_tenant_check(community_id, current_user, db)
+
+    if allow_owner and community.owner_id == current_user.id:
+        return await db.scalar(
+            select(CommunityMember).where(
+                (CommunityMember.community_id == community_id)
+                & (CommunityMember.user_id == current_user.id)
+            )
+        )
+
+    member = await db.scalar(
+        select(CommunityMember).where(
+            (CommunityMember.community_id == community_id)
+            & (CommunityMember.user_id == current_user.id)
+            & (CommunityMember.status == MemberStatus.approved)
+        )
+    )
+    if not member:
+        raise ForbiddenException("You don't have permission to access this community.")
+    return member
+
+
+async def require_community_admin(
+    community_id: UUID,
+    current_user: User,
+    db: AsyncSession,
+) -> Community:
+    community = await get_community_with_tenant_check(community_id, current_user, db)
+
+    if community.owner_id == current_user.id:
+        return community
+
+    member = await db.scalar(
+        select(CommunityMember).where(
+            (CommunityMember.community_id == community_id)
+            & (CommunityMember.user_id == current_user.id)
+            & (CommunityMember.status == MemberStatus.approved)
+        )
+    )
+    if not member or not member.is_admin:
+        raise NotCommunityAdminException()
+
+    return community
