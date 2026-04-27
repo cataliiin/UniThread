@@ -84,4 +84,15 @@ site_build/
 site/
 docs.zip
 archive.zip
+
+# JetBrains - extra
+*.iws
+*.iml
+*.ipr
+out/
+.idea/shelf/
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries/
+.idea/libraries/
 .ruff_cache/
