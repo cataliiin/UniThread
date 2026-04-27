@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 
-	// Mock user data
 	const user = {
 		name: 'Sebastian G.',
 		username: 'sebig'
@@ -36,38 +35,46 @@
 	];
 </script>
 
-<aside class="sidebar">
-	<div class="sidebar-header">
-		<div class="logo-placeholder">
+<aside class="hidden lg:flex flex-col w-72 h-full bg-slate-950 border-r border-slate-800 transition-all duration-300">
+	<!-- Header -->
+	<div class="p-6 flex items-center gap-4 border-b border-slate-800/50">
+		<div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
 			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
 		</div>
-		<span class="brand-name">UniThread</span>
+		<span class="text-xl font-bold tracking-tight text-white">UniThread</span>
 	</div>
 
-	<nav class="sidebar-nav">
+	<!-- Navigation -->
+	<nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1">
 		{#each navLinks as link}
 			<a
 				href={link.href}
-				class="nav-link {$page.url.pathname === link.href ? 'active' : ''}"
+				class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group
+				{$page.url.pathname === link.href 
+					? 'bg-indigo-600/10 text-indigo-400 font-semibold' 
+					: 'text-slate-400 hover:bg-slate-800 hover:text-white'}"
 			>
-				<span class="nav-icon">{@html link.icon}</span>
-				<span class="nav-label">{link.label}</span>
+				<span class="flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
+					{@html link.icon}
+				</span>
+				<span class="text-sm tracking-wide">{link.label}</span>
 			</a>
 		{/each}
 	</nav>
 
-	<div class="sidebar-footer">
-		<div class="user-card">
-			<div class="user-info">
-				<div class="default-avatar">
+	<!-- Footer -->
+	<div class="p-4 mt-auto border-t border-slate-800/50">
+		<div class="flex items-center justify-between p-3 rounded-2xl bg-slate-900 border border-slate-800 transition-all duration-200">
+			<div class="flex items-center gap-3">
+				<div class="w-9 h-9 rounded-full border border-slate-700 shadow-sm flex items-center justify-center bg-slate-800 text-slate-400">
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 				</div>
-				<div class="user-details">
-					<span class="user-name">{user.name}</span>
-					<span class="user-username">@{user.username}</span>
+				<div class="flex flex-col min-w-0">
+					<span class="font-semibold text-sm text-white truncate">{user.name}</span>
+					<span class="text-xs text-slate-500 truncate">@{user.username}</span>
 				</div>
 			</div>
-			<button class="logout-btn" title="Logout">
+			<button class="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-all duration-200" title="Logout">
 				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
 			</button>
 		</div>
