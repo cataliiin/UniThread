@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import MobileNav from '$lib/components/MobileNav.svelte';
+	import ToastContainer from '$lib/components/ToastContainer.svelte';
 
 	let { children } = $props();
 
@@ -28,6 +29,7 @@
 			<MobileNav />
 		{/if}
 	</div>
+	<ToastContainer />
 </div>
 
 <svelte:head>
