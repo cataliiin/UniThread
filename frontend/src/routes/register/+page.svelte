@@ -36,6 +36,17 @@
 	async function handleSubmit(event: Event) {
 		event.preventDefault();
 
+		if(!email.endsWith('@student.unitbv.ro') && !email.endsWith('@unitbv.ro')){
+			showError('Email must be a student or staff email from unitbv.ro');
+			return;
+		}
+
+		if(localStorage.getItem(username) === username){
+			showError('Username is taken. Please choose another one.');
+			return;
+		}
+		localStorage.setItem(username, username);
+		
 		if (password.length < 8) {
 			showError('Password must be at least 8 characters long.');
 			return;
