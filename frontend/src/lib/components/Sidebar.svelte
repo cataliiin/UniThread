@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { user } from '$lib/stores/user.svelte';
 	import { toasts } from '$lib/stores/toast.svelte';
+	import UserAvatar from './UserAvatar.svelte';
 
 	let avatarUrl = $derived(user.avatarUrl);
 
@@ -99,34 +100,7 @@
 			class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900 p-3 transition-all duration-200"
 		>
 			<a href="/profile" class="flex items-center gap-3">
-				<div
-					class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-700 bg-slate-800 text-slate-400 shadow-sm"
-				>
-					{#if avatarUrl}
-						<img
-							src={avatarUrl}
-							alt="Avatar"
-							class="h-full w-full [transform:translateZ(0)] object-cover [backface-visibility:hidden]"
-						/>
-					{:else}
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="20"
-							height="20"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle
-								cx="12"
-								cy="7"
-								r="4"
-							/></svg
-						>
-					{/if}
-				</div>
+				<UserAvatar src={avatarUrl} initials={user.avatarInitials} size="sm" />
 				<div class="flex min-w-0 flex-col">
 					<span class="truncate text-sm font-semibold text-white">{user.name}</span>
 					<span class="truncate text-xs text-slate-500">@{user.username}</span>

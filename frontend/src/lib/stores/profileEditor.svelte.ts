@@ -2,19 +2,17 @@ import { user } from './user.svelte';
 import { toasts } from './toast.svelte';
 
 class ProfileEditor {
-	// 1. Avatar State
 	avatar = $state({
 		previewUrl: null as string | null,
-		fileInput: null as HTMLInputElement | null
+		fileInput: null as HTMLInputElement | null,
+		shouldRemove: false
 	});
 
-	// 2. Username State
 	username = $state({
 		isEditing: false,
 		temp: user.username
 	});
 
-	// 3. Password State
 	password = $state({
 		isChanging: false,
 		current: '',
@@ -27,23 +25,23 @@ class ProfileEditor {
 		}
 	});
 
-	// --- Derived Properties ---
-	
-	currentAvatar = $derived(this.avatar.previewUrl || user.avatarUrl);
-	
-	showActions = $derived(
-		this.avatar.previewUrl !== null || 
-		this.username.isEditing || 
-		this.password.isChanging
-	);
 
+	currentAvatar = $derived(
+		this.avatar.shouldRemove ? null : this.avatar.previewUrl || user.avatarUrl
+	);
+	showActions = $derived(
+		this.avatar.previewUrl !== null ||
+			this.avatar.shouldRemove ||
+			this.username.isEditing ||
+			this.password.isChanging
+	);
 	hasChanges = $derived(
 		this.avatar.previewUrl !== null ||
-		(this.username.isEditing && this.username.temp !== user.username) ||
-		(this.password.isChanging && (this.password.current !== '' || this.password.new !== '' || this.password.confirm !== ''))
+			this.avatar.shouldRemove ||
+			(this.username.isEditing && this.username.temp !== user.username) ||
+			(this.password.isChanging &&
+				(this.password.current !== '' || this.password.new !== '' || this.password.confirm !== ''))
 	);
-
-	// --- Actions ---
 
 	handleAvatarClick() {
 		this.avatar.fileInput?.click();
@@ -54,7 +52,14 @@ class ProfileEditor {
 		if (target.files && target.files[0]) {
 			const file = target.files[0];
 			this.avatar.previewUrl = URL.createObjectURL(file);
+			this.avatar.shouldRemove = false;
 		}
+	}
+
+	removeAvatar() {
+		this.avatar.previewUrl = null;
+		this.avatar.shouldRemove = true;
+		if (this.avatar.fileInput) this.avatar.fileInput.value = '';
 	}
 
 	startEditingUsername() {
@@ -79,38 +84,46 @@ class ProfileEditor {
 	}
 
 	saveChanges() {
-		let updatedFields: string[] = [];
+		const updatedFields: string[] = [];
+		const hasAvatarChange = this.avatar.previewUrl !== null || this.avatar.shouldRemove;
+		const hasUsernameChange = this.username.isEditing && this.username.temp !== user.username;
+		
+		// Check if password form is active AND has any input
+		const isPasswordInputPresent = this.password.current !== '' || this.password.new !== '' || this.password.confirm !== '';
+		const shouldValidatePassword = this.password.isChanging && isPasswordInputPresent;
 
-		// Handle Avatar
-		if (this.avatar.previewUrl) {
-			user.avatarUrl = this.avatar.previewUrl;
+		if (shouldValidatePassword) {
+			if (this.password.new === this.password.current) {
+				toasts.show('New password cannot be the same as the current one!', 'error');
+				return;
+			}
+			if (this.password.new !== this.password.confirm || this.password.new === '') {
+				toasts.show('Passwords do not match or are empty!', 'error');
+				return;
+			}
+		}
+
+		if (hasAvatarChange) {
+			user.avatarUrl = this.avatar.shouldRemove ? null : this.avatar.previewUrl;
 			this.avatar.previewUrl = null;
+			this.avatar.shouldRemove = false;
 			updatedFields.push('Avatar');
 		}
 
-		// Handle Username
 		if (this.username.isEditing) {
-			if (this.username.temp !== user.username) {
+			if (hasUsernameChange) {
 				user.username = this.username.temp;
 				updatedFields.push('Username');
 			}
 			this.username.isEditing = false;
 		}
 
-		// Handle Password
 		if (this.password.isChanging) {
-			if (this.password.new === this.password.current) {
-				toasts.show('New password cannot be the same as the current one!', 'error');
-				return;
-			}
-			if (this.password.new === this.password.confirm && this.password.new !== '') {
-				this.password.isChanging = false;
-				this.resetPasswordFields();
+			if (isPasswordInputPresent) {
 				updatedFields.push('Password');
-			} else {
-				toasts.show('Passwords do not match or are empty!', 'error');
-				return;
 			}
+			this.password.isChanging = false;
+			this.resetPasswordFields();
 		}
 
 		if (updatedFields.length > 0) {
@@ -120,6 +133,7 @@ class ProfileEditor {
 
 	discardChanges() {
 		this.avatar.previewUrl = null;
+		this.avatar.shouldRemove = false;
 		if (this.avatar.fileInput) this.avatar.fileInput.value = '';
 		this.username.isEditing = false;
 		this.username.temp = user.username;

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { user } from '$lib/stores/user.svelte';
+	import UserAvatar from './UserAvatar.svelte';
 
 	let avatarUrl = $derived(user.avatarUrl);
 
@@ -55,19 +56,7 @@
 	>
 		<span class="flex items-center justify-center">
 			{#if link.isAvatar}
-				<div
-					class="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-indigo-600 text-[10px] font-bold text-white"
-				>
-					{#if avatarUrl}
-						<img
-							src={avatarUrl}
-							alt="Avatar"
-							class="h-full w-full [transform:translateZ(0)] object-cover [backface-visibility:hidden]"
-						/>
-					{:else}
-						{user.avatarInitials}
-					{/if}
-				</div>
+				<UserAvatar src={avatarUrl} initials={user.avatarInitials} size="xs" />
 			{:else}
 				{@html link.icon}
 			{/if}

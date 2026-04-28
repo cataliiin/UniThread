@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { user } from '$lib/stores/user.svelte';
 	import { profileEditor } from '$lib/stores/profileEditor.svelte';
+	import UserAvatar from '$lib/components/UserAvatar.svelte';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { slide, fade } from 'svelte/transition';
 </script>
 
@@ -14,29 +16,16 @@
 			<div class="mb-6 text-center sm:mb-8">
 				<!-- Avatar Section -->
 				<div
-					class="group relative mx-auto mb-4 flex h-20 w-20 cursor-pointer items-center justify-center sm:mb-5 sm:h-[100px] sm:w-[100px]"
+					class="group relative mx-auto mb-6 flex cursor-pointer justify-center"
 					onclick={() => profileEditor.handleAvatarClick()}
 				>
-					<div
-						class="absolute inset-0 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-[0_10px_20px_rgba(79,70,229,0.2)] transition-transform duration-300 group-hover:scale-105"
-					></div>
-
-					<div
-						class="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full"
+					<UserAvatar
+						src={profileEditor.currentAvatar}
+						initials={user.avatarInitials}
+						size="lg"
+						className="ring-4 ring-white shadow-xl transition-transform duration-300 group-hover:scale-105"
 					>
-						{#if profileEditor.currentAvatar}
-							<img
-								src={profileEditor.currentAvatar}
-								alt="Avatar"
-								class="h-full w-full [transform:translateZ(0)] object-cover [backface-visibility:hidden]"
-							/>
-						{:else}
-							<div class="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-								{user.avatarInitials}
-							</div>
-						{/if}
-
-						<!-- Hover Overlay -->
+						<!-- Hover Overlay for Upload -->
 						<div
 							class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
 						>
@@ -56,17 +45,45 @@
 								/><circle cx="12" cy="13" r="4" /></svg
 							>
 						</div>
-					</div>
+					</UserAvatar>
 
-					<!-- Hidden Input -->
-					<input
-						type="file"
-						accept="image/*"
-						class="hidden"
-						bind:this={profileEditor.avatar.fileInput}
-						onchange={(e) => profileEditor.handleFileChange(e)}
-					/>
+					<!-- Remove Avatar Button -->
+					{#if profileEditor.currentAvatar}
+						<button
+							onclick={(e) => {
+								e.stopPropagation();
+								profileEditor.removeAvatar();
+							}}
+							class="absolute -right-2 -bottom-2 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-red-500 text-white shadow-lg transition-transform hover:scale-110 sm:h-10 sm:w-10"
+							title="Remove Avatar"
+							transition:fade
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="18"
+								height="18"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path
+									d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
+								/></svg
+							>
+						</button>
+					{/if}
 				</div>
+
+				<!-- Hidden Input -->
+				<input
+					type="file"
+					accept="image/*"
+					class="hidden"
+					bind:this={profileEditor.avatar.fileInput}
+					onchange={(e) => profileEditor.handleFileChange(e)}
+				/>
 
 				<!-- Names -->
 				<h1
