@@ -29,8 +29,11 @@
 	async function checkUsername(username: string): Promise<boolean> {
 		// Simulate API call to check username availability
 		await new Promise((resolve) => setTimeout(resolve, 500));
-		// For demo purposes, let's assume "admin" and "user" are taken
-		return !['admin', 'user'].includes(username.toLowerCase());
+
+		if(localStorage.getItem(username) === username){
+			return false;
+		}
+		return true;
 	}
 
 	async function handleSubmit(event: Event) {
@@ -40,12 +43,6 @@
 			showError('Email must be a student or staff email from unitbv.ro');
 			return;
 		}
-
-		if(localStorage.getItem(username) === username){
-			showError('Username is taken. Please choose another one.');
-			return;
-		}
-		localStorage.setItem(username, username);
 		
 		if (password.length < 8) {
 			showError('Password must be at least 8 characters long.');
@@ -67,6 +64,7 @@
 			showError('Username is taken. Please choose another one.');
 			return;
 		}
+		localStorage.setItem(username, username);
 
 		isLoading = true;
 		errorToast = '';
