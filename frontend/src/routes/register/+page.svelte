@@ -1,11 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { fade, slide } from 'svelte/transition';
-	import {onMount} from 'svelte';
-
-	const emailExamples = ['student@student.unitbv.ro', 'staff@unitbv.ro'];
-	let currentExample = $state(emailExamples[0]);
-	let index = 0;
 
 	let email = $state('');
 	let username = $state('');
@@ -24,14 +19,6 @@
 			errorToast = '';
 		}, 4000);
 	}
-
-	onMount(() => {
-		const interval = setInterval(() => {
-            index = (index + 1) % emailExamples.length;
-            currentExample = emailExamples[index];
-        }, 3000);
-		return () => clearInterval(interval);
-	})
 
 	function showSuccess(msg: string) {
 		successToast = msg;
@@ -122,7 +109,8 @@
 		<form onsubmit={handleSubmit} class="space-y-4">
 			<div>
 				<label for="email">Email Address</label>
-				<input bind:value={email} type="email" id="email" placeholder={currentExample} required />
+
+				<input bind:value={email} type="email" id="email" placeholder='name@student.unitbv.ro' required />
 			</div>
 
 			<div>
