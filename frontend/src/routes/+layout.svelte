@@ -11,14 +11,14 @@
 	let isLoginPage = $derived($page.url.pathname === '/login');
 </script>
 
-<div class="flex h-screen bg-slate-50 text-slate-900 overflow-hidden">
+<div class="flex h-screen overflow-hidden bg-slate-50 text-slate-900">
 	<!-- Desktop Sidebar -->
 	{#if !isLoginPage}
 		<Sidebar />
 	{/if}
 
 	<!-- Content Area -->
-	<div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+	<div class="relative flex min-w-0 flex-1 flex-col overflow-hidden">
 		<!-- Main Content -->
 		<main class="flex-1 overflow-y-auto {isLoginPage ? '' : 'pb-20 lg:pb-0'}">
 			{@render children()}

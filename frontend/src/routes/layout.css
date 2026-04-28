@@ -7,8 +7,9 @@
 	--primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
 }
 
-html, body {
-	@apply h-full m-0 p-0 antialiased selection:bg-indigo-100 selection:text-indigo-900;
+html,
+body {
+	@apply m-0 h-full p-0 antialiased selection:bg-indigo-100 selection:text-indigo-900;
 }
 
 /* Custom scrollbar for better look */
@@ -21,5 +22,5 @@ html, body {
 }
 
 ::-webkit-scrollbar-thumb {
-	@apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+	@apply rounded-full bg-slate-200 transition-colors hover:bg-slate-300;
 }
