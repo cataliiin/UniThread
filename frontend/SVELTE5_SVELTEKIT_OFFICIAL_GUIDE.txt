@@ -2645,12 +2645,701 @@ If an AI suggests TypeScript + Svelte code, check these 6 things immediately:
 5. Did it use vague `any` / `Function` types everywhere? -> Low-quality TS
 6. Did it skip `lang="ts"`? -> Not actually TypeScript component code
 
+# ================================================================================
+RUNED - UTILITY LIBRARY FOR SVELTE 5 (April 2026)
+Based on runed.dev/docs | MIT License | npm install runed
+# ================================================================================
+
+Runed extends Svelte 5 Runes with battle-tested, type-safe utilities.
+Think of it as the "standard library" missing from Svelte 5.
+
+Import from "runed" (or "runed/kit" for SvelteKit-specific utilities).
+
+# ================================================================================
+SECTION 1: REACTIVITY
+# ================================================================================
+
+------------------------------------------------------------
+watch — Explicit reactive watcher (like $effect but controlled)
+------------------------------------------------------------
+Problem: $effect tracks ALL reactive reads inside it.
+watch() lets you specify EXACTLY what to watch.
+
+  import { watch } from "runed";
+
+  let count = $state(0);
+  let name = $state("Alice");
+
+  // Watch a single value
+  watch(() => count, (curr, prev) => {
+    console.log(`count: ${prev} → ${curr}`);
+  });
+
+  // Watch multiple values
+  watch([() => count, () => name], ([count, name], [prevCount, prevName]) => {
+    console.log(count, name);
+  });
+
+  // Lazy: skip the initial run (only react to changes)
+  watch(() => count, (curr) => { ... }, { lazy: true });
+
+  // watch.pre — runs BEFORE DOM update (like $effect.pre)
+  watch.pre(() => count, (curr) => { ... });
+
+  // watchOnce — runs callback only once, then stops
+  watchOnce(() => count, (curr) => {
+    console.log("Ran once:", curr);
+  });
+
+BEST PRACTICE: Use watch() instead of $effect() when you want to
+react to a specific value but read others without tracking them.
+
+------------------------------------------------------------
+extract — Resolve getter OR static value uniformly
+------------------------------------------------------------
+Problem: Library APIs often accept both () => value and value.
+Handling both cases manually is verbose.
+
+  import { extract } from "runed";
+
+  // MaybeGetter<T> = T | (() => T)
+  function doSomething(delay?: MaybeGetter<number | undefined>) {
+    const ms = $derived(extract(delay, 300)); // fallback = 300
+    // ...
+  }
+
+  doSomething();           // ms = 300
+  doSomething(500);        // ms = 500
+  doSomething(() => myState); // ms = reactive
+
+BEST PRACTICE: Use extract() when writing reusable utilities
+that should accept both static and reactive inputs.
+
+------------------------------------------------------------
+resource — Reactive async data fetching
+------------------------------------------------------------
+Problem: Fetching data reactively (re-fetch when state changes)
+requires manual $effect + AbortController boilerplate.
+
+  import { resource } from "runed";
+
+  let userId = $state(1);
+
+  const user = resource(
+    () => userId,
+    async (id, prevId, { signal, onCleanup }) => {
+      const res = await fetch(`/api/users/${id}`, { signal });
+      return res.json();
+    },
+    { debounce: 300 }
+  );
+
+  // In template:
+  // user.loading  → boolean
+  // user.current  → data | undefined
+  // user.error    → Error | undefined
+  // user.refetch() → re-run manually
+  // user.mutate(val) → optimistic update
+
+  // Multiple dependencies:
+  const results = resource(
+    [() => query, () => page],
+    async ([query, page]) => { ... }
+  );
+
+  // Pre-render (SSR-safe):
+  const data = resource.pre(() => id, async (id) => { ... });
+
+OPTIONS:
+  lazy: true        → skip initial fetch
+  once: true        → fetch only once
+  initialValue: []  → value before first fetch
+  debounce: 300     → debounce rapid changes
+  throttle: 500     → throttle rapid changes
+
+BEST PRACTICE: Use resource() for component-level reactive fetching.
+For page-level data, prefer SvelteKit load functions.
+
+------------------------------------------------------------
+useSearchParams — Reactive, typed URL search params
+------------------------------------------------------------
+Import from "runed/kit" (requires @sveltejs/kit).
+
+  import { useSearchParams } from "runed/kit";
+  import { z } from "zod";
+
+  const schema = z.object({
+    page: z.coerce.number().default(1),
+    query: z.string().default(""),
+    sort: z.enum(["asc", "desc"]).default("asc"),
+  });
+
+  const params = useSearchParams(schema);
+
+  // Read (typed):
+  params.page   // number
+  params.query  // string
+
+  // Write (updates URL automatically):
+  params.page = 2;
+  params.update({ page: 3, sort: "desc" });
+  params.reset(); // back to defaults
+
+  // In template:
+  <input bind:value={params.query} />
+
+  // In load function (server-side validation):
+  import { validateSearchParams } from "runed/kit";
+  export const load = ({ url }) => {
+    const { searchParams } = validateSearchParams(url, schema);
+    return fetch(`/api/items?${searchParams}`);
+  };
+
+OPTIONS:
+  debounce: 300       → delay URL updates
+  pushHistory: false  → replace instead of push
+  compress: true      → compress all params into one (_data)
+  showDefaults: true  → show default values in URL
+  noScroll: true      → don't scroll to top on URL change
+
+⚠️ LIMITATION: Only top-level property assignment triggers URL update.
+  params.filters.active = true  ❌ (nested mutation)
+  params.filters = { active: true }  ✅ (reassignment)
+
+# ================================================================================
+SECTION 2: STATE
+# ================================================================================
+
+------------------------------------------------------------
+Context — Type-safe Svelte context wrapper
+------------------------------------------------------------
+  // context.ts
+  import { Context } from "runed";
+  export const ThemeCtx = new Context<"light" | "dark">("theme");
+
+  // Parent component:
+  ThemeCtx.set("dark");
+
+  // Child component (any depth):
+  const theme = ThemeCtx.get();           // throws if not set
+  const theme = ThemeCtx.getOr("light");  // safe fallback
+  const exists = ThemeCtx.exists();       // boolean check
+
+BEST PRACTICE: Define all contexts in a separate context.ts file.
+Use Context instead of raw setContext/getContext for type safety.
+
+------------------------------------------------------------
+Debounced — Debounced reactive state
+------------------------------------------------------------
+  import { Debounced } from "runed";
+
+  let search = $state("");
+  const debounced = new Debounced(() => search, 500);
+
+  // debounced.current → updates 500ms after last change
+  // debounced.cancel() → cancel pending update
+  // debounced.setImmediately(val) → update now, cancel pending
+  // await debounced.updateImmediately() → flush pending now
+
+  <input bind:value={search} />
+  <p>Searching for: {debounced.current}</p>
+
+BEST PRACTICE: Use Debounced for search inputs, autocomplete,
+or any input that triggers expensive operations.
+
+------------------------------------------------------------
+Throttled — Throttled reactive state
+------------------------------------------------------------
+  import { Throttled } from "runed";
+
+  let scroll = $state(0);
+  const throttled = new Throttled(() => scroll, 100);
+
+  // throttled.current → updates at most every 100ms
+  // throttled.cancel() → cancel pending update
+  // throttled.setImmediately(val) → update now
+
+BEST PRACTICE: Use Throttled for scroll/resize handlers,
+real-time sliders, or any high-frequency state.
+
+------------------------------------------------------------
+PersistedState — localStorage/sessionStorage reactive state
+------------------------------------------------------------
+  import { PersistedState } from "runed";
+
+  const theme = new PersistedState("theme", "light");
+  theme.current = "dark"; // persists to localStorage
+
+  // Complex objects work too:
+  const prefs = new PersistedState("prefs", { fontSize: 14, lang: "en" });
+  prefs.current.fontSize = 16; // ✅ persists (plain object)
+
+OPTIONS:
+  storage: "session"          → use sessionStorage
+  syncTabs: false             → disable cross-tab sync (default: true)
+  connected: false            → start disconnected (in-memory only)
+  serializer: {               → custom serialize/deserialize
+    serialize: superjson.stringify,
+    deserialize: superjson.parse
+  }
+
+  // Manual connection control:
+  const state = new PersistedState("key", val, { connected: false });
+  state.connect();     // start persisting
+  state.disconnect();  // stop persisting, keep in memory
+
+⚠️ Class instances are NOT deeply reactive — reassign the whole value.
+
+------------------------------------------------------------
+Previous — Track previous value of a reactive getter
+------------------------------------------------------------
+  import { Previous } from "runed";
+
+  let count = $state(0);
+  const prev = new Previous(() => count);
+
+  // prev.current → previous value (undefined on first render)
+
+  <p>Was: {prev.current}, Now: {count}</p>
+
+BEST PRACTICE: Use for transition animations, undo previews,
+or "changed from X to Y" UI patterns.
+
+------------------------------------------------------------
+StateHistory — Undo/redo history for reactive state
+------------------------------------------------------------
+  import { StateHistory } from "runed";
+
+  let count = $state(0);
+  const history = new StateHistory(() => count, (v) => (count = v));
+
+  // history.undo()     → revert to previous
+  // history.redo()     → restore undone
+  // history.clear()    → wipe history
+  // history.canUndo    → boolean
+  // history.canRedo    → boolean
+  // history.log        → [{ snapshot, timestamp }, ...]
+
+  <button disabled={!history.canUndo} onclick={history.undo}>Undo</button>
+  <button disabled={!history.canRedo} onclick={history.redo}>Redo</button>
+
+BEST PRACTICE: Use for text editors, drawing apps, form wizards,
+or any feature requiring undo/redo.
+
+------------------------------------------------------------
+FiniteStateMachine — Strongly-typed FSM
+------------------------------------------------------------
+  import { FiniteStateMachine } from "runed";
+
+  type States = "idle" | "loading" | "success" | "error";
+  type Events = "fetch" | "resolve" | "reject" | "reset";
+
+  const fsm = new FiniteStateMachine<States, Events>("idle", {
+    idle: {
+      fetch: "loading",
+    },
+    loading: {
+      resolve: "success",
+      reject: "error",
+      _enter: () => console.log("Loading started"),
+    },
+    success: {
+      reset: "idle",
+    },
+    error: {
+      reset: "idle",
+    },
+    "*": {
+      // Wildcard: handles events not defined in current state
+      reset: "idle",
+    }
+  });
+
+  fsm.send("fetch");
+  fsm.state; // "loading"
+
+  // Conditional transitions (actions):
+  loading: {
+    resolve: (data) => data ? "success" : "error"
+  }
+
+  // Debounced transition:
+  fsm.debounce(3000, "reset"); // auto-reset after 3s
+
+BEST PRACTICE: Use FSM for multi-step forms, async operations,
+media players, or any UI with complex state transitions.
+
+# ================================================================================
+SECTION 3: ELEMENTS
+# ================================================================================
+
+------------------------------------------------------------
+activeElement — Reactive document.activeElement
+------------------------------------------------------------
+  import { activeElement } from "runed";
+
+  // activeElement.current → currently focused Element | null
+
+  {#if activeElement.current === myInput}
+    <p>Input is focused!</p>
+  {/if}
+
+  // Custom scope (Shadow DOM):
+  import { ActiveElement } from "runed";
+  const ae = new ActiveElement({ document: shadowRoot });
+
+------------------------------------------------------------
+ElementRect — Reactive getBoundingClientRect()
+------------------------------------------------------------
+  import { ElementRect } from "runed";
+
+  let el = $state<HTMLElement | undefined>();
+  const rect = new ElementRect(() => el);
+
+  // rect.width, rect.height, rect.top, rect.left, etc.
+
+  <div bind:this={el}>...</div>
+  <p>Width: {rect.width}px</p>
+
+------------------------------------------------------------
+ElementSize — Reactive element dimensions (ResizeObserver)
+------------------------------------------------------------
+  import { ElementSize } from "runed";
+
+  let el = $state<HTMLElement | undefined>();
+  const size = new ElementSize(() => el);
+
+  // size.width, size.height
+
+------------------------------------------------------------
+IsFocusWithin — Reactive focus-within detection
+------------------------------------------------------------
+  import { IsFocusWithin } from "runed";
+
+  let container = $state<HTMLElement | undefined>();
+  const focusWithin = new IsFocusWithin(() => container);
+
+  // focusWithin.current → boolean
+
+  <div bind:this={container} class:focused={focusWithin.current}>
+    <input />
+    <button>Submit</button>
+  </div>
+
+------------------------------------------------------------
+IsInViewport — Reactive IntersectionObserver
+------------------------------------------------------------
+  import { IsInViewport } from "runed";
+
+  let el = $state<HTMLElement | undefined>();
+  const inViewport = new IsInViewport(() => el);
+
+  // inViewport.current → boolean
+
+  <div bind:this={el}>
+    {#if inViewport.current}Visible!{/if}
+  </div>
+
+------------------------------------------------------------
+ScrollState — Reactive scroll position
+------------------------------------------------------------
+  import { ScrollState } from "runed";
+
+  let el = $state<HTMLElement | undefined>();
+  const scroll = new ScrollState(() => el);
+
+  // scroll.x, scroll.y → current scroll position
+
+  // Or track window scroll:
+  const windowScroll = new ScrollState();
+
+------------------------------------------------------------
+TextareaAutosize — Auto-resize textarea
+------------------------------------------------------------
+  import { TextareaAutosize } from "runed";
+
+  let textarea = $state<HTMLTextAreaElement | undefined>();
+  new TextareaAutosize(() => textarea);
+
+  <textarea bind:this={textarea} />
+
+/**
+ * Observer Hooks
+ * -----------------------------------------
+ */
+
+import { useIntersectionObserver, useMutationObserver, useResizeObserver } from "runed";
+
+let el = $state<HTMLElement | undefined>();
+
+// 1. useIntersectionObserver
+// Useful when you need full access to IntersectionObserverEntry (ratio, boundingClientRect, etc.)
+useIntersectionObserver(
+  () => el,
+  (entries) => {
+    const entry = entries[0];
+    console.log("isIntersecting:", entry.isIntersecting);
+    console.log("ratio:", entry.intersectionRatio);
+  },
+  {
+    threshold: 0.5,     // Callback triggers when 50% of the element is visible
+    root: null,         // Defaults to the browser viewport
+    rootMargin: "0px",
+  }
+);
+
+// 2. useMutationObserver
+// Detects DOM changes (attributes, added/removed children). 
+// Ideal for 3rd-party library integrations.
+useMutationObserver(
+  () => el,
+  (mutations) => {
+    for (const mutation of mutations) {
+      console.log(mutation.type); // "childList" | "attributes" | "characterData"
+    }
+  },
+  {
+    childList: true,      // Observe additions/removals of child nodes
+    attributes: true,     // Observe attribute changes
+    subtree: true,        // Observe all descendants as well
+    characterData: false,
+  }
+);
+
+// 3. useResizeObserver
+// Full access to ResizeObserverEntry (borderBoxSize, devicePixelContentBoxSize, etc.)
+useResizeObserver(
+  () => el,
+  (entries) => {
+    const entry = entries[0];
+    console.log("Width:", entry.contentRect.width);
+    console.log("Height:", entry.contentRect.height);
+  }
+);
+
+/**
+ * Note: All three hooks clean up automatically when the component is destroyed.
+ * They accept a reactive getter (() => el), so they handle elements appearing/disappearing.
+ */
+
+# ================================================================================
+SECTION 4: BROWSER / SENSORS
+# ================================================================================
+
+------------------------------------------------------------
+useEventListener — Reactive event listener with auto-cleanup
+------------------------------------------------------------
+  import { useEventListener } from "runed";
+
+  // Automatically removed when component is destroyed
+  useEventListener(window, "resize", () => {
+    console.log("resized");
+  });
+
+  // On a reactive element:
+  let btn = $state<HTMLButtonElement | undefined>();
+  useEventListener(() => btn, "click", handler);
+
+------------------------------------------------------------
+IsDocumentVisible — Reactive document visibility
+------------------------------------------------------------
+  import { IsDocumentVisible } from "runed";
+
+  const visible = new IsDocumentVisible();
+  // visible.current → true when tab is active
+
+------------------------------------------------------------
+IsIdle — Detect user inactivity
+------------------------------------------------------------
+  import { IsIdle } from "runed";
+
+  const idle = new IsIdle({ timeout: 60_000 }); // 60s
+  // idle.current → true when user is inactive
+
+------------------------------------------------------------
+onClickOutside — Detect clicks outside an element
+------------------------------------------------------------
+  import { onClickOutside } from "runed";
+
+  let modal = $state<HTMLElement | undefined>();
+  onClickOutside(() => modal, () => {
+    closeModal();
+  });
+
+------------------------------------------------------------
+PressedKeys — Reactive keyboard state
+------------------------------------------------------------
+  import { PressedKeys } from "runed";
+
+  const keys = new PressedKeys();
+  // keys.has("Shift") → boolean
+  // keys.current → Set<string> of all pressed keys
+
+  {#if keys.has("Shift")}
+    <p>Shift is held!</p>
+  {/if}
+
+------------------------------------------------------------
+useGeolocation — Reactive geolocation
+------------------------------------------------------------
+  import { useGeolocation } from "runed";
+
+  const geo = useGeolocation();
+  // geo.coords → GeolocationCoordinates | undefined
+  // geo.error  → GeolocationPositionError | undefined
+  // geo.loading → boolean
+
+# ================================================================================
+SECTION 5: ANIMATION & UTILITIES
+# ================================================================================
+
+------------------------------------------------------------
+AnimationFrames — Reactive requestAnimationFrame loop
+------------------------------------------------------------
+  import { AnimationFrames } from "runed";
+
+  const raf = new AnimationFrames();
+  // raf.timestamp → current frame timestamp (reactive)
+  // raf.delta     → ms since last frame
+
+  // Use in $derived for smooth animations:
+  const angle = $derived(raf.timestamp * 0.05 % 360);
+
+------------------------------------------------------------
+useDebounce — Debounce a callback function
+------------------------------------------------------------
+  import { useDebounce } from "runed";
+
+  const debouncedSave = useDebounce(() => {
+    saveToServer(data);
+  }, 500);
+
+  <input oninput={debouncedSave} />
+
+------------------------------------------------------------
+useThrottle — Throttle a callback function
+------------------------------------------------------------
+  import { useThrottle } from "runed";
+
+  const throttledUpdate = useThrottle(() => {
+    updatePosition(x, y);
+  }, 100);
+
+------------------------------------------------------------
+useInterval — Reactive setInterval with auto-cleanup
+------------------------------------------------------------
+  import { useInterval } from "runed";
+
+  useInterval(() => {
+    tick++;
+  }, 1000);
+
+------------------------------------------------------------
+onCleanup — Register cleanup outside $effect
+------------------------------------------------------------
+  import { onCleanup } from "runed";
+
+  // Useful inside utility functions that run in effect context
+  function startTimer() {
+    const id = setInterval(fn, 1000);
+    onCleanup(() => clearInterval(id));
+  }
+
+------------------------------------------------------------
+boolAttr — Convert boolean to HTML attribute string
+------------------------------------------------------------
+  import { boolAttr } from "runed";
+
+  // boolAttr(true)  → ""   (empty string = attribute present)
+  // boolAttr(false) → undefined (attribute absent)
+
+  <div aria-expanded={boolAttr(isOpen)} />
+
+------------------------------------------------------------
+IsMounted — Detect if component is mounted
+------------------------------------------------------------
+  import { IsMounted } from "runed";
+
+  const mounted = new IsMounted();
+  // mounted.current → false on server, true after mount
+
+  {#if mounted.current}
+    <ClientOnlyComponent />
+  {/if}
+
+# ================================================================================
+QUICK REFERENCE
+# ================================================================================
+
+REACTIVITY:
+  watch()           → explicit $effect with controlled dependencies
+  extract()         → resolve MaybeGetter<T> to T
+  resource()        → reactive async fetching with loading/error states
+  useSearchParams() → typed, reactive URL params (runed/kit)
+
+STATE:
+  Context           → type-safe setContext/getContext wrapper
+  Debounced         → debounced reactive value
+  Throttled         → throttled reactive value
+  PersistedState    → localStorage/sessionStorage reactive state
+  Previous          → previous value of a reactive getter
+  StateHistory      → undo/redo for any reactive state
+  FiniteStateMachine → strongly-typed FSM
+
+ELEMENTS:
+  activeElement     → reactive document.activeElement
+  ElementRect       → reactive getBoundingClientRect()
+  ElementSize       → reactive ResizeObserver dimensions
+  IsFocusWithin     → reactive focus-within detection
+  IsInViewport      → reactive IntersectionObserver
+  ScrollState       → reactive scroll position
+  TextareaAutosize  → auto-resize textarea
+  useIntersectionObserver 
+  useMutationObserver
+  useResizeObserver
+
+BROWSER / SENSORS:
+  useEventListener  → auto-cleanup event listener
+  IsDocumentVisible → reactive page visibility
+  IsIdle            → user inactivity detection
+  onClickOutside    → click outside detection
+  PressedKeys       → reactive keyboard state
+  useGeolocation    → reactive geolocation
+
+ANIMATION & UTILS:
+  AnimationFrames   → reactive rAF loop
+  useDebounce       → debounce a callback
+  useThrottle       → throttle a callback
+  useInterval       → auto-cleanup setInterval
+  onCleanup         → register cleanup in utility context
+  boolAttr          → boolean → HTML attribute
+  IsMounted         → SSR-safe mount detection
+
+# ================================================================================
+INSTALLATION & IMPORT
+# ================================================================================
+
+  npm install runed
+
+  // General utilities:
+  import { watch, resource, Debounced, PersistedState, ... } from "runed";
+
+  // SvelteKit-specific:
+  import { useSearchParams, validateSearchParams } from "runed/kit";
+
+  // File naming: use .svelte.ts for runes outside components
+  // Example: stores/counter.svelte.ts
+
+# ================================================================================
+
+
 BEST MENTAL MODEL:
 
 Svelte 5 gives you the reactive model.
 TypeScript gives you the contracts.
 SvelteKit gives you the full-stack typed boundaries.
+Runed library gives you extra utilities to facilitate work with various runes and svelte-type methods.
 
-Use all three together.
+Use all four together.
 
 Happy coding! 🚀
