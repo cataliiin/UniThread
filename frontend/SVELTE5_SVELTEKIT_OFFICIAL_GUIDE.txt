@@ -1,0 +1,2656 @@
+================================================================================
+SVELTE 5 & SVELTEKIT - OFFICIAL COMPREHENSIVE GUIDE (April 2026)
+Based on official svelte.dev documentation + Community consensus
+================================================================================
+
+🚨 CRITICAL WARNING FOR AI EDITORS 🚨
+================================================================================
+
+Copilot, Claude Code, Cline, and most AI editors are trained on Svelte 4 or older.
+They will suggest WRONG syntax for Svelte 5!
+
+❌ THEY WILL SAY:
+  export let name = "John";
+  on:click={fn}
+  $: doubled = count * 2;
+  createEventDispatcher()
+
+✅ CORRECT SVELTE 5:
+  let { name = "John" } = $props();
+  onclick={fn}
+  let doubled = $derived(count * 2);
+  let { onchange } = $props();
+
+KEEP THIS GUIDE NEXT TO YOU when working with AI. Correct them constantly!
+
+
+================================================================================
+PART 1: SVELTE 5 FUNDAMENTALS
+================================================================================
+
+📌 WHAT IS SVELTE 5?
+================================================================================
+
+Svelte 5 (October 2024+) is a complete rewrite introducing the "Rune System":
+
+BEFORE SVELTE 5 (Svelte 4):
+  ✗ Implicit reactivity (let count = 0; is auto-reactive)
+  ✗ Two syntaxes: component .svelte files vs .js files
+  ✗ Stores needed for shared state
+  ✗ Compiler-only reactivity system
+
+AFTER SVELTE 5:
+  ✓ Explicit runes: $state, $derived, $effect, $props
+  ✓ Unified: same syntax in .svelte and .svelte.ts files
+  ✓ Reactive state everywhere with $state
+  ✓ Compiler + runtime reactivity (signals-based)
+  ✓ Tiny runtime, extremely fast
+
+KEY PRINCIPLE: Svelte 5 is NOT backward-compatible. You're using a new language.
+
+
+🚀 SETUP INITIAL
+================================================================================
+
+Create new project:
+  npm create svelte@latest my-app
+  cd my-app
+  npm install
+  npm run dev
+
+Verify you have Svelte 5:
+  cat package.json | grep svelte
+  Expected: "svelte": "^5.x.x"
+
+If you have Svelte 4 (^4.x.x), upgrade:
+  npm install svelte@latest sveltekit@latest
+
+Project structure:
+  my-app/
+  ├── src/
+  │   ├── routes/              # File-based routing
+  │   │   ├── +page.svelte     # Home page
+  │   │   ├── +layout.svelte   # Root layout
+  │   │   ├── about/+page.svelte
+  │   │   └── api/hello/+server.js
+  │   ├── lib/                 # Reusable code
+  │   │   ├── components/
+  │   │   ├── utils/
+  │   │   ├── server/          # Server-only
+  │   │   └── types/
+  │   └── app.html
+  ├── svelte.config.js
+  ├── vite.config.js
+  ├── .env
+  └── package.json
+
+Scripts:
+  npm run dev       - Start dev server (localhost:5173)
+  npm run build     - Production build
+  npm run preview   - Preview built app
+  npm run lint      - ESLint + Svelte check
+
+
+================================================================================
+RUNE SYSTEM - THE HEART OF SVELTE 5
+================================================================================
+
+Runes are special primitives marked with $ that enable fine-grained reactivity.
+Think of them as "signals" (like Solid.js, Knockout, recent Angular).
+
+
+🔴 $state - REACTIVE STATE
+================================================================================
+
+Creates a reactive variable. Replaces Svelte 4's "let count = 0".
+
+BASIC USAGE:
+  let count = $state(0);
+  count++;  // Triggers reactivity automatically
+
+  <button onclick={() => count++}>
+    Count: {count}
+  </button>
+
+With objects (deep reactive by default):
+  let user = $state({
+    name: "John",
+    age: 30,
+    address: {
+      city: "NYC"
+    }
+  });
+
+  user.name = "Jane";        // Reactive
+  user.address.city = "LA";  // Reactive (deep)
+  user.age++;                // Reactive
+
+With arrays (mutations are reactive):
+  let items = $state([1, 2, 3]);
+  items.push(4);      // Reactive
+  items[0] = 10;      // Reactive
+  items.length = 0;   // Reactive
+
+Shallow reactivity ($state.raw):
+  let large = $state.raw(hugeDataStructure);
+  // Only reassignment triggers update, not mutations
+  // Use for: large datasets, immutable patterns, external libs
+
+Class fields (works too!):
+  class Counter {
+    count = $state(0);
+    increment() {
+      this.count++;
+    }
+  }
+
+  const counter = new Counter();
+  // Reactivity works!
+
+SVELTE 4 COMPARISON:
+  Svelte 4: let count = 0;              // Implicit reactive at top level only
+  Svelte 5: let count = $state(0);      // Explicit, works everywhere
+
+
+🟢 $derived - COMPUTED VALUES
+================================================================================
+
+Creates a value that automatically updates when dependencies change.
+Replaces Svelte 4's "$: doubled = count * 2".
+
+Simple computed value:
+  let count = $state(0);
+  let doubled = $derived(count * 2);
+
+  <p>{count} × 2 = {doubled}</p>
+  // doubled updates when count changes
+
+Multiple computed values:
+  let count = $state(0);
+  let doubled = $derived(count * 2);
+  let isEven = $derived(count % 2 === 0);
+
+  <p>
+    Count: {count}
+    Doubled: {doubled}
+    {#if isEven}Even{:else}Odd{/if}
+  </p>
+
+Complex computation ($derived.by):
+  let items = $state([1, 2, 3, 4, 5]);
+  let sum = $derived.by(() => {
+    let total = 0;
+    for (const n of items) {
+      total += n;
+    }
+    return total;
+  });
+
+  <p>Sum: {sum}</p>
+
+KEY CHARACTERISTICS:
+  ✓ Read-only (cannot assign to $derived variable)
+  ✓ Memoized (calculated only when accessed)
+  ✓ Pure (no side effects allowed)
+  ✓ Dependency tracking is automatic
+  ✓ Re-computed lazily
+
+SVELTE 4 COMPARISON:
+  Svelte 4: $: doubled = count * 2;     // Reactive label syntax
+  Svelte 5: let doubled = $derived(count * 2);  // Explicit rune
+
+
+🔵 $effect - SIDE EFFECTS
+================================================================================
+
+Runs code when dependencies change. Used for side effects like logging, API calls.
+Replaces Svelte 4's "$: { sideEffect() }".
+
+Basic effect:
+  let count = $state(0);
+
+  $effect(() => {
+    console.log(`Count is now ${count}`);
+  });
+
+  // Runs on mount and whenever count changes
+
+Effect with cleanup:
+  $effect(() => {
+    const interval = setInterval(() => {
+      console.log("tick");
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);  // Cleanup before next effect or unmount
+    };
+  });
+
+API call effect:
+  let userId = $state(1);
+
+  $effect(() => {
+    fetch(`/api/users/${userId}`)
+      .then(r => r.json())
+      .then(data => {
+        console.log(data);
+      });
+  });
+
+  // Re-runs when userId changes
+
+Advanced: $effect.pre (runs BEFORE DOM update):
+  $effect.pre(() => {
+    console.log("This runs before DOM update");
+  });
+
+KEY CHARACTERISTICS:
+  ✓ Runs after component mounts to DOM
+  ✓ Re-runs after dependencies change (in a microtask)
+  ✓ Cleanup function (return from effect) runs before re-run
+  ✓ Does NOT run during SSR
+  ✓ Auto-dependency tracking
+
+SVELTE 4 COMPARISON:
+  Svelte 4: $: { console.log(count); }
+  Svelte 5: $effect(() => { console.log(count); });
+
+
+🟣 ADVANCED RUNE UTILITIES
+================================================================================
+
+$props() - Component props (replaces "export let")
+
+SVELTE 5 WAY:
+  let { name = "John", age } = $props();
+  // name has default, age is required
+
+SVELTE 4 WAY:
+  export let name = "John";  ❌ DON'T USE IN SVELTE 5
+  export let age;
+
+
+$bindable() - Two-way binding props
+
+Component:
+  let { count = $bindable(0) } = $props();
+  
+  <button onclick={() => count++}>
+    Count: {count}
+  </button>
+
+Parent:
+  <script>
+    let myCount = $state(0);
+  </script>
+
+  <Counter bind:count={myCount} />
+  // Now myCount and counter.count are synchronized
+
+
+untrack() - Prevent effect re-run
+
+$effect(() => {
+  console.log("count changed");
+  
+  untrack(() => {
+    console.log("This doesn't trigger effect re-run");
+    count++;  // Won't cause effect to re-run
+  });
+});
+
+
+batch() - Multiple state changes, single effect trigger
+
+batch(() => {
+  state1++;
+  state2++;
+  state3++;
+});
+// Single $effect run, not three
+
+
+$state.snapshot() - Immutable copy (no reactivity)
+
+let copy = $state.snapshot(reactiveObject);
+// Changes to copy don't affect original, copy not reactive
+
+
+$effect.root() - Advanced: manual effect control
+
+const destroy = $effect.root(() => {
+  $effect(() => {
+    // This effect manually controlled
+  });
+});
+
+destroy();  // Clean up when ready
+
+
+================================================================================
+PART 2: COMPONENTS & REACTIVITY
+================================================================================
+
+📦 COMPONENT STRUCTURE (SVELTE 5)
+================================================================================
+
+Basic component file (Button.svelte):
+
+  <script>
+    // 1. Imports
+    import { onMount } from 'svelte';
+
+    // 2. Props
+    let { label = "Click", onclick } = $props();
+
+    // 3. State
+    let count = $state(0);
+
+    // 4. Derived
+    let doubleCount = $derived(count * 2);
+
+    // 5. Effects
+    $effect(() => {
+      console.log("Count changed to:", count);
+    });
+
+    // 6. Event handlers
+    function handleClick() {
+      count++;
+      onclick?.();
+    }
+
+    // 7. Lifecycle
+    onMount(() => {
+      console.log("Button mounted");
+    });
+  </script>
+
+  <!-- 8. Template -->
+  <button onclick={handleClick}>
+    {label}: {count} (doubled: {doubleCount})
+  </button>
+
+  <!-- 9. Scoped styles -->
+  <style>
+    button {
+      padding: 8px 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+
+
+⚙️ PROPS HANDLING (SVELTE 5 vs 4)
+================================================================================
+
+SVELTE 5 ($props):
+
+  let { name = "John", age, children } = $props();
+  // name has default, age required, children optional
+
+  <div>
+    {name} is {age} years old
+    {children}
+  </div>
+
+SVELTE 4 (export let) ❌ DON'T USE:
+
+  export let name = "John";
+  export let age;
+
+
+Bindable props (two-way binding):
+
+  Component:
+    let { text = $bindable("") } = $props();
+    <input bind:value={text} />
+
+  Parent:
+    let message = $state("");
+    <TextInput bind:text={message} />
+    // message and text stay synchronized
+
+
+Props with rest:
+
+  let { name, ...rest } = $props();
+  <div {...rest}>{name}</div>
+
+
+Accessing component instance:
+
+  <script>
+    let inputElement;
+  </script>
+
+  <input bind:this={inputElement} />
+
+  <button onclick={() => inputElement.focus()}>
+    Focus
+  </button>
+
+
+🎯 EVENT HANDLING (SVELTE 5)
+================================================================================
+
+DOM Events:
+
+  onclick, oninput, onchange, onsubmit, onkeydown, etc.
+
+  SVELTE 5:
+    <button onclick={() => count++}>Click</button>
+
+  SVELTE 4 (still works but not preferred):
+    <button on:click={() => count++}>Click</button>
+
+
+Event object:
+
+  <input oninput={(e) => text = e.target.value} />
+  <form onsubmit={(e) => { e.preventDefault(); submit(); }}>
+
+
+Component events (props):
+
+  Component:
+    let { onchange } = $props();
+
+    <button onclick={() => onchange("value")}>
+      Emit
+    </button>
+
+  Parent:
+    <Child onchange={(value) => console.log(value)} />
+
+  SVELTE 4 WAY (createEventDispatcher) ❌:
+    import { createEventDispatcher } from 'svelte';
+    const dispatch = createEventDispatcher();
+    dispatch("change", value);
+
+
+Event modifiers (still valid):
+
+  <form onsubmit|preventDefault={handleSubmit}>
+  <div onmousedown|stopPropagation={handler}>
+  <button onclick|once={setupOnce}>
+
+  Available: preventDefault, stopPropagation, passive, capture, once, nonpassive
+
+
+🔄 TWO-WAY BINDING (bind:)
+================================================================================
+
+Text input:
+  <input bind:value={name} />
+
+Checkbox:
+  <input type="checkbox" bind:checked={agreed} />
+
+Radio buttons (same bind:group):
+  <input type="radio" bind:group={choice} value="a" />
+  <input type="radio" bind:group={choice} value="b" />
+
+Select:
+  <select bind:value={selectedId}>
+    <option value={1}>Option 1</option>
+    <option value={2}>Option 2</option>
+  </select>
+
+Textarea:
+  <textarea bind:value={message}></textarea>
+
+Component binding:
+  <Child bind:this={ref} />
+  ref.method();
+
+DOM element binding:
+  <script>
+    let canvas;
+  </script>
+
+  <canvas bind:this={canvas} />
+  {canvas?.getContext("2d")}
+
+
+================================================================================
+PART 3: CONTROL FLOW & RENDERING
+================================================================================
+
+🔀 CONDITIONAL RENDERING ({#if})
+================================================================================
+
+Basic:
+  {#if condition}
+    <p>Yes</p>
+  {/if}
+
+With else:
+  {#if condition}
+    <p>Yes</p>
+  {:else}
+    <p>No</p>
+  {/if}
+
+With else if:
+  {#if role === "admin"}
+    <AdminPanel />
+  {:else if role === "user"}
+    <UserPanel />
+  {:else}
+    <LoginRequired />
+  {/if}
+
+
+📝 LIST RENDERING ({#each})
+================================================================================
+
+Basic loop:
+  {#each items as item}
+    <div>{item.name}</div>
+  {/each}
+
+With index:
+  {#each items as item, index}
+    <div>{index}: {item.name}</div>
+  {/each}
+
+WITH KEY (CRITICAL for animations/transitions):
+  {#each items as item (item.id)}
+    <div animate:flip>
+      {item.name}
+    </div>
+  {/each}
+
+  // Key prevents animation bugs when list reorders!
+
+With else (empty list):
+  {#each items as item}
+    <p>{item}</p>
+  {:else}
+    <p>No items found</p>
+  {/each}
+
+Destructuring:
+  {#each items as { id, name }}
+    <div>{id}: {name}</div>
+  {/each}
+
+
+⏳ ASYNC RENDERING ({#await})
+================================================================================
+
+Basic:
+  {#await promise}
+    <p>Loading...</p>
+  {:then value}
+    <p>Result: {value}</p>
+  {:catch error}
+    <p>Error: {error.message}</p>
+  {/await}
+
+Shorthand (no pending):
+  {#await promise then value}
+    <p>{value}</p>
+  {/await}
+
+With state variable:
+  <script>
+    let promise = fetch("/api/data").then(r => r.json());
+  </script>
+
+  {#await promise}
+    Loading...
+  {:then data}
+    <div>{data}</div>
+  {:catch error}
+    {error.message}
+  {/await}
+
+
+⏳ TRANSITIONS
+================================================================================
+
+Basic transition:
+  <div transition:fade>
+    Fades in and out
+  </div>
+
+With duration:
+  <div transition:fade={{ duration: 500 }}>
+    Half-second fade
+  </div>
+
+Built-in transitions:
+  fade, fly, slide, scale, draw, blur, crossfade
+
+Examples:
+  <div transition:fly={{ y: 200 }}>
+    Flies from below
+  </div>
+
+  <div transition:slide={{ duration: 300 }}>
+    Slides horizontally
+  </div>
+
+In/Out separately:
+  <div in:fade out:slide>
+    Fade in, slide out
+  </div>
+
+
+🎨 ANIMATE DIRECTIVE (for list items)
+================================================================================
+
+When list reorders, smoothly animate:
+
+  {#each items as item (item.id)}
+    <div animate:flip={{ duration: 200 }}>
+      {item.name}
+    </div>
+  {/each}
+
+  // animate:flip repositions smoothly when list changes
+
+
+🎭 SLOTS (COMPONENT COMPOSITION)
+================================================================================
+
+Simple slot:
+  <!-- Card.svelte -->
+  <div class="card">
+    <slot />
+  </div>
+
+  <!-- App.svelte -->
+  <Card>
+    <p>Card content</p>
+  </Card>
+
+Named slots:
+  <!-- Modal.svelte -->
+  <div class="modal">
+    <div class="header">
+      <slot name="header" />
+    </div>
+    <div class="content">
+      <slot />
+    </div>
+    <div class="footer">
+      <slot name="footer" />
+    </div>
+  </div>
+
+  <!-- App.svelte -->
+  <Modal>
+    <div slot="header">Title</div>
+    <p>Content</p>
+    <div slot="footer">
+      <button>OK</button>
+    </div>
+  </Modal>
+
+Slot props (passing data from child):
+  <!-- List.svelte -->
+  {#each items as item}
+    <slot {item} index={items.indexOf(item)}>
+      Default: {item}
+    </slot>
+  {/each}
+
+  <!-- App.svelte -->
+  <List {items} let:item let:index>
+    <div>{index}: {item.name}</div>
+  </List>
+
+
+🎓 CONTEXT API (component tree communication)
+================================================================================
+
+Set context in parent:
+  <script>
+    import { setContext } from 'svelte';
+    const theme = "dark";
+    setContext('theme', theme);
+  </script>
+
+Get context in child (any depth):
+  <script>
+    import { getContext } from 'svelte';
+    const theme = getContext('theme');
+  </script>
+
+  <div class={theme}>
+    Using {theme} theme
+  </div>
+
+
+================================================================================
+PART 4: SVELTEKIT - FULL-STACK FRAMEWORK
+================================================================================
+
+🚀 WHAT IS SVELTEKIT?
+================================================================================
+
+SvelteKit is a full-stack framework built on Svelte. It provides:
+
+✓ File-based routing (like Next.js for React)
+✓ Server-side rendering (SSR) + Static generation (SSG)
+✓ API routes (serverless functions)
+✓ Form actions (server actions without REST)
+✓ Authentication helpers
+✓ Built-in optimizations (code splitting, prefetching)
+
+Unlike Svelte (just a component framework), SvelteKit is the complete solution.
+
+
+📁 FILE-BASED ROUTING
+================================================================================
+
+Routes map directly to the file system:
+
+  src/routes/
+  ├── +page.svelte          → GET /
+  ├── +layout.svelte        → Root layout (wraps all)
+  ├── about/
+  │   └── +page.svelte      → GET /about
+  ├── posts/
+  │   ├── +page.svelte      → GET /posts (list all)
+  │   └── [id]/
+  │       └── +page.svelte  → GET /posts/123
+  ├── blog/
+  │   ├── +layout.svelte    → Layout for /blog/*
+  │   ├── [slug]/
+  │   │   └── +page.svelte  → GET /blog/hello-world
+  └── api/
+      └── users/
+          └── +server.js    → POST /api/users, GET /api/users, etc.
+
+Dynamic segments:
+  [id]      = Required: /posts/123
+  [[slug]]  = Optional: / or /something
+  [...rest] = Catch-all: /a/b/c all go to [...rest]
+
+Route groups (don't appear in URL):
+  (auth)/
+    login/+page.svelte      → /login (not /(auth)/login)
+    register/+page.svelte   → /register
+
+  (app)/
+    dashboard/+page.svelte  → /dashboard
+    settings/+page.svelte   → /settings
+
+
+📄 PAGE & LAYOUT COMPONENTS
+================================================================================
+
++page.svelte (Route component):
+  <script>
+    export let data;  // From load() function
+  </script>
+
+  <h1>{data.post.title}</h1>
+  <p>{data.post.content}</p>
+
++layout.svelte (Wrapper):
+  <script>
+    export let data;  // From layout load()
+  </script>
+
+  <nav>
+    <a href="/">Home</a>
+    <a href="/about">About</a>
+  </nav>
+
+  <main>
+    <slot />  <!-- Page component rendered here -->
+  </main>
+
+Layout hierarchy:
+  src/routes/+layout.svelte         → Wraps all pages
+  src/routes/blog/+layout.svelte    → Wraps /blog/*
+  src/routes/blog/[slug]/+page.svelte → Final page
+
+Each level can have its own data from load().
+
+
++error.svelte (Error page):
+  <script>
+    import { page } from '$app/stores';
+  </script>
+
+  <h1>Error {$page.status}</h1>
+  <p>{$page.error?.message}</p>
+
+  Catches errors thrown in load() or +server.js
+
+
+🔌 LOAD FUNCTIONS
+================================================================================
+
+Load functions fetch data before rendering.
+
+Universal load (+page.js or +layout.js):
+
+  export const load = async ({ params, url, fetch, route }) => {
+    const postId = params.id;
+    
+    const response = await fetch(`/api/posts/${postId}`);
+    const post = await response.json();
+    
+    return {
+      post,
+      title: post.title
+    };
+  };
+
+  Component receives data:
+    export let data;
+    <h1>{data.title}</h1>
+
+Server-only load (+page.server.js):
+
+  export const load = async ({ params, locals, cookies, depends }) => {
+    // Can access database directly
+    const post = await database.getPost(params.id);
+    
+    // Can check authentication
+    if (!locals.user) {
+      throw error(401, "Unauthorized");
+    }
+    
+    depends('data:post');  // For cache invalidation
+    
+    return { post };
+  };
+
+Loading with error handling:
+
+  import { error } from '@sveltekit/kit';
+
+  export const load = async ({ params }) => {
+    const post = await db.getPost(params.id);
+    
+    if (!post) {
+      throw error(404, 'Post not found');
+    }
+    
+    return { post };
+  };
+
+Parallel loading (faster):
+
+  export const load = async ({ fetch }) => {
+    const [users, posts, comments] = await Promise.all([
+      fetch('/api/users').then(r => r.json()),
+      fetch('/api/posts').then(r => r.json()),
+      fetch('/api/comments').then(r => r.json())
+    ]);
+    
+    return { users, posts, comments };
+  };
+
+
+🔐 API ROUTES (+server.js)
+================================================================================
+
+Create REST API endpoints:
+
+  src/routes/api/posts/[id]/+server.js
+
+GET request:
+
+  export const GET = async ({ params, url, locals }) => {
+    const post = await db.getPost(params.id);
+    
+    if (!post) {
+      return new Response('Not found', { status: 404 });
+    }
+    
+    return new Response(JSON.stringify(post), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  };
+
+Or use json() helper:
+
+  import { json, error } from '@sveltekit/kit';
+
+  export const GET = async ({ params }) => {
+    try {
+      const post = await db.getPost(params.id);
+      if (!post) throw error(404, 'Not found');
+      return json(post);
+    } catch (e) {
+      return json({ error: e.message }, { status: 500 });
+    }
+  };
+
+POST/PUT/DELETE:
+
+  export const POST = async ({ request, locals }) => {
+    const data = await request.json();
+    
+    if (!locals.user) {
+      return json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    const newPost = await db.createPost(data);
+    return json(newPost, { status: 201 });
+  };
+
+  export const PUT = async ({ params, request }) => {
+    const id = params.id;
+    const data = await request.json();
+    const post = await db.updatePost(id, data);
+    return json(post);
+  };
+
+  export const DELETE = async ({ params }) => {
+    await db.deletePost(params.id);
+    return new Response('Deleted', { status: 204 });
+  };
+
+
+📝 FORM ACTIONS (Server Actions)
+================================================================================
+
+Handle form submissions with actions:
+
++page.server.js:
+
+  export const actions = {
+    default: async ({ request, locals }) => {
+      const formData = await request.formData();
+      const email = formData.get('email');
+      const password = formData.get('password');
+      
+      try {
+        const user = await db.createUser(email, password);
+        return { success: true, user };
+      } catch (e) {
+        return { error: e.message };
+      }
+    }
+  };
+
++page.svelte:
+
+  <script>
+    export let form;
+  </script>
+
+  <form method="POST">
+    <input type="email" name="email" required />
+    <input type="password" name="password" required />
+    <button>Sign up</button>
+  </form>
+
+  {#if form?.success}
+    <p class="success">User created!</p>
+  {/if}
+  {#if form?.error}
+    <p class="error">{form.error}</p>
+  {/if}
+
+Named actions:
+
+  export const actions = {
+    login: async ({ request, cookies }) => {
+      const { email, password } = await request.formData();
+      const user = await db.verifyUser(email, password);
+      
+      if (!user) {
+        return { error: 'Invalid credentials' };
+      }
+      
+      const token = generateJWT(user);
+      cookies.set('token', token, { maxAge: 7 * 24 * 3600 });
+      
+      throw redirect(303, '/dashboard');
+    },
+    
+    logout: async ({ cookies }) => {
+      cookies.delete('token');
+      throw redirect(303, '/');
+    }
+  };
+
+Form HTML:
+
+  <form method="POST">
+    <input name="email" />
+    <button>Login</button>
+  </form>
+
+  <form method="POST" action="?/logout">
+    <button>Logout</button>
+  </form>
+
+use:enhance (Progressive Enhancement):
+
+  import { enhance } from '$app/forms';
+
+  <form method="POST" use:enhance>
+    <input name="email" />
+    <button>Submit</button>
+  </form>
+
+  // Form submits without page reload, updates UI
+
+With custom handler:
+
+  <form
+    method="POST"
+    use:enhance={({ formData }) => {
+      console.log('Submitting:', formData);
+      
+      return async ({ result, update }) => {
+        if (result.type === 'success') {
+          update();  // Re-run load() to get new data
+        }
+      };
+    }}
+  >
+    <input name="email" />
+    <button>Submit</button>
+  </form>
+
+
+================================================================================
+PART 5: STATE MANAGEMENT
+================================================================================
+
+🆕 NEW PATTERN: .svelte.ts Reactive State
+================================================================================
+
+Svelte 5 introduced reactive state in .svelte.ts files. This REPLACES stores.
+
+Create a counter module (counter.svelte.ts):
+
+  export function createCounter(initial = 0) {
+    let count = $state(initial);
+    let doubled = $derived(count * 2);
+    
+    return {
+      get count() {
+        return count;
+      },
+      get doubled() {
+        return doubled;
+      },
+      increment: () => count++,
+      decrement: () => count--,
+      reset: () => count = initial
+    };
+  }
+
+Use in component:
+
+  <script>
+    import { createCounter } from './counter.svelte.ts';
+    const counter = createCounter(10);
+  </script>
+
+  <p>{counter.count} × 2 = {counter.doubled}</p>
+  <button onclick={counter.increment}>+</button>
+  <button onclick={counter.decrement}>-</button>
+  <button onclick={counter.reset}>Reset</button>
+
+Global state (app-wide):
+
+  // src/lib/app.svelte.ts
+  export const appState = createCounter(0);
+
+  // In any component:
+  <script>
+    import { appState } from '$lib/app.svelte.ts';
+  </script>
+
+  <p>{appState.count}</p>
+  <button onclick={appState.increment}>+</button>
+
+WHY THIS IS BETTER:
+  ✓ Works in .svelte.ts files (universal reactivity)
+  ✓ No import/subscribe syntax needed
+  ✓ Lightweight, fast
+  ✓ More idiomatic in Svelte 5
+  ✓ Replaces need for stores in most cases
+
+
+🏚️ OLD: Writable Stores (Still Work, Not Recommended)
+================================================================================
+
+Stores still work in Svelte 5 but are considered legacy.
+
+Create store (src/lib/stores.js):
+
+  import { writable } from 'svelte/store';
+
+  export const count = writable(0);
+  export const user = writable(null);
+
+Use in component:
+
+  <script>
+    import { count } from '$lib/stores';
+  </script>
+
+  <p>{$count}</p>
+  <button onclick={() => $count++}>+</button>
+
+  // $ prefix auto-subscribes/unsubscribes
+
+Readable stores:
+
+  import { readable } from 'svelte/store';
+
+  export const time = readable(new Date(), (set) => {
+    const interval = setInterval(() => {
+      set(new Date());
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  });
+
+Derived stores:
+
+  import { derived } from 'svelte/store';
+
+  export const doubled = derived(count, $count => $count * 2);
+
+NOT RECOMMENDED IN SVELTE 5. Use .svelte.ts pattern instead.
+
+
+================================================================================
+PART 6: ADVANCED SVELTEKIT
+================================================================================
+
+🛡️ AUTHENTICATION & MIDDLEWARE
+================================================================================
+
+Middleware (hooks.server.js):
+
+  export const handle = async ({ event, resolve }) => {
+    // Check authentication
+    const token = event.cookies.get('token');
+    
+    if (token) {
+      try {
+        const user = verifyJWT(token);
+        event.locals.user = user;
+      } catch (e) {
+        event.cookies.delete('token');
+      }
+    }
+    
+    // Continue request
+    return resolve(event);
+  };
+
+Protected routes:
+
+  // src/routes/dashboard/+page.server.js
+  import { error } from '@sveltekit/kit';
+
+  export const load = ({ locals }) => {
+    if (!locals.user) {
+      throw error(401, 'Unauthorized');
+    }
+    
+    return { user: locals.user };
+  };
+
+Login action:
+
+  export const actions = {
+    login: async ({ request, cookies }) => {
+      const { email, password } = await request.formData();
+      
+      const user = await db.verifyUser(email, password);
+      if (!user) {
+        return { error: 'Invalid credentials' };
+      }
+      
+      const token = generateJWT(user);
+      cookies.set('token', token, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,  // 1 week
+        sameSite: 'strict'
+      });
+      
+      throw redirect(303, '/dashboard');
+    }
+  };
+
+
+📦 SSR, CSR, AND PRERENDERING
+================================================================================
+
+Server-Side Rendering (default):
+
+  export const ssr = true;
+
+  Pages render on the server, send HTML to client.
+  Pros: SEO-friendly, faster initial load
+  Cons: More server load
+
+Client-Side Rendering:
+
+  export const ssr = false;
+
+  Pages render only in the browser.
+  Pros: Lighter server, dynamic content
+  Cons: No SEO, slower initial load
+
+Prerendering (static HTML):
+
+  export const prerender = true;
+
+  Pages are rendered at build time → static HTML files.
+  Pros: Fast, no server needed, great for SEO
+  Cons: Can't use dynamic data from params
+
+Conditional prerender:
+
+  export const prerender = process.env.PRERENDER === 'true';
+
+
+🔗 ENVIRONMENT VARIABLES
+================================================================================
+
+.env file:
+
+  PUBLIC_API_URL=https://api.example.com
+  PUBLIC_APP_NAME=My App
+  SECRET_DB_PASSWORD=super_secret
+  SECRET_JWT_KEY=secret_key
+
+Public variables (exposed to browser):
+
+  import { PUBLIC_API_URL, PUBLIC_APP_NAME } from '$env/static/public';
+
+  const response = await fetch(`${PUBLIC_API_URL}/data`);
+  console.log(PUBLIC_APP_NAME);
+
+Secret variables (server-only):
+
+  // In +server.js or +page.server.js
+  import { SECRET_DB_PASSWORD } from '$env/static/private';
+
+  const db = connect(SECRET_DB_PASSWORD);
+
+
+================================================================================
+PART 7: BEST PRACTICES & PATTERNS
+================================================================================
+
+🧹 COMPONENT ORGANIZATION
+================================================================================
+
+Component file order:
+
+  <script>
+    // 1. Imports
+    import { onMount } from 'svelte';
+    
+    // 2. Props (always first in script)
+    let { label = "Button", onclick } = $props();
+    
+    // 3. State variables
+    let count = $state(0);
+    let isOpen = $state(false);
+    
+    // 4. Derived values
+    let doubleCount = $derived(count * 2);
+    
+    // 5. Effects (side effects)
+    $effect(() => {
+      console.log("Count:", count);
+    });
+    
+    // 6. Lifecycle hooks
+    onMount(() => {
+      console.log("Mounted");
+    });
+    
+    // 7. Event handlers
+    function handleClick() {
+      count++;
+    }
+  </script>
+
+  <!-- 8. Template -->
+  <button onclick={handleClick}>
+    {label}: {count}
+  </button>
+
+  <!-- 9. Styles -->
+  <style>
+    button { ... }
+  </style>
+
+Naming conventions:
+
+  Component files: PascalCase (Button.svelte, UserCard.svelte)
+  Util files: camelCase (helpers.js, validators.js)
+  Store/module files: camelCase (appState.svelte.ts, auth.svelte.ts)
+  CSS classes: kebab-case (.card-header, .user-profile)
+  Variables: camelCase (userName, isLoading)
+  Constants: UPPER_CASE (MAX_RETRIES, API_URL)
+
+
+📁 PROJECT STRUCTURE (RECOMMENDED)
+================================================================================
+
+  src/
+  ├── routes/
+  │   ├── (auth)/                      # Route group
+  │   │   ├── login/+page.svelte
+  │   │   └── register/+page.svelte
+  │   ├── (app)/                       # Protected routes
+  │   │   ├── +layout.server.js        # Check auth here
+  │   │   ├── dashboard/+page.svelte
+  │   │   └── settings/+page.svelte
+  │   ├── api/
+  │   │   ├── auth/+server.js
+  │   │   └── posts/+server.js
+  │   ├── +layout.svelte               # Global layout
+  │   ├── +page.svelte                 # Home
+  │   └── +error.svelte                # Error page
+  ├── lib/
+  │   ├── components/
+  │   │   ├── ui/
+  │   │   │   ├── Button.svelte
+  │   │   │   └── Modal.svelte
+  │   │   ├── layout/
+  │   │   │   └── Header.svelte
+  │   │   └── forms/
+  │   │       └── LoginForm.svelte
+  │   ├── utils/
+  │   │   ├── api.js
+  │   │   ├── validation.js
+  │   │   └── helpers.js
+  │   ├── server/                      # Server-only code
+  │   │   ├── database.js
+  │   │   └── auth.js
+  │   ├── types/
+  │   │   └── index.ts
+  │   ├── app.svelte.ts                # Global state
+  │   └── auth.svelte.ts               # Auth state
+  ├── app.html
+  ├── svelte.config.js
+  ├── vite.config.js
+  └── .env
+
+
+⚡ PERFORMANCE OPTIMIZATION
+================================================================================
+
+Code splitting (automatic):
+
+  SvelteKit automatically code-splits routes.
+  Each page loads only necessary code.
+  No extra config needed!
+
+Lazy loading components:
+
+  <script>
+    let Component;
+    
+    onMount(async () => {
+      Component = (await import('./Heavy.svelte')).default;
+    });
+  </script>
+
+  {#if Component}
+    <svelte:component this={Component} />
+  {/if}
+
+Image optimization:
+
+  Use modern formats (WebP)
+  Provide srcset for responsive images
+  Consider next-gen image solutions
+
+Caching strategies:
+
+  // In +server.js
+  export const GET = () => {
+    return json(data, {
+      headers: {
+        'Cache-Control': 'public, max-age=3600'
+      }
+    });
+  };
+
+
+🔐 SECURITY BEST PRACTICES
+================================================================================
+
+XSS Prevention:
+
+  Svelte escapes by default.
+  Use {@html} only for trusted content:
+    {@html sanitizedHTML}  ✓
+    {@html userInput}      ✗
+
+CSRF Protection:
+
+  SvelteKit auto-handles CSRF tokens.
+  No manual action needed.
+
+SQL Injection Prevention:
+
+  Use parameterized queries:
+    db.query('SELECT * FROM users WHERE id = ?', [id])  ✓
+    db.query(`SELECT * FROM users WHERE id = ${id}`)     ✗
+
+Secrets Management:
+
+  Environment variables: .env (never committed)
+  GitHub Secrets for CI/CD
+  Only PUBLIC_ prefix for client data
+  Secrets in .server.js or hooks only
+
+Rate Limiting:
+
+  export const POST = async ({ getClientAddress }) => {
+    const ip = getClientAddress();
+    
+    if (await isRateLimited(ip)) {
+      return json(
+        { error: 'Too many requests' },
+        { status: 429 }
+      );
+    }
+    
+    // Process request
+  };
+
+
+✅ COMMON PATTERNS
+================================================================================
+
+Loading state:
+
+  let loading = $state(false);
+  let data = $state(null);
+
+  onMount(async () => {
+    loading = true;
+    try {
+      data = await fetch('/api/data').then(r => r.json());
+    } finally {
+      loading = false;
+    }
+  });
+
+  {#if loading}
+    <p>Loading...</p>
+  {:else if data}
+    <div>{data}</div>
+  {/if}
+
+Error handling:
+
+  // In load() or action:
+  if (!data) {
+    throw error(404, 'Not found');
+  }
+
+  // Caught by +error.svelte
+  <h1>Error {$page.status}</h1>
+  <p>{$page.error?.message}</p>
+
+Optimistic updates:
+
+  <form
+    method="POST"
+    use:enhance={() => {
+      // Update UI immediately
+      items = [...items, { name: formData.get('name') }];
+      
+      return async ({ result }) => {
+        if (result.type !== 'success') {
+          // Revert on failure
+          items = items.slice(0, -1);
+        }
+      };
+    }}
+  >
+
+Pagination:
+
+  export const load = ({ url }) => {
+    const page = Number(url.searchParams.get('page')) || 1;
+    const perPage = 20;
+    
+    const items = db.getItems((page - 1) * perPage, perPage);
+    const total = db.countAll();
+    
+    return {
+      items,
+      page,
+      totalPages: Math.ceil(total / perPage)
+    };
+  };
+
+Modal/Dialog:
+
+  let showModal = $state(false);
+
+  {#if showModal}
+    <div class="overlay" onclick={() => showModal = false}>
+      <div class="modal" onclick|stopPropagation>
+        <h2>Modal</h2>
+        <button onclick={() => showModal = false}>Close</button>
+      </div>
+    </div>
+  {/if}
+
+
+================================================================================
+PART 8: AI EDITOR WARNINGS (CRITICAL!)
+================================================================================
+
+⚠️ COPILOT, CLAUDE CODE, CLINE WILL GET THIS WRONG
+================================================================================
+
+They are trained on Svelte 4 or older. When they suggest code, CHECK THESE:
+
+❌ WRONG: export let
+  Copilot will suggest:
+    export let name = "John";
+
+✅ CORRECT:
+    let { name = "John" } = $props();
+
+❌ WRONG: on:click
+  Copilot will suggest:
+    <button on:click={fn}>Click</button>
+
+✅ CORRECT (preferred):
+    <button onclick={fn}>Click</button>
+  Note: on: still works but not preferred in Svelte 5
+
+❌ WRONG: $: reactive declarations
+  Copilot will suggest:
+    $: doubled = count * 2;
+
+✅ CORRECT:
+    let doubled = $derived(count * 2);
+
+❌ WRONG: createEventDispatcher
+  Copilot will suggest:
+    import { createEventDispatcher } from 'svelte';
+    const dispatch = createEventDispatcher();
+    dispatch('change', value);
+
+✅ CORRECT:
+    let { onchange } = $props();
+    onchange?.(value);
+
+❌ WRONG: Writable stores everywhere
+  Copilot will suggest:
+    import { writable } from 'svelte/store';
+    export const count = writable(0);
+
+✅ CORRECT:
+    // Create counter.svelte.ts
+    export function createCounter() {
+      let count = $state(0);
+      return { get count() { return count }, increment: () => count++ };
+    }
+
+❌ WRONG: Using $ prefix everywhere in templates
+  Copilot will suggest:
+    <p>{$count}</p>  // For store subscription
+
+✅ CORRECT (for state, no $ needed):
+    let count = $state(0);
+    <p>{count}</p>
+
+    (Only use $ for stores:
+    import { count } from '$lib/stores';
+    <p>{$count}</p>)
+
+
+✅ WHAT AI EDITORS UNDERSTAND CORRECTLY
+================================================================================
+
+They should mostly get these right:
+
+✓ File-based routing structure (mostly)
+✓ +page.svelte, +layout.svelte concepts
+✓ SvelteKit folder organization
+✓ Load functions (basic usage)
+✓ +server.js API routes (mostly)
+✓ Form actions (mostly)
+✓ {#if}, {#each}, {#await} blocks
+✓ Transitions (mostly)
+✓ Slots
+✓ Basic CSS scoping
+
+
+================================================================================
+QUICK REFERENCE SHEET
+================================================================================
+
+SVELTE 5 RUNES:
+  let x = $state(0)              // Reactive state
+  let x = $derived(y * 2)        // Computed value
+  $effect(() => {...})           // Side effect
+  let { name } = $props()        // Props
+  let { x = $bindable(0) } = $props()  // Two-way prop
+
+SVELTE 5 EVENTS:
+  onclick, oninput, onchange, onsubmit, onkeydown...
+  (Not: on:click, on:input - these are Svelte 4)
+
+SVELTEKIT FILES:
+  +page.svelte   → Page component
+  +layout.svelte → Layout wrapper
+  +error.svelte  → Error boundary
+  +page.js/.server.js → Load functions
+  +server.js     → API routes + server actions
+
+COMMON IMPORTS:
+  import { goto, invalidate } from '$app/navigation'
+  import { page } from '$app/stores'
+  import { error, json, redirect } from '@sveltekit/kit'
+  import { onMount, onDestroy } from 'svelte'
+
+ENVIRONMENT:
+  PUBLIC_* → Client-visible
+  SECRET_* → Server-only
+  In load, use $env/static/private or $env/dynamic/private
+
+================================================================================
+FINAL THOUGHTS
+================================================================================
+
+Svelte 5 is a SIGNIFICANT departure from Svelte 4. The rune system is
+completely new. Don't trust AI editors trained before October 2024.
+
+Key differences from Svelte 4:
+  ✓ Explicit reactivity ($state instead of implicit let)
+  ✓ Universal reactivity (works in .svelte.ts files)
+  ✓ New event binding (onclick not on:click)
+  ✓ No more createEventDispatcher (use prop functions)
+  ✓ .svelte.ts for shared state (replaces stores)
+  ✓ Better performance (signals-based)
+
+Get the official docs for more technical details:
+  https://svelte.dev
+  https://kit.svelte.dev
+
+
+### Chapter: Anti-Patterns and Common Pitfalls in Svelte 5
+
+Transitioning to Svelte 5 is not just a syntax change, but a mental shift. Here are the most common mistakes that can degrade performance or introduce hard-to-trace bugs in new projects.
+
+#### 1. Overusing $effect for Data Transformations (Derived Logic)
+Anti-pattern: Using $effect to update a state when another state changes. This is reminiscent of React's useEffect and is a poor practice in Svelte 5.
+
+```typescript
+// ❌ WRONG: Creates a "render -> effect -> update -> render" cycle
+let count = $state(0);
+let doubled = $state(0);
+
+$effect(() => {
+    doubled = count * 2; 
+});
+```
+
+Why it's dangerous: It's inefficient, makes code harder to follow, and can trigger unintended infinite loops.
+The Solution: Always use $derived. It is lazy (only recalculates when the value is requested in the UI) and synchronous.
+
+```typescript
+// ✅ CORRECT
+let count = $state(0);
+let doubled = $derived(count * 2);
+```
+
+#### 2. Destructuring that Breaks Reactivity (Proxy Loss)
+Anti-pattern: Destructuring properties from complex states or props at the beginning of a component.
+
+```typescript
+// ❌ WRONG: You lose the link to the Proxy
+let { user } = $props<{ user: User }>();
+const name = user.name; // 'name' is now a static string; it won't update in the UI
+```
+
+Why it's dangerous: Svelte 5 uses Proxy objects to track changes. When you extract a primitive value (string, number, boolean) into a simple local variable, you "freeze" that value at that point in time.
+The Solution: Always access properties directly (user.name) or, if you need a shortcut, use $derived.
+
+```typescript
+// ✅ CORRECT
+const name = $derived(user.name);
+```
+
+#### 3. Manual Prop Synchronization (Inverse Prop Drilling)
+Anti-pattern: Copying a value from props into $state to make it locally editable without using $bindable.
+
+```typescript
+// ❌ WRONG
+let { value } = $props();
+let localValue = $state(value); // localValue will not update if 'value' changes in the parent
+```
+
+Why it's dangerous: The component becomes "deaf" to external changes after the initial mount.
+The Solution: Use the $bindable() rune to explicitly allow two-way data flow.
+
+#### 4. "Burying" Business Logic in $effect
+Anti-pattern: Placing API calls or complex business logic directly inside $effect without strict control conditions.
+
+Why it's dangerous: Effects run on the client side and can be triggered by state changes you might not expect, leading to dozens of redundant API calls.
+The Solution: Use event handlers (e.g., onclick, onsubmit) for user-triggered actions and reserve $effect strictly for synchronization with non-Svelte elements (e.g., Google Maps, Chart.js, or manual DOM manipulations).
+
+#### 5. Using $state for Static Objects or Class Instances
+Anti-pattern: Wrapping instances of external libraries in $state.
+
+```typescript
+// ❌ WRONG: Unnecessary and potentially crash-inducing
+let mapInstance = $state(new ExternalLibraryMap()); 
+```
+
+Why it's dangerous: Svelte will attempt to recursively turn the entire object (which might have thousands of internal properties) into a Proxy. This consumes excessive memory and can corrupt the internal logic of the external library.
+The Solution: If the object doesn't need to trigger re-renders of the entire component, use a simple let or const.
+
+
+
+# ==============================================================================
+PART 9: TYPESCRIPT + SVELTE 5 / SVELTEKIT (April 2026)
+Official-style extension for AI coding editors
+
+# 🎯 WHY TYPESCRIPT WITH SVELTE 5?
+
+TypeScript adds:
+✓ Safer refactors
+✓ Better autocomplete in AI editors + IDEs
+✓ Stronger component contracts
+✓ Typed load/actions in SvelteKit
+✓ Safer server/client boundaries
+✓ Fewer runtime bugs
+
+Svelte 5 + TypeScript is an excellent combo because runes are explicit.
+That means types are usually easier to infer than in older Svelte 4 code.
+
+KEY PRINCIPLE:
+Use TypeScript for contracts and safety.
+Use runes for reactivity.
+Do NOT mix Svelte 4 patterns with TypeScript and assume it is modern Svelte 5.
+
+# 🚨 CRITICAL WARNING FOR AI EDITORS (TS EDITION)
+
+Copilot / Claude / Cline will often generate outdated or half-correct TS + Svelte code.
+Check these immediately:
+
+❌ WRONG:
+<script lang="ts">
+  export let name: string;
+</script>
+
+✅ CORRECT SVELTE 5:
+<script lang="ts">
+  type Props = {
+    name: string;
+  };
+
+  let { name }: Props = $props();
+</script>
+
+❌ WRONG:
+<script lang="ts">
+  import { writable } from 'svelte/store';
+  export const count = writable<number>(0);
+</script>
+
+✅ BETTER SVELTE 5 PATTERN:
+// counter.svelte.ts
+export function createCounter(initial = 0) {
+  let count = $state(initial);
+  let doubled = $derived(count * 2);
+
+  return {
+    get count() {
+      return count;
+    },
+    get doubled() {
+      return doubled;
+    },
+    increment: () => count++,
+    reset: () => (count = initial)
+  };
+}
+
+❌ WRONG:
+<script lang="ts">
+  import { createEventDispatcher } from 'svelte';
+  const dispatch = createEventDispatcher<{ change: string }>();
+</script>
+
+✅ CORRECT SVELTE 5:
+<script lang="ts">
+  type Props = {
+    onchange?: (value: string) => void;
+  };
+
+  let { onchange }: Props = $props();
+</script>
+
+❌ WRONG:
+// state.ts
+let count = $state(0);
+
+✅ CORRECT:
+// state.svelte.ts
+let count = $state(0);
+
+IMPORTANT:
+Runes in plain TS/JS modules require `.svelte.ts` or `.svelte.js`.
+If you use `$state`, `$derived`, or `$effect` in a shared module, DO NOT put it in a plain `.ts` file.
+
+# 🛠️ PROJECT SETUP
+
+Most modern SvelteKit templates already include TypeScript support.
+Still, verify these basics:
+
+1. package.json contains TypeScript tooling
+2. tsconfig.json exists
+3. .svelte files that use TS have `<script lang="ts">`
+4. rune-based shared modules use `.svelte.ts`
+
+Typical setup:
+
+npm create svelte@latest my-app
+cd my-app
+npm install
+npm run dev
+
+If TypeScript was not enabled initially, add it:
+
+npx svelte-add@latest typescript
+npm install
+
+Recommended file types:
+
+Button.svelte          -> Svelte component with TS via <script lang="ts">
+counter.svelte.ts      -> Shared reactive rune-based state
+helpers.ts             -> Normal TypeScript utility file (NO runes)
+app.d.ts               -> Global app typings
++page.ts               -> Universal typed load
++page.server.ts        -> Server-only typed load/actions
++server.ts             -> Typed API handlers
+
+RULE OF THUMB:
+If the file contains runes, use `.svelte.ts`.
+If the file is plain utilities/types, use `.ts`.
+
+# 🧩 BASIC COMPONENT TYPING
+
+Use `<script lang="ts">` in Svelte components.
+
+Basic prop typing:
+
+<script lang="ts">
+  type Props = {
+    label?: string;
+    disabled?: boolean;
+    onclick?: () => void;
+  };
+
+  let { label = 'Save', disabled = false, onclick }: Props = $props();
+</script>
+
+<button {disabled} onclick={onclick}>
+  {label}
+</button>
+
+IMPORTANT:
+Type the destructured `$props()` result.
+Do NOT fall back to `export let` just because TypeScript autocomplete suggests it.
+
+Inline typing also works:
+
+<script lang="ts">
+  let { name = 'John', age }: { name?: string; age: number } = $props();
+</script>
+
+Prefer a named `Props` type once props become more than 2-3 fields.
+
+# 🔴 TYPING $state
+
+Inference is usually enough:
+
+let count = $state(0);
+let name = $state('John');
+let open = $state(false);
+
+Use explicit generics when the initial value is ambiguous:
+
+let selectedId = $state<number | null>(null);
+let items = $state<string[]>([]);
+let user = $state<{ id: string; name: string } | null>(null);
+
+Nested objects:
+
+let profile = $state({
+  id: 'u1',
+  name: 'Ada',
+  settings: {
+    theme: 'dark' as 'dark' | 'light'
+  }
+});
+
+profile.settings.theme = 'light';
+
+For large immutable external data:
+
+type BigDataset = {
+  rows: Array<{ id: string; value: number }>;
+};
+
+let dataset = $state.raw<BigDataset>({ rows: [] });
+
+// Mutations inside `dataset.rows` will NOT trigger updates.
+// Reassignment will.
+
+dataset = { rows: [{ id: '1', value: 42 }] };
+
+# 🟢 TYPING $derived
+
+Usually inference is automatic:
+
+let count = $state(0);
+let doubled = $derived(count * 2);
+let isEven = $derived(count % 2 === 0);
+
+Complex derived values:
+
+type Item = {
+  id: string;
+  price: number;
+};
+
+let items = $state<Item[]>([]);
+
+let total = $derived.by(() => {
+  let sum = 0;
+  for (const item of items) {
+    sum += item.price;
+  }
+  return sum;
+});
+
+If you want stricter readability, annotate the variable:
+
+let totalPrice: number = $derived(items.reduce((sum, item) => sum + item.price, 0));
+
+REMEMBER:
+`$derived` values are read-only.
+Do not assign to them.
+
+# 🔵 TYPING $effect
+
+Effects infer dependencies automatically, but TS still helps inside the callback.
+
+let count = $state(0);
+let intervalMs = $state(1000);
+
+$effect(() => {
+  console.log('count is', count);
+});
+
+Cleanup stays normal TypeScript:
+
+$effect(() => {
+  const id = setInterval(() => {
+    console.log('tick');
+  }, intervalMs);
+
+  return () => {
+    clearInterval(id);
+  };
+});
+
+Do NOT put side-effectful async code directly into `$derived`.
+That belongs in `$effect` or SvelteKit load/actions.
+
+# 🧷 TYPING DOM EVENTS
+
+DOM events are a common source of weak TS in Svelte code.
+
+Simple click handler:
+
+<script lang="ts">
+  function handleClick(event: MouseEvent) {
+    console.log(event.clientX, event.clientY);
+  }
+</script>
+
+<button onclick={handleClick}>Click</button>
+
+Input event:
+
+<script lang="ts">
+  let value = $state('');
+
+  function handleInput(event: Event) {
+    value = (event.currentTarget as HTMLInputElement).value;
+  }
+</script>
+
+<input value={value} oninput={handleInput} />
+
+Textarea:
+
+function handleMessageInput(event: Event) {
+  const el = event.currentTarget as HTMLTextAreaElement;
+  console.log(el.value);
+}
+
+Form submit:
+
+function handleSubmit(event: SubmitEvent) {
+  event.preventDefault();
+}
+
+<form onsubmit={handleSubmit}></form>
+
+TIP:
+`event.currentTarget` is usually safer than `event.target` for typing.
+
+# 🧱 TYPING bind:this AND DOM REFERENCES
+
+DOM refs should be typed explicitly:
+
+<script lang="ts">
+  let canvas: HTMLCanvasElement | null = null;
+  let inputEl: HTMLInputElement | null = null;
+</script>
+
+<canvas bind:this={canvas}></canvas>
+<input bind:this={inputEl} />
+
+<button onclick={() => inputEl?.focus()}>
+  Focus input
+</button>
+
+This is one of the easiest TS wins in Svelte.
+
+# 🔁 TYPING BINDABLE PROPS
+
+Bindable props need explicit typing too.
+
+Child component:
+
+<script lang="ts">
+  type Props = {
+    value?: string;
+  };
+
+  let { value = $bindable('') }: Props = $props();
+</script>
+
+<input bind:value={value} />
+
+Parent component:
+
+<script lang="ts">
+  let message = $state('');
+</script>
+
+<TextInput bind:value={message} />
+
+If the prop can be null:
+
+<script lang="ts">
+  type Props = {
+    selectedId?: string | null;
+  };
+
+  let { selectedId = $bindable<string | null>(null) }: Props = $props();
+</script>
+
+# 🧠 TYPING SHARED RUNE STATE (.svelte.ts)
+
+This is the modern Svelte 5 replacement for many store use cases.
+
+// auth.svelte.ts
+export type User = {
+  id: string;
+  email: string;
+  role: 'admin' | 'user';
+};
+
+export function createAuthState() {
+  let user = $state<User | null>(null);
+  let loading = $state(false);
+  let isAuthenticated = $derived(user !== null);
+
+  return {
+    get user() {
+      return user;
+    },
+    get loading() {
+      return loading;
+    },
+    get isAuthenticated() {
+      return isAuthenticated;
+    },
+    login(nextUser: User) {
+      user = nextUser;
+    },
+    logout() {
+      user = null;
+    },
+    setLoading(value: boolean) {
+      loading = value;
+    }
+  };
+}
+
+export const authState = createAuthState();
+
+Use in a component:
+
+<script lang="ts">
+  import { authState } from '$lib/auth.svelte.ts';
+</script>
+
+{#if authState.isAuthenticated}
+  <p>{authState.user?.email}</p>
+{/if}
+
+IMPORTANT:
+Use getters in returned objects so consuming code stays reactive.
+Do not return raw copies of state values if you expect them to stay live.
+
+# 📦 TYPES FOR ARRAYS, MAPS, UNION STATES
+
+Typical UI state patterns:
+
+Type array items clearly:
+
+type Todo = {
+  id: string;
+  text: string;
+  done: boolean;
+};
+
+let todos = $state<Todo[]>([]);
+
+Discriminated unions are excellent for async UI:
+
+type LoadState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: string[] }
+  | { status: 'error'; message: string };
+
+let state = $state<LoadState>({ status: 'idle' });
+
+This pattern is often better than multiple booleans like `loading`, `error`, `data`.
+
+# 🧪 TYPING COMPONENT CALLBACK PROPS
+
+Svelte 5 prefers callback props over `createEventDispatcher`.
+Type them clearly.
+
+<script lang="ts">
+  type User = {
+    id: string;
+    name: string;
+  };
+
+  type Props = {
+    user: User;
+    onselect?: (user: User) => void;
+    ondelete?: (id: string) => Promise<void> | void;
+  };
+
+  let { user, onselect, ondelete }: Props = $props();
+</script>
+
+<button onclick={() => onselect?.(user)}>
+  Select
+</button>
+
+<button onclick={() => ondelete?.(user.id)}>
+  Delete
+</button>
+
+This is easier to type and refactor than event names + payload maps.
+
+# 🧬 ADVANCED: GENERIC COMPONENTS
+
+When building reusable typed components, generics are extremely powerful.
+
+Example pattern:
+
+<script lang="ts" generics="T extends { id: string }">
+  import type { Snippet } from 'svelte';
+
+  type Props = {
+    items: T[];
+    renderItem: Snippet<[T]>;
+    onselect?: (item: T) => void;
+  };
+
+  let { items, renderItem, onselect }: Props = $props();
+</script>
+
+{#each items as item (item.id)}
+  <button onclick={() => onselect?.(item)}>
+    {@render renderItem(item)}
+  </button>
+{/each}
+
+This is a major Svelte 5 + TypeScript superpower.
+
+NOTE:
+For new Svelte 5 code, snippets/render often provide a better typed composition story than legacy slots.
+
+# 🧩 TYPING SNIPPETS / CHILD CONTENT
+
+If you want typed child content in modern Svelte 5, use `Snippet`.
+
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+
+  type Props = {
+    children?: Snippet;
+    header?: Snippet;
+    footer?: Snippet;
+  };
+
+  let { children, header, footer }: Props = $props();
+</script>
+
+<div class="card">
+  {#if header}
+    <header>{@render header()}</header>
+  {/if}
+
+  <section>
+    {#if children}
+      {@render children()}
+    {/if}
+  </section>
+
+  {#if footer}
+    <footer>{@render footer()}</footer>
+  {/if}
+</div>
+
+This is the modern typed alternative to many slot-based APIs.
+
+# 🧾 TYPING SVELTEKIT LOAD FUNCTIONS
+
+Always prefer generated route types from `./$types`.
+This is the official and safest way.
+
+Universal page load:
+
+// +page.ts
+import type { PageLoad } from './$types';
+
+export const load: PageLoad = async ({ fetch, params, url }) => {
+  const response = await fetch(`/api/posts/${params.id}`);
+  const post = await response.json();
+
+  return {
+    post,
+    page: Number(url.searchParams.get('page') ?? '1')
+  };
+};
+
+Server-only page load:
+
+// +page.server.ts
+import { error } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ params, locals }) => {
+  if (!locals.user) {
+    throw error(401, 'Unauthorized');
+  }
+
+  const post = await locals.db.getPost(params.id);
+
+  if (!post) {
+    throw error(404, 'Post not found');
+  }
+
+  return { post };
+};
+
+Layout loads:
+
+import type { LayoutLoad, LayoutServerLoad } from './$types';
+
+export const load: LayoutLoad = async ({ fetch }) => {
+  return {
+    settings: await fetch('/api/settings').then((r) => r.json())
+  };
+};
+
+IMPORTANT:
+Do not invent route types manually if `./$types` already provides them.
+
+# 📝 TYPING FORM ACTIONS
+
+Use the generated `Actions` type.
+
+// +page.server.ts
+import { fail, redirect } from '@sveltejs/kit';
+import type { Actions } from './$types';
+
+export const actions = {
+  login: async ({ request, cookies, locals }) => {
+    const formData = await request.formData();
+    const email = String(formData.get('email') ?? '');
+    const password = String(formData.get('password') ?? '');
+
+    if (!email || !password) {
+      return fail(400, {
+        error: 'Email and password are required',
+        email
+      });
+    }
+
+    const user = await locals.db.verifyUser(email, password);
+
+    if (!user) {
+      return fail(400, {
+        error: 'Invalid credentials',
+        email
+      });
+    }
+
+    cookies.set('session', 'token_here', {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: true
+    });
+
+    throw redirect(303, '/dashboard');
+  }
+} satisfies Actions;
+
+WHY `satisfies Actions` IS GREAT:
+✓ Keeps exact function inference
+✓ Validates action names and return shapes
+✓ Safer than loose object typing
+
+# 🌐 TYPING API ROUTES (+server.ts)
+
+Use `RequestHandler` from generated or official kit types.
+
+// src/routes/api/posts/[id]/+server.ts
+import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+
+export const GET: RequestHandler = async ({ params, locals }) => {
+  const post = await locals.db.getPost(params.id);
+
+  if (!post) {
+    return json({ error: 'Not found' }, { status: 404 });
+  }
+
+  return json(post);
+};
+
+export const DELETE: RequestHandler = async ({ params, locals }) => {
+  await locals.db.deletePost(params.id);
+  return new Response(null, { status: 204 });
+};
+
+Prefer `+server.ts` over `+server.js` when your route is TypeScript.
+
+# 🪪 GLOBAL APP TYPES (app.d.ts)
+
+Use `src/app.d.ts` to type server locals, page data extensions, and platform-specific fields.
+
+Example:
+
+// src/app.d.ts
+import type { User } from '$lib/auth.svelte';
+
+declare global {
+  namespace App {
+    interface Locals {
+      user: User | null;
+      db: {
+        getPost(id: string): Promise<{ id: string; title: string } | null>;
+        deletePost(id: string): Promise<void>;
+        verifyUser(email: string, password: string): Promise<User | null>;
+      };
+    }
+
+    interface PageData {
+      user?: User | null;
+    }
+  }
+}
+
+export {};
+
+This unlocks proper typing in:
+✓ hooks.server.ts
+✓ +page.server.ts
+✓ +layout.server.ts
+✓ +server.ts
+
+# 🪝 TYPING hooks.server.ts
+
+// src/hooks.server.ts
+import type { Handle } from '@sveltejs/kit';
+
+export const handle: Handle = async ({ event, resolve }) => {
+  const session = event.cookies.get('session');
+
+  if (session) {
+    event.locals.user = await event.locals.db.getUserFromSession?.(session) ?? null;
+  } else {
+    event.locals.user = null;
+  }
+
+  return resolve(event);
+};
+
+Type `App.Locals` first in `app.d.ts`, then hooks and server loads become much cleaner.
+
+# 🔐 TYPES + ENVIRONMENT VARIABLES
+
+Prefer SvelteKit env modules instead of untyped `process.env` access.
+
+Public:
+
+import { PUBLIC_API_URL } from '$env/static/public';
+
+Private:
+
+import { SECRET_DB_PASSWORD } from '$env/static/private';
+
+Benefits:
+✓ Better tree-shaking
+✓ Better type safety
+✓ Correct server/client separation
+
+Do NOT expose secrets by importing private env modules into client code.
+
+# 🧼 TYPES FOR UTILITIES VS REACTIVE MODULES
+
+Use normal `.ts` for pure helpers:
+
+// currency.ts
+export function formatCurrency(value: number, currency = 'USD') {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency
+  }).format(value);
+}
+
+Use `.svelte.ts` only when runes are involved:
+
+// cart.svelte.ts
+export function createCart() {
+  let items = $state<Array<{ id: string; qty: number }>>([]);
+  let count = $derived(items.reduce((sum, item) => sum + item.qty, 0));
+
+  return {
+    get items() {
+      return items;
+    },
+    get count() {
+      return count;
+    },
+    add(id: string) {
+      items.push({ id, qty: 1 });
+    }
+  };
+}
+
+This distinction matters A LOT.
+AI editors often put rune code into plain `.ts` files.
+That is wrong.
+
+# 🧭 TYPES FOR PAGE DATA IN COMPONENTS
+
+In route components, use the generated data types rather than loose `any`.
+
+// +page.svelte
+<script lang="ts">
+  import type { PageProps } from './$types';
+
+  let { data, form }: PageProps = $props();
+</script>
+
+<h1>{data.post.title}</h1>
+
+For layouts:
+
+<script lang="ts">
+  import type { LayoutProps } from './$types';
+
+  let { data, children }: LayoutProps = $props();
+</script>
+
+This is much better than older untyped `export let data` patterns.
+
+# ⚠️ COMMON TS + SVELTE 5 MISTAKES
+
+❌ WRONG: Using `any` for props because `$props()` feels unfamiliar
+✅ CORRECT: Define `type Props = { ... }` and destructure it
+
+❌ WRONG: Putting runes in `state.ts`
+✅ CORRECT: Put rune-based modules in `state.svelte.ts`
+
+❌ WRONG: Typing event callbacks with vague `Function`
+✅ CORRECT: Use exact signatures like `(id: string) => void`
+
+❌ WRONG: Reading form data without narrowing
+✅ CORRECT: Convert explicitly with `String(...)`, `Number(...)`, or schema validation
+
+❌ WRONG: Typing API responses as `any`
+✅ CORRECT: Define response types or use shared domain types
+
+❌ WRONG: Using slots for everything without considering typed snippets
+✅ BETTER: For new Svelte 5 APIs, consider `Snippet` + `{@render ...}`
+
+❌ WRONG: Falling back to stores for every shared state need
+✅ BETTER: Reach first for `.svelte.ts` rune modules
+
+# ✅ RECOMMENDED PATTERNS
+
+1. Small components
+- Use `type Props = { ... }`
+- Destructure with `$props()`
+- Let inference handle most state/derived typing
+
+2. Shared app state
+- Use `.svelte.ts`
+- Export factories or singleton state objects
+- Return getters for reactive values
+
+3. SvelteKit routes
+- Use `./$types`
+- Use `satisfies Actions`
+- Type handlers with `RequestHandler`
+
+4. Server auth/data
+- Define `App.Locals` in `app.d.ts`
+- Keep env/secrets server-only
+- Reuse shared domain types when practical
+
+5. Complex UI state
+- Prefer unions over many booleans
+- Type callback props exactly
+- Use snippets for typed composition
+
+# 📌 QUICK REFERENCE SHEET (TS EDITION)
+
+COMPONENT:
+<script lang="ts">
+  type Props = { title: string; onclick?: () => void };
+  let { title, onclick }: Props = $props();
+</script>
+
+STATE:
+let count = $state(0);
+let user = $state<User | null>(null);
+
+DERIVED:
+let doubled = $derived(count * 2);
+
+SHARED RUNE MODULE:
+// something.svelte.ts
+let state = $state(0);
+
+ROUTE TYPES:
+import type { PageLoad, PageServerLoad, Actions, RequestHandler } from './$types';
+
+PAGE/LAYOUT PROPS:
+import type { PageProps, LayoutProps } from './$types';
+
+SNIPPETS:
+import type { Snippet } from 'svelte';
+
+APP GLOBAL TYPES:
+// src/app.d.ts -> namespace App { interface Locals { ... } }
+
+ENV:
+import { PUBLIC_API_URL } from '$env/static/public';
+import { SECRET_DB_PASSWORD } from '$env/static/private';
+
+# 🧨 FINAL WARNING FOR AI EDITORS
+
+If an AI suggests TypeScript + Svelte code, check these 6 things immediately:
+
+1. Did it use `export let`? -> Probably outdated Svelte 4 style
+2. Did it use `createEventDispatcher`? -> Usually outdated for Svelte 5
+3. Did it put runes inside plain `.ts`? -> Wrong, should be `.svelte.ts`
+4. Did it ignore `./$types` in SvelteKit routes? -> Weak typing
+5. Did it use vague `any` / `Function` types everywhere? -> Low-quality TS
+6. Did it skip `lang="ts"`? -> Not actually TypeScript component code
+
+BEST MENTAL MODEL:
+
+Svelte 5 gives you the reactive model.
+TypeScript gives you the contracts.
+SvelteKit gives you the full-stack typed boundaries.
+
+Use all three together.
+
+Happy coding! 🚀

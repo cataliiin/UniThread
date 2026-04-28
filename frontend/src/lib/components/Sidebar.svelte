@@ -1,8 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { user } from '$lib/stores/user.svelte';
+	import { toasts } from '$lib/stores/toast.svelte';
 
 	let avatarUrl = $derived(user.avatarUrl);
+
+	interface NavLink {
+		href: string;
+		label: string;
+		icon: string;
+	}
 
 	const navLinks = [
 		{
@@ -31,7 +38,29 @@
 			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`
 		}
 	];
+
+	function handleLogout() {
+		toasts.show('Logged out successfully', 'info');
+		// In a real app, we would also clear tokens and redirect
+	}
 </script>
+
+{#snippet navLink(link: NavLink)}
+	<a
+		href={link.href}
+		class="group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200
+		{$page.url.pathname === link.href
+			? 'bg-indigo-600/10 font-semibold text-indigo-400'
+			: 'text-slate-400 hover:bg-slate-800 hover:text-white'}"
+	>
+		<span
+			class="flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+		>
+			{@html link.icon}
+		</span>
+		<span class="text-sm tracking-wide">{link.label}</span>
+	</a>
+{/snippet}
 
 <aside
 	class="hidden h-full w-72 flex-col border-r border-slate-800 bg-slate-950 transition-all duration-300 lg:flex"
@@ -60,20 +89,7 @@
 	<!-- Navigation -->
 	<nav class="flex-1 space-y-1 overflow-y-auto px-4 py-6">
 		{#each navLinks as link}
-			<a
-				href={link.href}
-				class="group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200
-				{$page.url.pathname === link.href
-					? 'bg-indigo-600/10 font-semibold text-indigo-400'
-					: 'text-slate-400 hover:bg-slate-800 hover:text-white'}"
-			>
-				<span
-					class="flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
-				>
-					{@html link.icon}
-				</span>
-				<span class="text-sm tracking-wide">{link.label}</span>
-			</a>
+			{@render navLink(link)}
 		{/each}
 	</nav>
 
@@ -84,10 +100,14 @@
 		>
 			<a href="/profile" class="flex items-center gap-3">
 				<div
-					class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-slate-400 shadow-sm overflow-hidden"
+					class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-700 bg-slate-800 text-slate-400 shadow-sm"
 				>
 					{#if avatarUrl}
-						<img src={avatarUrl} alt="Avatar" class="w-full h-full object-cover [transform:translateZ(0)] [backface-visibility:hidden]" />
+						<img
+							src={avatarUrl}
+							alt="Avatar"
+							class="h-full w-full [transform:translateZ(0)] object-cover [backface-visibility:hidden]"
+						/>
 					{:else}
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -113,6 +133,7 @@
 				</div>
 			</a>
 			<button
+				onclick={handleLogout}
 				class="rounded-lg p-2 text-slate-500 transition-all duration-200 hover:bg-red-400/10 hover:text-red-400"
 				title="Logout"
 			>

@@ -18,7 +18,7 @@ class ToastState {
 	}
 
 	remove(id: number) {
-		this.messages = this.messages.filter(m => m.id !== id);
+		this.messages = this.messages.filter((m) => m.id !== id);
 	}
 }
 

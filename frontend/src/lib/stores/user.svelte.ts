@@ -6,11 +6,7 @@ class UserState {
 	memberSince = $state('April 2026');
 	avatarInitials = $state('GS');
 	avatarUrl = $state<string | null>(null);
-
-	// Derived property for the avatar source
-	get avatarSource() {
-		return this.avatarUrl;
-	}
+	avatarSource = $derived(this.avatarUrl);
 }
 
 export const user = new UserState();
