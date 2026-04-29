@@ -53,7 +53,7 @@
 				return;
 			}
 
-			await user.register(email, username);
+			await user.register(email, username, password);
 
 			toasts.show('Registration successful! Logging you in...', 'success');
 			setTimeout(() => {

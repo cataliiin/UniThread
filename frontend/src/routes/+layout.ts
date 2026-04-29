@@ -1,17 +1,31 @@
 import { redirect } from '@sveltejs/kit';
+import { browser } from '$app/environment';
 import type { LayoutLoad } from './$types';
 
 export const load: LayoutLoad = async ({ url }) => {
-	// Set to true to access main page for development purposes
-	const isAuthenticated = true;
-	const isLoginPage = url.pathname === '/login';
+	let isAuthenticated = false;
 
-	if (!isAuthenticated && !isLoginPage) {
-		throw redirect(307, '/login');
-	}
+	if (browser) {
+		try {
+			const saved = localStorage.getItem('currentUser');
+			if (saved) {
+				const data = JSON.parse(saved);
+				isAuthenticated = data.isAuthenticated === true;
+			}
+		} catch {
+			isAuthenticated = false;
+		}
 
-	if (isAuthenticated && isLoginPage) {
-		throw redirect(307, '/');
+		// Allow both login and register without being authenticated
+		const isAuthPage = url.pathname === '/login' || url.pathname === '/register';
+
+		if (!isAuthenticated && !isAuthPage) {
+			throw redirect(307, '/login');
+		}
+
+		if (isAuthenticated && isAuthPage) {
+			throw redirect(307, '/');
+		}
 	}
 
 	return {

@@ -51,7 +51,70 @@ class UserState {
 		return true;
 	}
 
-	async register(email: string, username: string): Promise<void> {
+	async login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+		// Simulate network delay
+		await new Promise((resolve) => setTimeout(resolve, 800));
+
+		if (typeof window === 'undefined') return { success: false, error: 'Not available server-side' };
+
+		// Check if this email was registered
+		const storedEmail = localStorage.getItem('email_' + email);
+		if (storedEmail !== email) {
+			return { success: false, error: 'No account found with this email address.' };
+		}
+
+		// Check password
+		const storedPassword = localStorage.getItem('password_' + email);
+		if (storedPassword !== password) {
+			return { success: false, error: 'Incorrect password. Please try again.' };
+		}
+
+		// Load user profile
+		const profileRaw = localStorage.getItem('profile_' + email);
+		if (!profileRaw) {
+			return { success: false, error: 'User profile not found.' };
+		}
+
+		const profile = JSON.parse(profileRaw);
+		this.name = profile.name || '';
+		this.username = profile.username || '';
+		this.email = profile.email || '';
+		this.university = profile.university || '';
+		this.memberSince = profile.memberSince || '';
+		this.avatarInitials = profile.avatarInitials || '';
+		this.avatarUrl = profile.avatarUrl || null;
+		this.isAuthenticated = true;
+
+		// Persist session
+		localStorage.setItem('currentUser', JSON.stringify({
+			name: this.name,
+			username: this.username,
+			email: this.email,
+			university: this.university,
+			memberSince: this.memberSince,
+			avatarInitials: this.avatarInitials,
+			avatarUrl: this.avatarUrl,
+			isAuthenticated: true
+		}));
+
+		return { success: true };
+	}
+
+	logout() {
+		this.name = '';
+		this.username = '';
+		this.email = '';
+		this.university = '';
+		this.memberSince = '';
+		this.avatarInitials = '';
+		this.avatarUrl = null;
+		this.isAuthenticated = false;
+		if (typeof window !== 'undefined') {
+			localStorage.removeItem('currentUser');
+		}
+	}
+
+	async register(email: string, username: string, password: string): Promise<void> {
 		// Simulate API call
 		await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -70,16 +133,25 @@ class UserState {
 			localStorage.setItem('username_' + username, username);
 			localStorage.setItem('email_' + email, email);
 
-			// Save current user session
-			localStorage.setItem('currentUser', JSON.stringify({
+			// Save password for login
+			localStorage.setItem('password_' + email, password);
+
+			// Save full profile for login retrieval
+			const profile = {
 				name: this.name,
 				username: this.username,
 				email: this.email,
 				university: this.university,
 				memberSince: this.memberSince,
 				avatarInitials: this.avatarInitials,
-				avatarUrl: this.avatarUrl,
-				isAuthenticated: this.isAuthenticated
+				avatarUrl: this.avatarUrl
+			};
+			localStorage.setItem('profile_' + email, JSON.stringify(profile));
+
+			// Save current user session
+			localStorage.setItem('currentUser', JSON.stringify({
+				...profile,
+				isAuthenticated: true
 			}));
 		}
 	}

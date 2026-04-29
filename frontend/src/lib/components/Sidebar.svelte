@@ -41,9 +41,12 @@
 		}
 	];
 
+	import { goto } from '$app/navigation';
+
 	function handleLogout() {
+		user.logout();
 		toasts.show('Logged out successfully', 'info');
-		// In a real app, we would also clear tokens and redirect
+		goto('/login');
 	}
 </script>
 
