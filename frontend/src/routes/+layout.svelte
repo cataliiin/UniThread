@@ -4,6 +4,7 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import MobileNav from '$lib/components/MobileNav.svelte';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
+	import logo from '$lib/assets/UniThread_Logo.svg';
 
 	let { children } = $props();
 
@@ -19,6 +20,20 @@
 
 	<!-- Content Area -->
 	<div class="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+		<!-- Mobile Header -->
+		{#if !isAuthPage}
+			<header
+				class="flex items-center gap-3 border-b border-slate-800/50 bg-slate-950 p-4 lg:hidden"
+			>
+				<div
+					class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-white p-0.5 shadow-lg shadow-indigo-500/20"
+				>
+					<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
+				</div>
+				<span class="text-lg font-bold tracking-tight text-white">UniThread</span>
+			</header>
+		{/if}
+
 		<!-- Main Content -->
 		<main class="flex-1 overflow-y-auto {isAuthPage ? '' : 'pb-20 lg:pb-0'}">
 			{@render children()}

@@ -3,6 +3,7 @@
 	import { user } from '$lib/stores/user.svelte';
 	import { toasts } from '$lib/stores/toast.svelte';
 	import UserAvatar from './UserAvatar.svelte';
+	import logo from '$lib/assets/UniThread_Logo.svg';
 
 	let avatarUrl = $derived(user.avatarUrl);
 
@@ -69,20 +70,9 @@
 	<!-- Header -->
 	<div class="flex items-center gap-4 border-b border-slate-800/50 p-6">
 		<div
-			class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 shadow-lg shadow-indigo-500/20"
+			class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-lg shadow-indigo-500/20"
 		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="24"
-				height="24"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				class="text-white"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg
-			>
+			<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
 		</div>
 		<span class="text-xl font-bold tracking-tight text-white">UniThread</span>
 	</div>

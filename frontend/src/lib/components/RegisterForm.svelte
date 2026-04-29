@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { toasts } from '$lib/stores/toast.svelte';
 	import { user } from '$lib/stores/user.svelte';
+	import logo from '$lib/assets/UniThread_Logo.svg';
 
 	let email = $state('');
 	let username = $state('');
@@ -68,20 +69,9 @@
 
 <div class="mb-8 flex flex-col items-center">
 	<div
-		class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-500/20"
+		class="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-lg shadow-indigo-500/20"
 	>
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="32"
-			height="32"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			class="text-white"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg
-		>
+		<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
 	</div>
 	<h1 class="text-2xl font-bold text-white">Create UniThread Account</h1>
 	<p class="text-slate-400">Join the community</p>
