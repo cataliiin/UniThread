@@ -11,27 +11,52 @@
 	let showPassword = $state(false);
 	let showConfirmPassword = $state(false);
 	let isLoading = $state(false);
+	let touched = $state({ email: false, username: false, password: false, confirmPassword: false });
 
-	async function handleSubmit(event: Event) {
-		event.preventDefault();
+	const VALID_DOMAIN = '@student.unitbv.ro';
 
-		if (!email || !username || !password || !confirmPassword) {
-			toasts.show('Please fill in all fields', 'error');
-			return;
-		}
+	const emailError = $derived.by(() => {
+		if (!touched.email) return '';
+		if (!email) return 'Email is required.';
+		if (!email.endsWith(VALID_DOMAIN))
+			return `Must be a ${VALID_DOMAIN} address.`;
+		return '';
+	});
 
-		if (!email.endsWith('@student.unitbv.ro') && !email.endsWith('@unitbv.ro')) {
-			toasts.show('Email must be a student or staff email from unitbv.ro', 'error');
-			return;
-		}
+	const usernameError = $derived.by(() => {
+		if (!touched.username) return '';
+		if (!username) return 'Username is required.';
+		if (username.length < 3) return 'Username must be at least 3 characters.';
+		return '';
+	});
 
-		if (password.length < 8) {
-			toasts.show('Password must be at least 8 characters long', 'error');
-			return;
-		}
+	const passwordError = $derived.by(() => {
+		if (!touched.password) return '';
+		if (!password) return 'Password is required.';
+		if (password.length < 8) return 'Password must be at least 8 characters.';
+		return '';
+	});
 
-		if (password !== confirmPassword) {
-			toasts.show('Passwords do not match', 'error');
+	const confirmPasswordError = $derived.by(() => {
+		if (!touched.confirmPassword) return '';
+		if (confirmPassword !== password) return 'Passwords do not match.';
+		return '';
+	});
+
+	const isFormValid = $derived(
+		!emailError && !usernameError && !passwordError && !confirmPasswordError &&
+		!!email && !!username && !!password && !!confirmPassword
+	);
+
+	async function handleSubmit(e: Event) {
+		e.preventDefault();
+		touched.email = true;
+		touched.username = true;
+		touched.password = true;
+		touched.confirmPassword = true;
+
+		if (!isFormValid) {
+			toasts.show('Please fix the errors before submitting.', 'error');
 			return;
 		}
 
@@ -77,16 +102,26 @@
 	<p class="text-slate-400">Join the community</p>
 </div>
 
-<form class="space-y-4" onsubmit={handleSubmit}>
+<form class="space-y-4" onsubmit={handleSubmit} novalidate>
 	<div>
 		<label for="email" class="mb-1 block text-sm font-medium text-slate-300">Email</label>
 		<input
 			type="email"
 			id="email"
 			bind:value={email}
-			class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-indigo-500"
+			onblur={() => (touched.email = true)}
+			class="w-full rounded-xl border px-4 py-3 text-white transition-all outline-none focus:ring-2 focus:ring-indigo-500
+			{emailError
+				? 'border-red-500 bg-red-950/40 focus:border-transparent'
+				: 'border-slate-700 bg-slate-800 focus:border-transparent'}"
 			placeholder="name.surname@student.unitbv.ro"
 		/>
+		{#if emailError}
+			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+				{emailError}
+			</p>
+		{/if}
 	</div>
 
 	<div>
@@ -95,9 +130,19 @@
 			type="text"
 			id="username"
 			bind:value={username}
-			class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-indigo-500"
+			onblur={() => (touched.username = true)}
+			class="w-full rounded-xl border px-4 py-3 text-white transition-all outline-none focus:ring-2 focus:ring-indigo-500
+			{usernameError
+				? 'border-red-500 bg-red-950/40 focus:border-transparent'
+				: 'border-slate-700 bg-slate-800 focus:border-transparent'}"
 			placeholder="Choose a username"
 		/>
+		{#if usernameError}
+			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+				{usernameError}
+			</p>
+		{/if}
 	</div>
 
 	<div>
@@ -107,7 +152,11 @@
 				type={showPassword ? 'text' : 'password'}
 				id="password"
 				bind:value={password}
-				class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-indigo-500"
+				onblur={() => (touched.password = true)}
+				class="w-full rounded-xl border px-4 py-3 text-white transition-all outline-none focus:ring-2 focus:ring-indigo-500
+				{passwordError
+					? 'border-red-500 bg-red-950/40 focus:border-transparent'
+					: 'border-slate-700 bg-slate-800 focus:border-transparent'}"
 				placeholder="Password must be at least 8 characters"
 			/>
 			<button
@@ -148,6 +197,12 @@
 				{/if}
 			</button>
 		</div>
+		{#if passwordError}
+			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+				{passwordError}
+			</p>
+		{/if}
 	</div>
 
 	<div>
@@ -159,7 +214,11 @@
 				type={showConfirmPassword ? 'text' : 'password'}
 				id="confirmPassword"
 				bind:value={confirmPassword}
-				class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-indigo-500"
+				onblur={() => (touched.confirmPassword = true)}
+				class="w-full rounded-xl border px-4 py-3 text-white transition-all outline-none focus:ring-2 focus:ring-indigo-500
+				{confirmPasswordError
+					? 'border-red-500 bg-red-950/40 focus:border-transparent'
+					: 'border-slate-700 bg-slate-800 focus:border-transparent'}"
 				placeholder="Passwords must match"
 			/>
 			<button
@@ -200,6 +259,12 @@
 				{/if}
 			</button>
 		</div>
+		{#if confirmPasswordError}
+			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+				{confirmPasswordError}
+			</p>
+		{/if}
 	</div>
 
 	<button

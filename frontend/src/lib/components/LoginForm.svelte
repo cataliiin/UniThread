@@ -9,13 +9,13 @@
 	let isSubmitting = $state(false);
 	let touched = $state({ email: false, password: false });
 
-	const VALID_DOMAINS = ['@student.unitbv.ro', '@unitbv.ro'];
+	const VALID_DOMAIN = '@student.unitbv.ro';
 
 	const emailError = $derived.by(() => {
 		if (!touched.email) return '';
 		if (!email) return 'Email is required.';
-		if (!VALID_DOMAINS.some((d) => email.endsWith(d)))
-			return 'Must be a @student.unitbv.ro or @unitbv.ro address.';
+		if (!email.endsWith(VALID_DOMAIN))
+			return `Must be a ${VALID_DOMAIN} address.`;
 		return '';
 	});
 
@@ -30,7 +30,6 @@
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
-
 		touched.email = true;
 		touched.password = true;
 

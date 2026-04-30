@@ -3,6 +3,7 @@ import { browser } from '$app/environment';
 import type { LayoutLoad } from './$types';
 
 export const load: LayoutLoad = async ({ url }) => {
+	// Change this flag to true for main page development purposes
 	let isAuthenticated = false;
 
 	if (browser) {
