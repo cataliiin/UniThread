@@ -5,44 +5,53 @@ export interface ToastMessage {
 	duration: number;
 }
 
-class ToastState {
-	messages = $state<ToastMessage[]>([]);
-	private nextId = 0;
+function createToastState() {
+	let messages = $state<ToastMessage[]>([]);
+	let nextId = 0;
 
-	show(message: string, type: ToastMessage['type'] = 'success', duration = 4000) {
-		const id = this.nextId++;
-		this.messages.push({ id, message, type, duration });
+	function show(message: string, type: ToastMessage['type'] = 'success', duration = 4000) {
+		const id = nextId++;
+		messages.push({ id, message, type, duration });
 
 		setTimeout(() => {
-			this.remove(id);
+			remove(id);
 		}, duration);
 
 		return id;
 	}
 
-	remove(id: number) {
-		this.messages = this.messages.filter((m) => m.id !== id);
+	function remove(id: number) {
+		messages = messages.filter((m) => m.id !== id);
 	}
 
-	// Helper functions
-	success(message: string, duration = 4000) {
-		return this.show(message, 'success', duration);
+	function success(message: string, duration = 4000) {
+		return show(message, 'success', duration);
 	}
 
-	error(message: string, duration = 4000) {
-		return this.show(message, 'error', duration);
+	function error(message: string, duration = 4000) {
+		return show(message, 'error', duration);
 	}
 
-	warning(message: string, duration = 4000) {
-		return this.show(message, 'warning', duration);
+	function warning(message: string, duration = 4000) {
+		return show(message, 'warning', duration);
 	}
 
-	info(message: string, duration = 4000) {
-		return this.show(message, 'info', duration);
+	function info(message: string, duration = 4000) {
+		return show(message, 'info', duration);
 	}
+
+	return {
+		get messages() { return messages; },
+		show,
+		remove,
+		success,
+		error,
+		warning,
+		info
+	};
 }
 
-export const toasts = new ToastState();
+export const toasts = createToastState();
 
 // Export helper functions for convenience
 export const toast = {
