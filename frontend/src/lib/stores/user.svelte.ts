@@ -1,5 +1,6 @@
 function createUserState() {
 	let name = $state('');
+	let surname = $state('');
 	let username = $state('');
 	let email = $state('');
 	let university = $state('');
@@ -15,6 +16,7 @@ function createUserState() {
 			try {
 				const data = JSON.parse(saved);
 				name = data.name || '';
+				surname = data.surname || '';
 				username = data.username || '';
 				email = data.email || '';
 				university = data.university || '';
@@ -29,6 +31,14 @@ function createUserState() {
 	}
 
 	let avatarSource = $derived(avatarUrl);
+
+	function updateProfileStorage() {
+		if (typeof window !== 'undefined' && isAuthenticated) {
+			const profile = { name, surname, username, email, university, memberSince, avatarInitials, avatarUrl };
+			localStorage.setItem('profile_' + email, JSON.stringify(profile));
+			localStorage.setItem('currentUser', JSON.stringify({ ...profile, isAuthenticated: true }));
+		}
+	}
 
 	async function checkUsername(usernameParam: string): Promise<boolean> {
 		await new Promise((resolve) => setTimeout(resolve, 500));
@@ -46,14 +56,10 @@ function createUserState() {
 		return true;
 	}
 
-	async function login(
-		emailParam: string,
-		password: string
-	): Promise<{ success: boolean; error?: string }> {
+	async function login(emailParam: string, password: string): Promise<{ success: boolean; error?: string }> {
 		await new Promise((resolve) => setTimeout(resolve, 800));
 
-		if (typeof window === 'undefined')
-			return { success: false, error: 'Not available server-side' };
+		if (typeof window === 'undefined') return { success: false, error: 'Not available server-side' };
 
 		const storedEmail = localStorage.getItem('email_' + emailParam);
 		if (storedEmail !== emailParam) {
@@ -72,33 +78,33 @@ function createUserState() {
 
 		const profile = JSON.parse(profileRaw);
 		name = profile.name || '';
+		surname = profile.surname || '';
 		username = profile.username || '';
-		email = profile.emailParam || '';
+		email = profile.email || '';
 		university = profile.university || '';
 		memberSince = profile.memberSince || '';
 		avatarInitials = profile.avatarInitials || '';
 		avatarUrl = profile.avatarUrl || null;
 		isAuthenticated = true;
 
-		localStorage.setItem(
-			'currentUser',
-			JSON.stringify({
-				name,
-				username,
-				email,
-				university,
-				memberSince,
-				avatarInitials,
-				avatarUrl,
-				isAuthenticated: true
-			})
-		);
+		localStorage.setItem('currentUser', JSON.stringify({
+			name,
+			surname,
+			username,
+			email,
+			university,
+			memberSince,
+			avatarInitials,
+			avatarUrl,
+			isAuthenticated: true
+		}));
 
 		return { success: true };
 	}
 
 	function logout() {
 		name = '';
+		surname = '';
 		username = '';
 		email = '';
 		university = '';
@@ -111,17 +117,17 @@ function createUserState() {
 		}
 	}
 
-	async function register(
-		emailParam: string,
-		usernameParam: string,
-		password: string
-	): Promise<void> {
+	async function register(emailParam: string, usernameParam: string, password: string,
+		nameParam: string, surnameParam: string): Promise<void> {
+
 		await new Promise((resolve) => setTimeout(resolve, 1500));
 
 		email = emailParam;
 		username = usernameParam;
-		name = usernameParam;
+		name = nameParam;
+		surname = surnameParam;
 		university = 'Transilvania University of Brașov';
+
 
 		const date = new Date();
 		memberSince = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
@@ -135,6 +141,7 @@ function createUserState() {
 
 			const profile = {
 				name,
+				surname,
 				username,
 				email,
 				university,
@@ -144,44 +151,32 @@ function createUserState() {
 			};
 			localStorage.setItem('profile_' + emailParam, JSON.stringify(profile));
 
-			localStorage.setItem(
-				'currentUser',
-				JSON.stringify({
-					...profile,
-					isAuthenticated: true
-				})
-			);
+			localStorage.setItem('currentUser', JSON.stringify({
+				...profile,
+				isAuthenticated: true
+			}));
 		}
 	}
 
 	return {
-		get name() {
-			return name;
+		get name() { return name; },
+		get surname() { return surname; },
+		get username() { return username; },
+		set username(val: string) {
+			username = val;
+			updateProfileStorage();
 		},
-		get username() {
-			return username;
+		get email() { return email; },
+		get university() { return university; },
+		get memberSince() { return memberSince; },
+		get avatarInitials() { return avatarInitials; },
+		get avatarUrl() { return avatarUrl; },
+		set avatarUrl(val: string | null) {
+			avatarUrl = val;
+			updateProfileStorage();
 		},
-		get email() {
-			return email;
-		},
-		get university() {
-			return university;
-		},
-		get memberSince() {
-			return memberSince;
-		},
-		get avatarInitials() {
-			return avatarInitials;
-		},
-		get avatarUrl() {
-			return avatarUrl;
-		},
-		get avatarSource() {
-			return avatarSource;
-		},
-		get isAuthenticated() {
-			return isAuthenticated;
-		},
+		get avatarSource() { return avatarSource; },
+		get isAuthenticated() { return isAuthenticated; },
 		checkUsername,
 		checkEmail,
 		login,

@@ -91,6 +91,11 @@
 				>
 					{user.name}
 				</h1>
+				<h1
+					class="m-0 px-2 text-xl leading-tight font-extrabold tracking-tight text-slate-900 sm:text-3xl"
+				>
+					{user.surname}
+				</h1>
 
 				<!-- Inline Username Editing -->
 				<div class="mt-1 flex items-center justify-center gap-2">

@@ -7,11 +7,13 @@
 	let email = $state('');
 	let username = $state('');
 	let password = $state('');
+    let name = $state('');
+    let surname = $state('');
 	let confirmPassword = $state('');
 	let showPassword = $state(false);
 	let showConfirmPassword = $state(false);
 	let isLoading = $state(false);
-	let touched = $state({ email: false, username: false, password: false, confirmPassword: false });
+	let touched = $state({ email: false, username: false, password: false, confirmPassword: false , name: false , surname: false });
 
 	const VALID_DOMAIN = '@student.unitbv.ro';
 
@@ -42,15 +44,21 @@
 		return '';
 	});
 
+    const nameError = $derived.by(() => {
+        if (!touched.name) return '';
+        if (!name) return 'First name is required.';
+        return '';
+    });
+
+    const surnameError = $derived.by(() => {
+        if (!touched.surname) return '';
+        if (!surname) return 'Last name is required.';
+        return '';
+    });
+
 	const isFormValid = $derived(
-		!emailError &&
-			!usernameError &&
-			!passwordError &&
-			!confirmPasswordError &&
-			!!email &&
-			!!username &&
-			!!password &&
-			!!confirmPassword
+		!emailError && !usernameError && !passwordError && !confirmPasswordError && !nameError && !surnameError &&
+		!!email && !!username && !!password && !!confirmPassword && !!name && !!surname
 	);
 
 	async function handleSubmit(e: Event) {
@@ -59,6 +67,8 @@
 		touched.username = true;
 		touched.password = true;
 		touched.confirmPassword = true;
+		touched.name = true;
+		touched.surname = true;
 
 		if (!isFormValid) {
 			toasts.show('Please fix the errors before submitting.', 'error');
@@ -83,7 +93,7 @@
 				return;
 			}
 
-			await user.register(email, username, password);
+			await user.register(email, username, password, name, surname);
 
 			toasts.show('Registration successful! Logging you in...', 'success');
 			setTimeout(() => {
@@ -143,7 +153,47 @@
 			</p>
 		{/if}
 	</div>
-
+<div>
+        <label for="name" class="mb-1 block text-sm font-medium text-slate-300">First Name</label>
+        <input
+            type="text"
+            id="name"
+            bind:value={name}
+            onblur={() => (touched.name = true)}
+            class="w-full rounded-xl border px-4 py-3 text-white transition-all outline-none focus:ring-2 focus:ring-indigo-500
+            border-slate-700 bg-slate-800 focus:border-transparent
+            {nameError 
+                ? 'border-red-500 bg-red-950/40 focus:border-transparent'
+				: 'border-slate-700 bg-slate-800 focus:border-transparent'}"
+            placeholder="First Name"
+        />
+        {#if nameError}
+            <p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                {nameError}
+            </p>
+        {/if}
+    </div>
+	<div>
+		<label for="surname" class="mb-1 block text-sm font-medium text-slate-300">Last Name</label>
+		<input
+			type="text"
+			id="surname"
+			bind:value={surname}
+			onblur={() => (touched.surname = true)}
+			class="w-full rounded-xl border px-4 py-3 text-white transition-all outline-none focus:ring-2 focus:ring-indigo-500
+			{surnameError
+				? 'border-red-500 bg-red-950/40 focus:border-transparent'
+				: 'border-slate-700 bg-slate-800 focus:border-transparent'}"
+			placeholder="Last Name"
+		/>
+		{#if surnameError}
+			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+				{surnameError}
+			</p>
+		{/if}
+	</div>
 	<div>
 		<label for="username" class="mb-1 block text-sm font-medium text-slate-300">Username</label>
 		<input
