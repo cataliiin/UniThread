@@ -6,6 +6,9 @@
 	import { slide, fade } from 'svelte/transition';
 </script>
 
+<svelte:head>
+	<title>Profile - UniThread</title>
+</svelte:head>
 <div
 	class="flex h-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top_left,#f8fafc_0%,#f1f5f9_100%)] p-4 sm:p-6"
 >
