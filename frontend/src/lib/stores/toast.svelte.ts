@@ -41,7 +41,9 @@ function createToastState() {
 	}
 
 	return {
-		get messages() { return messages; },
+		get messages() {
+			return messages;
+		},
 		show,
 		remove,
 		success,

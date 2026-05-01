@@ -15,7 +15,7 @@ function createPostsState() {
 		loading = true;
 
 		// Simulate API delay
-		await new Promise(resolve => setTimeout(resolve, 800));
+		await new Promise((resolve) => setTimeout(resolve, 800));
 
 		const university = user.university || 'Default University';
 		const newPosts = mockPosts.generate(university, pageSize, posts.length);
@@ -27,7 +27,7 @@ function createPostsState() {
 
 		posts = [...posts, ...newPosts];
 		page++;
-		
+
 		// Limit to 50 posts for demo
 		hasMore = posts.length < 50;
 		loading = false;
@@ -35,7 +35,7 @@ function createPostsState() {
 
 	function setSort(sortOption: SortOption) {
 		if (sort === sortOption) return;
-		
+
 		sort = sortOption;
 		posts = [];
 		page = 0;
@@ -44,7 +44,7 @@ function createPostsState() {
 	}
 
 	function toggleLike(postId: number) {
-		posts = posts.map(post => {
+		posts = posts.map((post) => {
 			if (post.id === postId) {
 				return {
 					...post,
@@ -64,11 +64,21 @@ function createPostsState() {
 	}
 
 	return {
-		get posts() { return posts; },
-		get sort() { return sort; },
-		get page() { return page; },
-		get hasMore() { return hasMore; },
-		get loading() { return loading; },
+		get posts() {
+			return posts;
+		},
+		get sort() {
+			return sort;
+		},
+		get page() {
+			return page;
+		},
+		get hasMore() {
+			return hasMore;
+		},
+		get loading() {
+			return loading;
+		},
 		loadMore,
 		setSort,
 		toggleLike,

@@ -46,10 +46,14 @@ function createUserState() {
 		return true;
 	}
 
-	async function login(emailParam: string, password: string): Promise<{ success: boolean; error?: string }> {
+	async function login(
+		emailParam: string,
+		password: string
+	): Promise<{ success: boolean; error?: string }> {
 		await new Promise((resolve) => setTimeout(resolve, 800));
 
-		if (typeof window === 'undefined') return { success: false, error: 'Not available server-side' };
+		if (typeof window === 'undefined')
+			return { success: false, error: 'Not available server-side' };
 
 		const storedEmail = localStorage.getItem('email_' + emailParam);
 		if (storedEmail !== emailParam) {
@@ -76,16 +80,19 @@ function createUserState() {
 		avatarUrl = profile.avatarUrl || null;
 		isAuthenticated = true;
 
-		localStorage.setItem('currentUser', JSON.stringify({
-			name,
-			username,
-			email,
-			university,
-			memberSince,
-			avatarInitials,
-			avatarUrl,
-			isAuthenticated: true
-		}));
+		localStorage.setItem(
+			'currentUser',
+			JSON.stringify({
+				name,
+				username,
+				email,
+				university,
+				memberSince,
+				avatarInitials,
+				avatarUrl,
+				isAuthenticated: true
+			})
+		);
 
 		return { success: true };
 	}
@@ -104,7 +111,11 @@ function createUserState() {
 		}
 	}
 
-	async function register(emailParam: string, usernameParam: string, password: string): Promise<void> {
+	async function register(
+		emailParam: string,
+		usernameParam: string,
+		password: string
+	): Promise<void> {
 		await new Promise((resolve) => setTimeout(resolve, 1500));
 
 		email = emailParam;
@@ -133,23 +144,44 @@ function createUserState() {
 			};
 			localStorage.setItem('profile_' + emailParam, JSON.stringify(profile));
 
-			localStorage.setItem('currentUser', JSON.stringify({
-				...profile,
-				isAuthenticated: true
-			}));
+			localStorage.setItem(
+				'currentUser',
+				JSON.stringify({
+					...profile,
+					isAuthenticated: true
+				})
+			);
 		}
 	}
 
 	return {
-		get name() { return name; },
-		get username() { return username; },
-		get email() { return email; },
-		get university() { return university; },
-		get memberSince() { return memberSince; },
-		get avatarInitials() { return avatarInitials; },
-		get avatarUrl() { return avatarUrl; },
-		get avatarSource() { return avatarSource; },
-		get isAuthenticated() { return isAuthenticated; },
+		get name() {
+			return name;
+		},
+		get username() {
+			return username;
+		},
+		get email() {
+			return email;
+		},
+		get university() {
+			return university;
+		},
+		get memberSince() {
+			return memberSince;
+		},
+		get avatarInitials() {
+			return avatarInitials;
+		},
+		get avatarUrl() {
+			return avatarUrl;
+		},
+		get avatarSource() {
+			return avatarSource;
+		},
+		get isAuthenticated() {
+			return isAuthenticated;
+		},
 		checkUsername,
 		checkEmail,
 		login,

@@ -14,8 +14,7 @@
 	const emailError = $derived.by(() => {
 		if (!touched.email) return '';
 		if (!email) return 'Email is required.';
-		if (!email.endsWith(VALID_DOMAIN))
-			return `Must be a ${VALID_DOMAIN} address.`;
+		if (!email.endsWith(VALID_DOMAIN)) return `Must be a ${VALID_DOMAIN} address.`;
 		return '';
 	});
 
@@ -84,7 +83,22 @@
 		/>
 		{#if emailError}
 			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-3.5 w-3.5 shrink-0"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line
+						x1="12"
+						x2="12.01"
+						y1="16"
+						y2="16"
+					/></svg
+				>
 				{emailError}
 			</p>
 		{/if}
@@ -92,7 +106,9 @@
 
 	<!-- Password -->
 	<div>
-		<label for="login-password" class="mb-1 block text-sm font-medium text-slate-300">Password</label>
+		<label for="login-password" class="mb-1 block text-sm font-medium text-slate-300"
+			>Password</label
+		>
 		<input
 			type="password"
 			id="login-password"
@@ -106,7 +122,22 @@
 		/>
 		{#if passwordError}
 			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-3.5 w-3.5 shrink-0"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line
+						x1="12"
+						x2="12.01"
+						y1="16"
+						y2="16"
+					/></svg
+				>
 				{passwordError}
 			</p>
 		{/if}
@@ -120,9 +151,19 @@
 	>
 		{#if isSubmitting}
 			<span class="flex items-center justify-center gap-2">
-				<svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-					<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+				<svg
+					class="h-4 w-4 animate-spin"
+					xmlns="http://www.w3.org/2000/svg"
+					fill="none"
+					viewBox="0 0 24 24"
+				>
+					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
+					></circle>
+					<path
+						class="opacity-75"
+						fill="currentColor"
+						d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+					></path>
 				</svg>
 				Signing In…
 			</span>

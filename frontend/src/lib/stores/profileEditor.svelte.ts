@@ -25,7 +25,6 @@ class ProfileEditor {
 		}
 	});
 
-
 	currentAvatar = $derived(
 		this.avatar.shouldRemove ? null : this.avatar.previewUrl || user.avatarUrl
 	);
@@ -87,9 +86,10 @@ class ProfileEditor {
 		const updatedFields: string[] = [];
 		const hasAvatarChange = this.avatar.previewUrl !== null || this.avatar.shouldRemove;
 		const hasUsernameChange = this.username.isEditing && this.username.temp !== user.username;
-		
+
 		// Check if password form is active AND has any input
-		const isPasswordInputPresent = this.password.current !== '' || this.password.new !== '' || this.password.confirm !== '';
+		const isPasswordInputPresent =
+			this.password.current !== '' || this.password.new !== '' || this.password.confirm !== '';
 		const shouldValidatePassword = this.password.isChanging && isPasswordInputPresent;
 
 		if (shouldValidatePassword) {

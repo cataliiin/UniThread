@@ -18,8 +18,7 @@
 	const emailError = $derived.by(() => {
 		if (!touched.email) return '';
 		if (!email) return 'Email is required.';
-		if (!email.endsWith(VALID_DOMAIN))
-			return `Must be a ${VALID_DOMAIN} address.`;
+		if (!email.endsWith(VALID_DOMAIN)) return `Must be a ${VALID_DOMAIN} address.`;
 		return '';
 	});
 
@@ -44,8 +43,14 @@
 	});
 
 	const isFormValid = $derived(
-		!emailError && !usernameError && !passwordError && !confirmPasswordError &&
-		!!email && !!username && !!password && !!confirmPassword
+		!emailError &&
+			!usernameError &&
+			!passwordError &&
+			!confirmPasswordError &&
+			!!email &&
+			!!username &&
+			!!password &&
+			!!confirmPassword
 	);
 
 	async function handleSubmit(e: Event) {
@@ -118,7 +123,22 @@
 		/>
 		{#if emailError}
 			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-3.5 w-3.5 shrink-0"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line
+						x1="12"
+						x2="12.01"
+						y1="16"
+						y2="16"
+					/></svg
+				>
 				{emailError}
 			</p>
 		{/if}
@@ -139,7 +159,22 @@
 		/>
 		{#if usernameError}
 			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-3.5 w-3.5 shrink-0"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line
+						x1="12"
+						x2="12.01"
+						y1="16"
+						y2="16"
+					/></svg
+				>
 				{usernameError}
 			</p>
 		{/if}
@@ -199,7 +234,22 @@
 		</div>
 		{#if passwordError}
 			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-3.5 w-3.5 shrink-0"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line
+						x1="12"
+						x2="12.01"
+						y1="16"
+						y2="16"
+					/></svg
+				>
 				{passwordError}
 			</p>
 		{/if}
@@ -261,7 +311,22 @@
 		</div>
 		{#if confirmPasswordError}
 			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-3.5 w-3.5 shrink-0"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line
+						x1="12"
+						x2="12.01"
+						y1="16"
+						y2="16"
+					/></svg
+				>
 				{confirmPasswordError}
 			</p>
 		{/if}
