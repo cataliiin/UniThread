@@ -82,7 +82,7 @@ class ProfileEditor {
 		this.password.visibility.confirm = false;
 	}
 
-	saveChanges() {
+	async saveChanges() {
 		const updatedFields: string[] = [];
 		const hasAvatarChange = this.avatar.previewUrl !== null || this.avatar.shouldRemove;
 		const hasUsernameChange = this.username.isEditing && this.username.temp !== user.username;
@@ -104,7 +104,22 @@ class ProfileEditor {
 		}
 
 		if (hasAvatarChange) {
-			user.avatarUrl = this.avatar.shouldRemove ? null : this.avatar.previewUrl;
+			if (this.avatar.shouldRemove) {
+				user.avatarUrl = null;
+			} else if (this.avatar.previewUrl) {
+				try {
+					const response = await fetch(this.avatar.previewUrl);
+					const blob = await response.blob();
+					const base64 = await new Promise<string>((resolve) => {
+						const reader = new FileReader();
+						reader.onloadend = () => resolve(reader.result as string);
+						reader.readAsDataURL(blob);
+					});
+					user.avatarUrl = base64;
+				} catch {
+					user.avatarUrl = this.avatar.previewUrl;
+				}
+			}
 			this.avatar.previewUrl = null;
 			this.avatar.shouldRemove = false;
 			updatedFields.push('Avatar');
