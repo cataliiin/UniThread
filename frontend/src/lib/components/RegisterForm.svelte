@@ -2,6 +2,10 @@
 	import { goto } from '$app/navigation';
 	import { toasts } from '$lib/stores/toast.svelte';
 	import { user } from '$lib/stores/user.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Loader2, AlertCircle, Eye, EyeOff } from '@lucide/svelte';
 	import logo from '$lib/assets/UniThread_Logo.svg';
 
 	let email = $state('');
@@ -109,291 +113,165 @@
 
 <div class="mb-8 flex flex-col items-center">
 	<div
-		class="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-lg shadow-indigo-500/20"
+		class="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40"
 	>
 		<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
 	</div>
-	<h1 class="text-2xl font-bold text-white">Create UniThread Account</h1>
-	<p class="text-slate-400">Join the community</p>
+	<h1 class="text-2xl font-bold text-foreground">Create UniThread Account</h1>
+	<p class="text-muted-foreground">Join the community</p>
 </div>
 
 <form class="space-y-4" onsubmit={handleSubmit} novalidate>
-	<div>
-		<label for="email" class="mb-1 block text-sm font-medium text-slate-300">Email</label>
-		<input
+	<div class="space-y-2">
+		<Label for="email" class="text-muted-foreground">Email</Label>
+		<Input
 			type="email"
 			id="email"
 			bind:value={email}
 			onblur={() => (touched.email = true)}
-			class="w-full rounded-xl border px-4 py-3 text-white transition-all outline-none focus:ring-2 focus:ring-indigo-500
-			{emailError
-				? 'border-red-500 bg-red-950/40 focus:border-transparent'
-				: 'border-slate-700 bg-slate-800 focus:border-transparent'}"
+			class="transition-all duration-300 {emailError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
 			placeholder="name.surname@student.unitbv.ro"
 		/>
 		{#if emailError}
-			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-3.5 w-3.5 shrink-0"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line
-						x1="12"
-						x2="12.01"
-						y1="16"
-						y2="16"
-					/></svg
-				>
+			<p class="flex items-center gap-1 text-xs text-destructive">
+				<AlertCircle class="h-3.5 w-3.5 shrink-0" />
 				{emailError}
 			</p>
 		{/if}
 	</div>
-<div>
-        <label for="name" class="mb-1 block text-sm font-medium text-slate-300">First Name</label>
-        <input
-            type="text"
-            id="name"
-            bind:value={name}
-            onblur={() => (touched.name = true)}
-            class="w-full rounded-xl border px-4 py-3 text-white transition-all outline-none focus:ring-2 focus:ring-indigo-500
-            border-slate-700 bg-slate-800 focus:border-transparent
-            {nameError 
-                ? 'border-red-500 bg-red-950/40 focus:border-transparent'
-				: 'border-slate-700 bg-slate-800 focus:border-transparent'}"
-            placeholder="First Name"
-        />
-        {#if nameError}
-            <p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-                {nameError}
-            </p>
-        {/if}
-    </div>
-	<div>
-		<label for="surname" class="mb-1 block text-sm font-medium text-slate-300">Last Name</label>
-		<input
+	<div class="space-y-2">
+		<Label for="name" class="text-muted-foreground">First Name</Label>
+		<Input
+			type="text"
+			id="name"
+			bind:value={name}
+			onblur={() => (touched.name = true)}
+			class="transition-all duration-300 {nameError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
+			placeholder="First Name"
+		/>
+		{#if nameError}
+			<p class="flex items-center gap-1 text-xs text-destructive">
+				<AlertCircle class="h-3.5 w-3.5 shrink-0" />
+				{nameError}
+			</p>
+		{/if}
+	</div>
+	<div class="space-y-2">
+		<Label for="surname" class="text-muted-foreground">Last Name</Label>
+		<Input
 			type="text"
 			id="surname"
 			bind:value={surname}
 			onblur={() => (touched.surname = true)}
-			class="w-full rounded-xl border px-4 py-3 text-white transition-all outline-none focus:ring-2 focus:ring-indigo-500
-			{surnameError
-				? 'border-red-500 bg-red-950/40 focus:border-transparent'
-				: 'border-slate-700 bg-slate-800 focus:border-transparent'}"
+			class="transition-all duration-300 {surnameError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
 			placeholder="Last Name"
 		/>
 		{#if surnameError}
-			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+			<p class="flex items-center gap-1 text-xs text-destructive">
+				<AlertCircle class="h-3.5 w-3.5 shrink-0" />
 				{surnameError}
 			</p>
 		{/if}
 	</div>
-	<div>
-		<label for="username" class="mb-1 block text-sm font-medium text-slate-300">Username</label>
-		<input
+	<div class="space-y-2">
+		<Label for="username" class="text-muted-foreground">Username</Label>
+		<Input
 			type="text"
 			id="username"
 			bind:value={username}
 			onblur={() => (touched.username = true)}
-			class="w-full rounded-xl border px-4 py-3 text-white transition-all outline-none focus:ring-2 focus:ring-indigo-500
-			{usernameError
-				? 'border-red-500 bg-red-950/40 focus:border-transparent'
-				: 'border-slate-700 bg-slate-800 focus:border-transparent'}"
+			class="transition-all duration-300 {usernameError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
 			placeholder="Choose a username"
 		/>
 		{#if usernameError}
-			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-3.5 w-3.5 shrink-0"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line
-						x1="12"
-						x2="12.01"
-						y1="16"
-						y2="16"
-					/></svg
-				>
+			<p class="flex items-center gap-1 text-xs text-destructive">
+				<AlertCircle class="h-3.5 w-3.5 shrink-0" />
 				{usernameError}
 			</p>
 		{/if}
 	</div>
 
-	<div>
-		<label for="password" class="mb-1 block text-sm font-medium text-slate-300">Password</label>
+	<div class="space-y-2">
+		<Label for="password" class="text-muted-foreground">Password</Label>
 		<div class="relative">
-			<input
+			<Input
 				type={showPassword ? 'text' : 'password'}
 				id="password"
 				bind:value={password}
 				onblur={() => (touched.password = true)}
-				class="w-full rounded-xl border px-4 py-3 text-white transition-all outline-none focus:ring-2 focus:ring-indigo-500
-				{passwordError
-					? 'border-red-500 bg-red-950/40 focus:border-transparent'
-					: 'border-slate-700 bg-slate-800 focus:border-transparent'}"
+				class="pr-10 transition-all duration-300 {passwordError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
 				placeholder="Password must be at least 8 characters"
 			/>
 			<button
 				type="button"
 				onclick={() => (showPassword = !showPassword)}
-				class="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-300"
+				class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors duration-300 hover:text-foreground"
 			>
 				{#if showPassword}
-					<svg
-						class="h-5 w-5"
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><path
-							d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"
-						/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /><path
-							d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"
-						/><path d="m2 2 20 20" /></svg
-					>
+					<EyeOff class="h-5 w-5" />
 				{:else}
-					<svg
-						class="h-5 w-5"
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><path
-							d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"
-						/><circle cx="12" cy="12" r="3" /></svg
-					>
+					<Eye class="h-5 w-5" />
 				{/if}
 			</button>
 		</div>
 		{#if passwordError}
-			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-3.5 w-3.5 shrink-0"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line
-						x1="12"
-						x2="12.01"
-						y1="16"
-						y2="16"
-					/></svg
-				>
+			<p class="flex items-center gap-1 text-xs text-destructive">
+				<AlertCircle class="h-3.5 w-3.5 shrink-0" />
 				{passwordError}
 			</p>
 		{/if}
 	</div>
 
-	<div>
-		<label for="confirmPassword" class="mb-1 block text-sm font-medium text-slate-300"
-			>Confirm Password</label
-		>
+	<div class="space-y-2">
+		<Label for="confirmPassword" class="text-muted-foreground">Confirm Password</Label>
 		<div class="relative">
-			<input
+			<Input
 				type={showConfirmPassword ? 'text' : 'password'}
 				id="confirmPassword"
 				bind:value={confirmPassword}
 				onblur={() => (touched.confirmPassword = true)}
-				class="w-full rounded-xl border px-4 py-3 text-white transition-all outline-none focus:ring-2 focus:ring-indigo-500
-				{confirmPasswordError
-					? 'border-red-500 bg-red-950/40 focus:border-transparent'
-					: 'border-slate-700 bg-slate-800 focus:border-transparent'}"
+				class="pr-10 transition-all duration-300 {confirmPasswordError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
 				placeholder="Passwords must match"
 			/>
 			<button
 				type="button"
 				onclick={() => (showConfirmPassword = !showConfirmPassword)}
-				class="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-300"
+				class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors duration-300 hover:text-foreground"
 			>
 				{#if showConfirmPassword}
-					<svg
-						class="h-5 w-5"
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><path
-							d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"
-						/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /><path
-							d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"
-						/><path d="m2 2 20 20" /></svg
-					>
+					<EyeOff class="h-5 w-5" />
 				{:else}
-					<svg
-						class="h-5 w-5"
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><path
-							d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"
-						/><circle cx="12" cy="12" r="3" /></svg
-					>
+					<Eye class="h-5 w-5" />
 				{/if}
 			</button>
 		</div>
 		{#if confirmPasswordError}
-			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-3.5 w-3.5 shrink-0"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line
-						x1="12"
-						x2="12.01"
-						y1="16"
-						y2="16"
-					/></svg
-				>
+			<p class="flex items-center gap-1 text-xs text-destructive">
+				<AlertCircle class="h-3.5 w-3.5 shrink-0" />
 				{confirmPasswordError}
 			</p>
 		{/if}
 	</div>
 
-	<button
+	<Button
 		type="submit"
 		disabled={isLoading}
-		class="w-full transform rounded-xl bg-indigo-600 py-3 font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:bg-indigo-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+		class="w-full bg-primary py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-300 hover:bg-primary/90 hover:shadow-primary/40 active:scale-[0.98]"
 	>
-		{isLoading ? 'Creating Account...' : 'Sign Up'}
-	</button>
+		{#if isLoading}
+			<span class="flex items-center justify-center gap-2">
+				<Loader2 class="h-4 w-4 animate-spin" />
+				Creating Account...
+			</span>
+		{:else}
+			Sign Up
+		{/if}
+	</Button>
 </form>
 
-<p class="mt-6 text-center text-sm text-slate-400">
+<p class="mt-6 text-center text-sm text-muted-foreground">
 	Already have an account?
-	<a href="/login" class="font-semibold text-indigo-400 transition-colors hover:text-indigo-300">
+	<a href="/login" class="font-semibold text-primary transition-all duration-300 hover:text-primary/80 hover:underline">
 		Sign In
 	</a>
 </p>

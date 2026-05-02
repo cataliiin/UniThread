@@ -72,19 +72,19 @@
 {#snippet navLink(link: NavLink)}
 	<a
 		href={link.href}
-		class="group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200
+		class="group flex items-center gap-3 rounded-lg px-4 py-3 transition-all duration-300
 		{$page.url.pathname === link.href
-			? 'bg-indigo-600/10 font-semibold text-indigo-400'
-			: 'text-slate-400 hover:bg-slate-800 hover:text-white'}"
+			? 'bg-primary/10 font-semibold text-primary shadow-[0_0_15px_rgba(50,65,95,0.15)]'
+			: 'text-muted-foreground hover:bg-secondary hover:text-foreground'}"
 	>
 		<span
-			class="flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+			class="flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
 		>
 			{@html link.icon}
 		</span>
 		<span class="text-sm tracking-wide">{link.label}</span>
 		{#if link.badge && link.badge > 0}
-			<span class="ml-auto rounded-full bg-indigo-500 px-2 py-0.5 text-xs font-medium text-white">
+			<span class="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground shadow-lg shadow-primary/30 animate-pulse">
 				{link.badge}
 			</span>
 		{/if}
@@ -92,16 +92,16 @@
 {/snippet}
 
 <aside
-	class="hidden h-full w-72 flex-col border-r border-slate-800 bg-slate-950 transition-all duration-300 lg:flex"
+	class="hidden h-full w-72 flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300 lg:flex"
 >
 	<!-- Header -->
-	<div class="flex items-center gap-4 border-b border-slate-800/50 p-6">
+	<div class="flex items-center gap-4 border-b border-sidebar-border p-6">
 		<div
-			class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-lg shadow-indigo-500/20"
+			class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40"
 		>
 			<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
 		</div>
-		<span class="text-xl font-bold tracking-tight text-white">UniThread</span>
+		<span class="text-xl font-bold tracking-tight text-sidebar-foreground">UniThread</span>
 	</div>
 
 	<!-- Navigation -->
@@ -112,20 +112,20 @@
 	</nav>
 
 	<!-- Footer -->
-	<div class="mt-auto border-t border-slate-800/50 p-4">
+	<div class="mt-auto border-t border-sidebar-border p-4">
 		<div
-			class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900 p-3 transition-all duration-200"
+			class="flex items-center justify-between rounded-2xl border border-sidebar-border bg-sidebar-accent p-3 transition-all duration-300 hover:border-primary/30"
 		>
 			<a href="/profile" class="flex items-center gap-3">
 				<UserAvatar src={avatarUrl} initials={user.avatarInitials} size="sm" />
 				<div class="flex min-w-0 flex-col">
-					<span class="truncate text-sm font-semibold text-white">{user.name}</span>
-					<span class="truncate text-xs text-slate-500">@{user.username}</span>
+					<span class="truncate text-sm font-semibold text-sidebar-accent-foreground">{user.name}</span>
+					<span class="truncate text-xs text-muted-foreground">@{user.username}</span>
 				</div>
 			</a>
 			<button
 				onclick={handleLogout}
-				class="rounded-lg p-2 text-slate-500 transition-all duration-200 hover:bg-red-400/10 hover:text-red-400"
+				class="rounded-lg p-2 text-muted-foreground transition-all duration-300 hover:bg-destructive/10 hover:text-destructive"
 				title="Logout"
 			>
 				<svg

@@ -58,10 +58,10 @@
 {#snippet navItem(link: MobileNavLink)}
 	<a
 		href={link.href}
-		class="relative flex h-full w-full flex-col items-center justify-center gap-1 transition-colors
+		class="relative flex h-full w-full flex-col items-center justify-center gap-1 transition-all duration-300
 		{$page.url.pathname === link.href
-			? 'font-medium text-indigo-400'
-			: 'text-slate-500 hover:text-slate-300'}"
+			? 'font-medium text-primary'
+			: 'text-muted-foreground hover:text-foreground'}"
 	>
 		<span class="relative flex items-center justify-center">
 			{#if link.isAvatar}
@@ -70,7 +70,7 @@
 				{@html link.icon}
 			{/if}
 			{#if link.badge}
-				<span class="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500"></span>
+				<span class="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-destructive shadow-sm animate-pulse"></span>
 			{/if}
 		</span>
 		<span class="text-[10px] tracking-wider uppercase">{link.label}</span>
@@ -78,7 +78,7 @@
 {/snippet}
 
 <nav
-	class="pb-safe fixed right-0 bottom-0 left-0 z-50 border-t border-slate-800 bg-slate-950 lg:hidden"
+	class="pb-safe fixed right-0 bottom-0 left-0 z-50 border-t border-sidebar-border bg-sidebar lg:hidden"
 >
 	<div class="flex h-16 items-center justify-around">
 		{#each navLinks as link}

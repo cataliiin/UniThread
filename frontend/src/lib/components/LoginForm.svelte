@@ -2,6 +2,10 @@
 	import { goto } from '$app/navigation';
 	import { toasts } from '$lib/stores/toast.svelte';
 	import { user } from '$lib/stores/user.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Loader2, AlertCircle } from '@lucide/svelte';
 	import logo from '$lib/assets/UniThread_Logo.svg';
 
 	let email = $state('');
@@ -58,124 +62,73 @@
 
 <div class="mb-8 flex flex-col items-center">
 	<div
-		class="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-lg shadow-indigo-500/20"
+		class="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40"
 	>
 		<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
 	</div>
-	<h1 class="text-2xl font-bold text-white">Login to UniThread</h1>
-	<p class="text-slate-400">Enter your credentials to continue</p>
+	<h1 class="text-2xl font-bold text-foreground">Login to UniThread</h1>
+	<p class="text-muted-foreground">Enter your credentials to continue</p>
 </div>
 
 <form class="space-y-5" onsubmit={handleSubmit} novalidate>
 	<!-- Email -->
-	<div>
-		<label for="login-email" class="mb-1 block text-sm font-medium text-slate-300">Email</label>
-		<input
+	<div class="space-y-2">
+		<Label for="login-email" class="text-muted-foreground">Email</Label>
+		<Input
 			type="email"
 			id="login-email"
 			bind:value={email}
 			onblur={() => (touched.email = true)}
-			class="w-full rounded-xl border px-4 py-3 text-white transition-all outline-none focus:ring-2 focus:ring-indigo-500
-			{emailError
-				? 'border-red-500 bg-red-950/40 focus:border-transparent'
-				: 'border-slate-700 bg-slate-800 focus:border-transparent'}"
+			class="transition-all duration-300 {emailError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
 			placeholder="name.surname@student.unitbv.ro"
 		/>
 		{#if emailError}
-			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-3.5 w-3.5 shrink-0"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line
-						x1="12"
-						x2="12.01"
-						y1="16"
-						y2="16"
-					/></svg
-				>
+			<p class="flex items-center gap-1 text-xs text-destructive">
+				<AlertCircle class="h-3.5 w-3.5 shrink-0" />
 				{emailError}
 			</p>
 		{/if}
 	</div>
 
 	<!-- Password -->
-	<div>
-		<label for="login-password" class="mb-1 block text-sm font-medium text-slate-300"
-			>Password</label
-		>
-		<input
+	<div class="space-y-2">
+		<Label for="login-password" class="text-muted-foreground">Password</Label>
+		<Input
 			type="password"
 			id="login-password"
 			bind:value={password}
 			onblur={() => (touched.password = true)}
-			class="w-full rounded-xl border px-4 py-3 text-white transition-all outline-none focus:ring-2 focus:ring-indigo-500
-			{passwordError
-				? 'border-red-500 bg-red-950/40 focus:border-transparent'
-				: 'border-slate-700 bg-slate-800 focus:border-transparent'}"
+			class="transition-all duration-300 {passwordError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
 			placeholder="••••••••"
 		/>
 		{#if passwordError}
-			<p class="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-3.5 w-3.5 shrink-0"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line
-						x1="12"
-						x2="12.01"
-						y1="16"
-						y2="16"
-					/></svg
-				>
+			<p class="flex items-center gap-1 text-xs text-destructive">
+				<AlertCircle class="h-3.5 w-3.5 shrink-0" />
 				{passwordError}
 			</p>
 		{/if}
 	</div>
 
 	<!-- Submit -->
-	<button
+	<Button
 		type="submit"
 		disabled={isSubmitting}
-		class="w-full transform rounded-xl bg-indigo-600 py-3 font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:bg-indigo-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+		class="w-full bg-primary py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-300 hover:bg-primary/90 hover:shadow-primary/40 active:scale-[0.98]"
 	>
 		{#if isSubmitting}
 			<span class="flex items-center justify-center gap-2">
-				<svg
-					class="h-4 w-4 animate-spin"
-					xmlns="http://www.w3.org/2000/svg"
-					fill="none"
-					viewBox="0 0 24 24"
-				>
-					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
-					></circle>
-					<path
-						class="opacity-75"
-						fill="currentColor"
-						d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-					></path>
-				</svg>
-				Signing In…
+				<Loader2 class="h-4 w-4 animate-spin" />
+				Signing In...
 			</span>
 		{:else}
 			Sign In
 		{/if}
-	</button>
+	</Button>
 </form>
 
-<p class="mt-6 text-center text-sm text-slate-400">
+<p class="mt-6 text-center text-sm text-muted-foreground">
 	Don't have an account?
-	<a href="/register" class="font-semibold text-indigo-400 transition-colors hover:text-indigo-300">
+	<a href="/register" class="font-semibold text-primary transition-all duration-300 hover:text-primary/80 hover:underline">
 		Sign Up
 	</a>
 </p>

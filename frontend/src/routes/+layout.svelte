@@ -12,7 +12,7 @@
 	let isAuthPage = $derived($page.url.pathname === '/login' || $page.url.pathname === '/register');
 </script>
 
-<div class="flex h-screen overflow-hidden bg-slate-50 text-slate-900">
+<div class="flex h-screen overflow-hidden bg-background text-foreground">
 	<!-- Desktop Sidebar -->
 	{#if !isAuthPage}
 		<Sidebar />
@@ -23,14 +23,14 @@
 		<!-- Mobile Header -->
 		{#if !isAuthPage}
 			<header
-				class="flex items-center gap-3 border-b border-slate-800/50 bg-slate-950 p-4 lg:hidden"
+				class="flex items-center gap-3 border-b border-sidebar-border bg-sidebar p-4 lg:hidden"
 			>
 				<div
-					class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-white p-0.5 shadow-lg shadow-indigo-500/20"
+					class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-white p-0.5 shadow-lg shadow-primary/20"
 				>
 					<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
 				</div>
-				<span class="text-lg font-bold tracking-tight text-white">UniThread</span>
+				<span class="text-lg font-bold tracking-tight text-sidebar-foreground">UniThread</span>
 			</header>
 		{/if}
 

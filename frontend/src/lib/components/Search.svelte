@@ -65,7 +65,7 @@
 	<!-- Search Input -->
 	<div class="relative">
 		<svg
-			class="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-slate-400"
+			class="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-muted-foreground"
 			xmlns="http://www.w3.org/2000/svg"
 			fill="none"
 			viewBox="0 0 24 24"
@@ -83,7 +83,7 @@
 			bind:value={searchInput}
 			onkeydown={handleKeydown}
 			placeholder="Search users, communities, posts..."
-			class="w-full rounded-xl border border-slate-200 bg-white py-3 pr-4 pl-12 text-slate-900 placeholder-slate-400 shadow-sm transition-shadow focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+			class="w-full rounded-xl border border-input bg-background py-3 pr-4 pl-12 text-foreground placeholder-muted-foreground shadow-sm transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
 		/>
 		{#if searchInput}
 			<button
@@ -91,7 +91,7 @@
 					searchInput = '';
 					searchState.clearSearch();
 				}}
-				class="absolute top-1/2 right-4 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+				class="absolute top-1/2 right-4 -translate-y-1/2 text-muted-foreground transition-colors duration-300 hover:text-foreground"
 				aria-label="Clear search"
 			>
 				<svg
@@ -114,10 +114,10 @@
 	<div class="flex gap-2 overflow-x-auto pb-2">
 		{#each filters as f}
 			<button
-				class="rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors
+				class="rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-all duration-300
 				{searchState.filter === f.value
-					? 'bg-slate-900 text-white'
-					: 'bg-slate-100 text-slate-600 hover:bg-slate-200'}"
+					? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+					: 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}"
 				onclick={() => searchState.setFilter(f.value)}
 			>
 				{f.label}
@@ -129,7 +129,7 @@
 	{#if searchState.loading}
 		<div class="flex justify-center py-12">
 			<svg
-				class="h-8 w-8 animate-spin text-indigo-600"
+				class="h-8 w-8 animate-spin text-primary"
 				xmlns="http://www.w3.org/2000/svg"
 				fill="none"
 				viewBox="0 0 24 24"
@@ -146,7 +146,7 @@
 		<!-- Empty State - No query for users/posts -->
 	{:else if !searchState.hasSearched && (searchState.filter === 'users' || searchState.filter === 'posts')}
 		<div class="flex flex-col items-center justify-center py-16 text-center">
-			<div class="mb-4 rounded-full bg-slate-100 p-4">
+			<div class="mb-4 rounded-full bg-secondary p-4 transition-all duration-300 hover:bg-secondary/80">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="32"
@@ -157,19 +157,19 @@
 					stroke-width="2"
 					stroke-linecap="round"
 					stroke-linejoin="round"
-					class="text-slate-400"
+					class="text-muted-foreground"
 					><circle cx="11" cy="11" r="8" /><line x1="21" x2="16.65" y1="21" y2="16.65" /></svg
 				>
 			</div>
-			<h3 class="mb-2 text-lg font-semibold text-slate-900">Start searching</h3>
-			<p class="max-w-sm text-slate-500">
+			<h3 class="mb-2 text-lg font-semibold text-foreground">Start searching</h3>
+			<p class="max-w-sm text-muted-foreground">
 				Enter a search term to find {searchState.filter === 'users' ? 'users' : 'posts'}
 			</p>
 		</div>
 		<!-- No Results -->
 	{:else if hasNoResults()}
 		<div class="flex flex-col items-center justify-center py-16 text-center">
-			<div class="mb-4 rounded-full bg-slate-100 p-4">
+			<div class="mb-4 rounded-full bg-secondary p-4 transition-all duration-300 hover:bg-secondary/80">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="32"
@@ -180,12 +180,12 @@
 					stroke-width="2"
 					stroke-linecap="round"
 					stroke-linejoin="round"
-					class="text-slate-400"
+					class="text-muted-foreground"
 					><circle cx="12" cy="12" r="10" /><line x1="8" x2="16" y1="12" y2="12" /></svg
 				>
 			</div>
-			<h3 class="mb-2 text-lg font-semibold text-slate-900">No results found</h3>
-			<p class="max-w-sm text-slate-500">Try adjusting your search or filters</p>
+			<h3 class="mb-2 text-lg font-semibold text-foreground">No results found</h3>
+			<p class="max-w-sm text-muted-foreground">Try adjusting your search or filters</p>
 		</div>
 		<!-- Results -->
 	{:else}
@@ -193,25 +193,25 @@
 			<!-- Users Section -->
 			{#if searchState.users.length > 0}
 				<section>
-					<h2 class="mb-3 text-sm font-semibold tracking-wide text-slate-500 uppercase">Users</h2>
+					<h2 class="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">Users</h2>
 					<div class="space-y-3">
 						{#each searchState.users as user (user.id)}
 							<button
-								class="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition-shadow hover:shadow-md"
+								class="group flex w-full items-center gap-4 rounded-xl border border-border bg-card p-4 text-left transition-all duration-300 hover:border-primary/30 hover:shadow-md"
 								onclick={() => goto('/profile')}
 							>
 								<div
-									class="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-700"
+									class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
 								>
 									{user.avatarInitials}
 								</div>
 								<div class="flex-1">
-									<div class="font-semibold text-slate-900">{user.name}</div>
-									<div class="text-sm text-slate-500">@{user.username}</div>
+									<div class="font-semibold text-card-foreground">{user.name}</div>
+									<div class="text-sm text-muted-foreground">@{user.username}</div>
 								</div>
 								<div class="text-right">
-									<div class="text-sm font-medium text-slate-900">{user.followers}</div>
-									<div class="text-xs text-slate-500">followers</div>
+									<div class="text-sm font-medium text-card-foreground">{user.followers}</div>
+									<div class="text-xs text-muted-foreground">followers</div>
 								</div>
 							</button>
 						{/each}
@@ -219,9 +219,9 @@
 				</section>
 			{:else if shouldShowUsersPlaceholder()}
 				<section>
-					<h2 class="mb-3 text-sm font-semibold tracking-wide text-slate-500 uppercase">Users</h2>
-					<div class="rounded-xl border border-slate-200 bg-white p-8 text-center">
-						<p class="text-sm text-slate-500">Enter a search term to find users</p>
+					<h2 class="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">Users</h2>
+					<div class="rounded-xl border border-border bg-card p-8 text-center">
+						<p class="text-sm text-muted-foreground">Enter a search term to find users</p>
 					</div>
 				</section>
 			{/if}
@@ -229,28 +229,28 @@
 			<!-- Communities Section -->
 			{#if searchState.communities.length > 0}
 				<section>
-					<h2 class="mb-3 text-sm font-semibold tracking-wide text-slate-500 uppercase">
+					<h2 class="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
 						Communities
 					</h2>
 					<div class="grid gap-3 sm:grid-cols-2">
 						{#each searchState.communities as community (community.id)}
-							<div class="flex flex-col rounded-xl border border-slate-200 bg-white p-4">
+							<div class="group flex flex-col rounded-xl border border-border bg-card p-4 transition-all duration-300 hover:border-primary/30">
 								<div class="mb-2 flex items-start justify-between">
 									<div>
-										<h3 class="font-semibold text-slate-900">{community.name}</h3>
-										<p class="text-sm text-slate-500">{community.description}</p>
+										<h3 class="font-semibold text-card-foreground">{community.name}</h3>
+										<p class="text-sm text-muted-foreground">{community.description}</p>
 									</div>
 								</div>
 								<div class="mt-auto flex items-center justify-between">
-									<div class="flex gap-4 text-sm text-slate-500">
+									<div class="flex gap-4 text-sm text-muted-foreground">
 										<span>{community.members} members</span>
 										<span>{community.posts} posts</span>
 									</div>
 									<button
-										class="rounded-full px-4 py-1.5 text-sm font-medium transition-colors
+										class="rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-300
 										{community.isJoined
-											? 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-											: 'bg-slate-900 text-white hover:bg-slate-800'}"
+											? 'border border-border bg-card text-foreground hover:bg-secondary'
+											: 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 hover:shadow-primary/40'}"
 										onclick={() => searchState.toggleJoinCommunity(community.id)}
 									>
 										{community.isJoined ? 'Joined' : 'Join'}
@@ -265,24 +265,24 @@
 			<!-- Posts Section -->
 			{#if searchState.posts.length > 0}
 				<section>
-					<h2 class="mb-3 text-sm font-semibold tracking-wide text-slate-500 uppercase">Posts</h2>
+					<h2 class="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">Posts</h2>
 					<div class="space-y-3">
 						{#each searchState.posts as post (post.id)}
-							<article class="rounded-xl border border-slate-200 bg-white p-4">
+							<article class="group rounded-xl border border-border bg-card p-4 transition-all duration-300 hover:border-primary/30">
 								<div class="mb-2 flex items-center gap-3">
 									<div
-										class="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700"
+										class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
 									>
 										{post.authorName.charAt(0)}
 									</div>
 									<div>
-										<span class="font-medium text-slate-900">{post.authorName}</span>
-										<span class="text-sm text-slate-500"> @{post.authorUsername}</span>
+										<span class="font-medium text-card-foreground">{post.authorName}</span>
+										<span class="text-sm text-muted-foreground"> @{post.authorUsername}</span>
 									</div>
-									<span class="text-xs text-slate-400">· {formatTimeAgo(post.createdAt)}</span>
+									<span class="text-xs text-muted-foreground/60">· {formatTimeAgo(post.createdAt)}</span>
 								</div>
-								<p class="text-slate-700">{post.content}</p>
-								<div class="mt-3 flex items-center gap-4 text-sm text-slate-500">
+								<p class="text-card-foreground/90 leading-relaxed">{post.content}</p>
+								<div class="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
 									<span>{post.likes} likes</span>
 									<span>{post.comments} comments</span>
 								</div>
@@ -292,9 +292,9 @@
 				</section>
 			{:else if shouldShowPostsPlaceholder()}
 				<section>
-					<h2 class="mb-3 text-sm font-semibold tracking-wide text-slate-500 uppercase">Posts</h2>
-					<div class="rounded-xl border border-slate-200 bg-white p-8 text-center">
-						<p class="text-sm text-slate-500">Enter a search term to find posts</p>
+					<h2 class="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">Posts</h2>
+					<div class="rounded-xl border border-border bg-card p-8 text-center">
+						<p class="text-sm text-muted-foreground">Enter a search term to find posts</p>
 					</div>
 				</section>
 			{/if}

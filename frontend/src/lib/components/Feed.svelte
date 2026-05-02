@@ -43,55 +43,55 @@
 <div class="space-y-4">
 	<!-- Sort Controls -->
 	<div class="flex items-center gap-2">
-		<span class="text-sm font-medium text-slate-600">Sort by:</span>
+		<span class="text-sm font-medium text-muted-foreground">Sort by:</span>
 		<button
-			class="rounded-full px-4 py-1.5 text-sm font-medium transition-colors
+			class="rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-300
 			{posts.sort === 'new'
-				? 'bg-slate-900 text-white'
-				: 'bg-slate-100 text-slate-600 hover:bg-slate-200'}"
+				? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+				: 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}"
 			onclick={() => posts.setSort('new')}
 		>
 			New
 		</button>
 		<button
-			class="rounded-full px-4 py-1.5 text-sm font-medium transition-colors
+			class="rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-300
 			{posts.sort === 'top'
-				? 'bg-slate-900 text-white'
-				: 'bg-slate-100 text-slate-600 hover:bg-slate-200'}"
+				? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+				: 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}"
 			onclick={() => posts.setSort('top')}
 		>
 			Top
 		</button>
 	</div>
 
-	<!-- Posts Feed -->
+		<!-- Posts Feed -->
 	<div class="space-y-4">
 		{#each posts.posts as post (post.id)}
-			<article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+			<article class="group rounded-2xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_20px_rgba(50,65,95,0.1)]">
 				<!-- Author Header -->
 				<div class="mb-3 flex items-center gap-3">
 					<div
-						class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-700"
+						class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
 					>
 						{post.authorName.charAt(0)}
 					</div>
 					<div class="flex-1">
 						<div class="flex items-center gap-2">
-							<span class="font-semibold text-slate-900">{post.authorName}</span>
-							<span class="text-sm text-slate-500">@{post.authorUsername}</span>
+							<span class="font-semibold text-card-foreground">{post.authorName}</span>
+							<span class="text-sm text-muted-foreground">@{post.authorUsername}</span>
 						</div>
-						<span class="text-xs text-slate-400">{formatTimeAgo(post.createdAt)}</span>
+						<span class="text-xs text-muted-foreground/60">{formatTimeAgo(post.createdAt)}</span>
 					</div>
 				</div>
 
 				<!-- Content -->
-				<p class="mb-4 text-slate-700">{post.content}</p>
+				<p class="mb-4 text-card-foreground/90 leading-relaxed">{post.content}</p>
 
 				<!-- Actions -->
-				<div class="flex items-center gap-4 border-t border-slate-100 pt-3">
+				<div class="flex items-center gap-4 border-t border-border/50 pt-3">
 					<button
-						class="flex items-center gap-1.5 text-sm transition-colors
-						{post.liked ? 'text-red-500' : 'text-slate-500 hover:text-red-500'}"
+						class="flex items-center gap-1.5 text-sm transition-all duration-300
+						{post.liked ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}"
 						onclick={() => posts.toggleLike(post.id)}
 					>
 						<svg
@@ -112,7 +112,7 @@
 						<span>{post.likes}</span>
 					</button>
 
-					<button class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
+					<button class="flex items-center gap-1.5 text-sm text-muted-foreground transition-all duration-300 hover:text-foreground">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							width="18"
@@ -134,7 +134,7 @@
 		<!-- Loading / Infinite Scroll Trigger -->
 		<div bind:this={containerRef} class="py-4 text-center">
 			{#if posts.loading}
-				<div class="flex items-center justify-center gap-2 text-slate-500">
+				<div class="flex items-center justify-center gap-2 text-muted-foreground">
 					<svg
 						class="h-5 w-5 animate-spin"
 						xmlns="http://www.w3.org/2000/svg"
@@ -152,7 +152,7 @@
 					<span class="text-sm">Loading more posts...</span>
 				</div>
 			{:else if !posts.hasMore}
-				<p class="text-sm text-slate-400">You've reached the end!</p>
+				<p class="text-sm text-muted-foreground/60">You've reached the end!</p>
 			{/if}
 		</div>
 	</div>
