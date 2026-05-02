@@ -1,4 +1,10 @@
-export { AuthService } from './auth.service';
-export { UserService } from './user.service';
-export { CommunityService } from './community.service';
-export { PostService } from './post.service';
+export { AuthService } from './AuthService';
+export { CommunitiesService } from './CommunitiesService';
+export { CommunityAdminService } from './CommunityAdminService';
+export { HealthService } from './HealthService';
+export { InvitationsService } from './InvitationsService';
+export { PostsService } from './PostsService';
+export { SearchService } from './SearchService';
+export { StorageService } from './StorageService';
+export { UniversitiesService } from './UniversitiesService';
+export { UsersService } from './UsersService';
