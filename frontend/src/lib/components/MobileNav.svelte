@@ -1,18 +1,21 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { user } from '$lib/stores/user.svelte';
+	import { invitationsState } from '$lib/stores/invitations.svelte';
 	import UserAvatar from './UserAvatar.svelte';
 
 	let avatarUrl = $derived(user.avatarUrl);
+	let pendingInvites = $derived(invitationsState.pendingCount);
 
 	interface MobileNavLink {
 		href: string;
 		label: string;
 		icon?: string;
 		isAvatar?: boolean;
+		badge?: boolean;
 	}
 
-	const navLinks = [
+	let navLinks = $derived([
 		{
 			href: '/',
 			label: 'Home',
@@ -29,6 +32,12 @@
 			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`
 		},
 		{
+			href: '/invitations',
+			label: 'Invites',
+			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="m9 9 2 2 4-4"/></svg>`,
+			badge: pendingInvites > 0
+		},
+		{
 			href: '/messages',
 			label: 'Chat',
 			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`
@@ -43,22 +52,25 @@
 			label: 'Profile',
 			isAvatar: true
 		}
-	];
+	]);
 </script>
 
 {#snippet navItem(link: MobileNavLink)}
 	<a
 		href={link.href}
-		class="flex h-full w-full flex-col items-center justify-center gap-1 transition-colors
+		class="relative flex h-full w-full flex-col items-center justify-center gap-1 transition-colors
 		{$page.url.pathname === link.href
 			? 'font-medium text-indigo-400'
 			: 'text-slate-500 hover:text-slate-300'}"
 	>
-		<span class="flex items-center justify-center">
+		<span class="relative flex items-center justify-center">
 			{#if link.isAvatar}
 				<UserAvatar src={avatarUrl} initials={user.avatarInitials} size="xs" />
 			{:else}
 				{@html link.icon}
+			{/if}
+			{#if link.badge}
+				<span class="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500"></span>
 			{/if}
 		</span>
 		<span class="text-[10px] tracking-wider uppercase">{link.label}</span>
