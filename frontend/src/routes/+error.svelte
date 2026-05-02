@@ -4,12 +4,12 @@
 	import ErrorPage from '$lib/components/ErrorPage.svelte';
 
 	// Map status code -> error page configuration
-	const errorConfig: Record<number, { title: string; message: string; actions: Array<{ label: string; href?: string; onClick?: () => void; variant?: 'primary' | 'secondary' }> }> = {
+	const errorConfig: Record<number, { title: string; message: string; actions: Array<{ label: string; href?: string; onClick?: () => void; variant?: 'default' | 'secondary' | 'destructive' | 'ghost' | 'link' }> }> = {
 		404: {
 			title: 'Page Not Found',
 			message: 'Sorry, the page you are looking for does not exist or has been moved. Check the URL or go back to the homepage.',
 			actions: [
-				{ label: 'Back Home', href: '/', variant: 'primary' },
+				{ label: 'Back Home', href: '/', variant: 'default' },
 				{ label: 'Go to Login', href: '/login', variant: 'secondary' }
 			]
 		},
@@ -17,7 +17,7 @@
 			title: 'Access Forbidden',
 			message: 'You do not have permission to access this resource. Make sure you are logged in with the correct account.',
 			actions: [
-				{ label: 'Login', href: '/login', variant: 'primary' },
+				{ label: 'Login', href: '/login', variant: 'default' },
 				{ label: 'Back Home', href: '/', variant: 'secondary' }
 			]
 		},
@@ -25,14 +25,14 @@
 			title: 'Authentication Required',
 			message: 'You need to log in to access this page. Sign in with your account to continue.',
 			actions: [
-				{ label: 'Go to Login', href: '/login', variant: 'primary' }
+				{ label: 'Go to Login', href: '/login', variant: 'default' }
 			]
 		},
 		500: {
 			title: 'Server Error',
 			message: 'Something went wrong on our end. We are working to fix the issue as soon as possible.',
 			actions: [
-				{ label: 'Try Again', onClick: () => window.location.reload(), variant: 'primary' },
+				{ label: 'Try Again', onClick: () => window.location.reload(), variant: 'default' },
 				{ label: 'Back Home', href: '/', variant: 'secondary' }
 			]
 		}
@@ -40,6 +40,7 @@
 
 	let status = $derived($page.status || 404);
 	let config = $derived(errorConfig[status] || errorConfig[404]);
+	let customMessage = $derived($page.error?.message);
 </script>
 
 <svelte:head>
@@ -49,6 +50,6 @@
 <ErrorPage
 	{status}
 	title={config.title}
-	message={config.message}
+	message={customMessage || config.message}
 	actions={config.actions}
 />
