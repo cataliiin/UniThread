@@ -85,7 +85,7 @@
 			<!-- Description -->
 			{#if community.description}
 				<div class="mb-6 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-					<p class="text-slate-300">{community.description}</p>
+					<p class="break-words text-slate-300">{community.description}</p>
 				</div>
 			{/if}
 
