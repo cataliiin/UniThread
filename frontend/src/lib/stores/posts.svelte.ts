@@ -23,6 +23,8 @@ function createPostsState() {
 		// Sort based on current sort option
 		if (sort === 'top') {
 			newPosts.sort((a, b) => b.likes - a.likes);
+		} else if (sort === 'new') {
+			newPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 		}
 
 		posts = [...posts, ...newPosts];
