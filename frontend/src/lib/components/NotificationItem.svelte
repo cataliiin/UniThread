@@ -48,13 +48,11 @@
 
 	<!-- Right Column: Text & Buttons -->
 	<div class="flex flex-1 flex-col">
+		<!-- Notification Text -->
 		{#if notification.type === NotificationType.Invitation}
 			<div class="text-sm">
 				<strong>{notification.sender_name}</strong> invited you to join
 				<strong>{notification.community_name}</strong>
-			</div>
-			<div class="mt-2 flex gap-2">
-				<Button variant="default" size="sm" onclick={goToInvitaions}>View</Button>
 			</div>
 		{:else if notification.type === NotificationType.AcceptInvitation}
 			<div class="text-sm">
@@ -70,36 +68,33 @@
 			<div class="text-sm">
 				<strong>{notification.sender_name}</strong> sent you a message
 			</div>
-			<div class="mt-2 flex gap-2">
-				<Button variant="default" size="sm" onclick={goToMessages}>View</Button>
-			</div>
 		{:else if notification.type === NotificationType.Post}
 			<div class="text-sm">
 				<strong>{notification.sender_name}</strong> posted a new post
-			</div>
-			<div class="mt-2 flex gap-2">
-				<Button variant="default" size="sm" onclick={() => goToPost(notification.post_id)}>
-					View
-				</Button>
 			</div>
 		{:else if notification.type === NotificationType.Like}
 			<div class="text-sm">
 				<strong>{notification.sender_name}</strong> liked your post
 			</div>
-			<div class="mt-2 flex gap-2">
-				<Button variant="default" size="sm" onclick={() => goToPost(notification.post_id)}>
-					View
-				</Button>
-			</div>
 		{:else if notification.type === NotificationType.Comment}
 			<div class="text-sm">
 				<strong>{notification.sender_name}</strong> commented on your post
 			</div>
-			<div class="mt-2 flex gap-2">
-				<Button variant="default" size="sm" onclick={() => goToPost(notification.post_id)}>
-					View
-				</Button>
-			</div>
 		{/if}
+
+		<!-- Action Buttons -->
+		<div class="mt-2 flex items-center gap-2">
+			{#if notification.type === NotificationType.Invitation}
+				<Button variant="default" size="sm" onclick={goToInvitaions}>View</Button>
+			{:else if notification.type === NotificationType.Message}
+				<Button variant="default" size="sm" onclick={goToMessages}>View</Button>
+			{:else if notification.type === NotificationType.Post || notification.type === NotificationType.Like || notification.type === NotificationType.Comment}
+				<Button variant="default" size="sm" onclick={() => goToPost(notification.post_id)}
+					>View</Button
+				>
+			{/if}
+
+			<Button variant="secondary" size="sm" onclick={handleRead}>Mark as Read</Button>
+		</div>
 	</div>
 </div>
