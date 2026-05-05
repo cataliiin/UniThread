@@ -5,7 +5,8 @@ import type {
 	CommunityFormData,
 	CommunityUpdateRequest,
 	PresignedUrlRequest,
-	PresignedUrlResponse
+	PresignedUrlResponse,
+	CommunityMember
 } from '$lib/types/community';
 import { toasts } from './toast.svelte';
 
@@ -13,7 +14,10 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 function createCommunityState() {
 	let currentCommunity = $state<Community | null>(null);
+	let myCommunities = $state<Community[]>([]);
+	let members = $state<CommunityMember[]>([]);
 	let loading = $state(false);
+	let membersLoading = $state(false);
 	let isAdmin = $state(false);
 	let isOwner = $state(false);
 
@@ -218,8 +222,154 @@ function createCommunityState() {
 		}
 	}
 
+	async function fetchMyCommunities(): Promise<Community[]> {
+		loading = true;
+		try {
+			const response = await fetch(`${API_BASE}/communities/me`, {
+				headers: await getAuthHeaders()
+			});
+			if (!response.ok) throw new Error('Failed to fetch communities');
+			const data: Community[] = await response.json();
+			myCommunities = data;
+			return data;
+		} catch {
+			// Fallback to localStorage (dev mode)
+			if (typeof window !== 'undefined') {
+				const all: Community[] = JSON.parse(localStorage.getItem('mock_communities') || '[]');
+				myCommunities = all;
+				return all;
+			}
+			return [];
+		} finally {
+			loading = false;
+		}
+	}
+
+	async function fetchMembers(communityId: string): Promise<CommunityMember[]> {
+		membersLoading = true;
+		try {
+			const response = await fetch(`${API_BASE}/communities/${communityId}/members`, {
+				headers: await getAuthHeaders()
+			});
+			if (!response.ok) throw new Error('Failed to fetch members');
+			const data: CommunityMember[] = await response.json();
+			members = data;
+			return data;
+		} catch {
+			// Fallback to mock data
+			if (typeof window !== 'undefined') {
+				const key = `mock_members_${communityId}`;
+				const stored: CommunityMember[] = JSON.parse(localStorage.getItem(key) || '[]');
+				// Seed with a default owner member if empty
+				if (stored.length === 0) {
+					const userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+					const seed: CommunityMember[] = [
+						{
+							user_id: userData.email || 'local_user',
+							username: userData.username || 'you',
+							name: userData.name || 'You',
+							community_id: communityId,
+							status: 'approved',
+							is_admin: true,
+							joined_at: new Date().toISOString()
+						}
+					];
+					localStorage.setItem(key, JSON.stringify(seed));
+					members = seed;
+					return seed;
+				}
+				members = stored;
+				return stored;
+			}
+			return [];
+		} finally {
+			membersLoading = false;
+		}
+	}
+
+	async function leaveCommunity(communityId: string): Promise<boolean> {
+		try {
+			const response = await fetch(`${API_BASE}/communities/${communityId}/leave`, {
+				method: 'DELETE',
+				headers: await getAuthHeaders()
+			});
+			if (!response.ok) throw new Error('Failed to leave community');
+			toasts.show('Left community successfully', 'success');
+			return true;
+		} catch {
+			// Mock: remove from localStorage
+			if (typeof window !== 'undefined') {
+				const all: Community[] = JSON.parse(localStorage.getItem('mock_communities') || '[]');
+				const updated = all.filter((c) => c.id !== communityId);
+				localStorage.setItem('mock_communities', JSON.stringify(updated));
+				myCommunities = updated;
+				toasts.show('Left community (local mode)', 'success');
+				return true;
+			}
+			return false;
+		}
+	}
+
+	async function promoteToAdmin(communityId: string, userId: string): Promise<boolean> {
+		try {
+			const response = await fetch(
+				`${API_BASE}/communities/${communityId}/members/${userId}/promote`,
+				{
+					method: 'PATCH',
+					headers: await getAuthHeaders()
+				}
+			);
+			if (!response.ok) throw new Error('Failed to promote member');
+			toasts.show('Member promoted to admin', 'success');
+			return true;
+		} catch {
+			// Mock: update localStorage
+			if (typeof window !== 'undefined') {
+				const key = `mock_members_${communityId}`;
+				const stored: CommunityMember[] = JSON.parse(localStorage.getItem(key) || '[]');
+				const updated = stored.map((m) =>
+					m.user_id === userId ? { ...m, is_admin: true } : m
+				);
+				localStorage.setItem(key, JSON.stringify(updated));
+				members = updated;
+				toasts.show('Member promoted (local mode)', 'success');
+				return true;
+			}
+			return false;
+		}
+	}
+
+	async function removeMember(communityId: string, userId: string): Promise<boolean> {
+		try {
+			const response = await fetch(
+				`${API_BASE}/communities/${communityId}/members/${userId}`,
+				{
+					method: 'DELETE',
+					headers: await getAuthHeaders()
+				}
+			);
+			if (!response.ok) throw new Error('Failed to remove member');
+			toasts.show('Member removed', 'success');
+			return true;
+		} catch {
+			// Mock: update localStorage
+			if (typeof window !== 'undefined') {
+				const key = `mock_members_${communityId}`;
+				const stored: CommunityMember[] = JSON.parse(localStorage.getItem(key) || '[]');
+				const updated = stored.filter((m) => m.user_id !== userId);
+				localStorage.setItem(key, JSON.stringify(updated));
+				members = updated;
+				toasts.show('Member removed (local mode)', 'success');
+				return true;
+			}
+			return false;
+		}
+	}
+
 	function reset() {
 		currentCommunity = null;
+		myCommunities = [];
+		members = [];
 		isAdmin = false;
 		isOwner = false;
 	}
@@ -228,8 +378,17 @@ function createCommunityState() {
 		get currentCommunity() {
 			return currentCommunity;
 		},
+		get myCommunities() {
+			return myCommunities;
+		},
+		get members() {
+			return members;
+		},
 		get loading() {
 			return loading;
+		},
+		get membersLoading() {
+			return membersLoading;
 		},
 		get isAdmin() {
 			return isAdmin;
@@ -240,6 +399,11 @@ function createCommunityState() {
 		createCommunity,
 		updateCommunity,
 		fetchCommunity,
+		fetchMyCommunities,
+		fetchMembers,
+		leaveCommunity,
+		promoteToAdmin,
+		removeMember,
 		checkPermissions,
 		getPresignedUrl,
 		uploadFile,
