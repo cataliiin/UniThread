@@ -56,7 +56,10 @@ function createUserState() {
 		if (typeof window === 'undefined') return { success: false, error: 'Not available server-side' };
 
 		try {
-			await AuthService.login({ username: emailParam, password });
+			const tokenData = await AuthService.login({ username: emailParam, password });
+			if (typeof window !== 'undefined') {
+				localStorage.setItem('token', tokenData.access_token);
+			}
 			const me = await UsersService.getMe();
 
 			username = me.username;
@@ -86,6 +89,7 @@ function createUserState() {
 		isAuthenticated = false;
 		if (typeof window !== 'undefined') {
 			localStorage.removeItem('currentUser');
+			localStorage.removeItem('token');
 		}
 	}
 

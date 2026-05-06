@@ -3,8 +3,8 @@ import {
 	type UserResult,
 	type CommunityResult,
 	type PostResult,
-	mockSearch
 } from '$lib/types/search';
+import { SearchService } from '$lib/api/services/SearchService';
 import { user } from './user.svelte';
 
 function createSearchState() {
@@ -20,37 +20,76 @@ function createSearchState() {
 		query = searchQuery;
 		filter = searchFilter;
 		hasSearched = true;
+		
+		if (!searchQuery.trim()) {
+			users = [];
+			communities = [];
+			posts = [];
+			loading = false;
+			return;
+		}
+
 		loading = true;
 
-		// Simulate API delay
-		await new Promise((resolve) => setTimeout(resolve, 500));
+		try {
+			const typeParam = searchFilter === 'all' ? undefined : searchFilter;
+			const results = await SearchService.globalSearch(searchQuery, typeParam, 10);
 
-		const university = user.university || 'Default University';
+			if (searchFilter === 'all' || searchFilter === 'users') {
+				users = results.users.map(u => ({
+					id: u.id,
+					name: u.username,
+					username: u.username,
+					avatar: u.avatar_key || undefined,
+					avatarInitials: u.username.substring(0, 2).toUpperCase(),
+					memberSince: new Date(u.created_at).getFullYear().toString(),
+					followers: 0,
+					university: 'University' // Or derive from university_id
+				}));
+			} else {
+				users = [];
+			}
 
-		if (searchFilter === 'all' || searchFilter === 'users') {
-			// Only show users when there's a query
-			users =
-				searchQuery.trim() !== '' ? mockSearch.generateUsers(searchQuery, university, 10) : [];
-		} else {
+			if (searchFilter === 'all' || searchFilter === 'communities') {
+				communities = results.communities.map(c => ({
+					id: c.id,
+					name: c.name,
+					description: c.description || '',
+					members: c.member_count,
+					isJoined: c.user_membership_status === 'approved',
+					icon: c.icon_key || undefined,
+					posts: 0,
+					university: 'University'
+				}));
+			} else {
+				communities = [];
+			}
+
+			if (searchFilter === 'all' || searchFilter === 'posts') {
+				posts = results.posts.map(p => ({
+					id: p.id,
+					title: p.title,
+					content: p.body || p.title,
+					authorId: p.author?.id || 'anonymous',
+					authorName: p.author?.username || 'Anonymous',
+					authorUsername: p.author?.username || 'anonymous',
+					createdAt: p.created_at,
+					likes: p.score,
+					comments: p.comment_count,
+					communityName: p.community?.name || 'Global',
+					university: 'University'
+				}));
+			} else {
+				posts = [];
+			}
+		} catch (e) {
+			console.error("Search failed:", e);
 			users = [];
-		}
-
-		if (searchFilter === 'all' || searchFilter === 'communities') {
-			// Communities show popular when no query, filtered when query exists
-			communities = mockSearch.generateCommunities(searchQuery, university, 10);
-		} else {
 			communities = [];
-		}
-
-		if (searchFilter === 'all' || searchFilter === 'posts') {
-			// Only show posts when there's a query
-			posts =
-				searchQuery.trim() !== '' ? mockSearch.generatePosts(searchQuery, university, 10) : [];
-		} else {
 			posts = [];
+		} finally {
+			loading = false;
 		}
-
-		loading = false;
 	}
 
 	function setFilter(newFilter: SearchFilter) {
@@ -68,7 +107,7 @@ function createSearchState() {
 		loading = false;
 	}
 
-	function toggleJoinCommunity(communityId: number) {
+	function toggleJoinCommunity(communityId: string | number) {
 		communities = communities.map((c) => {
 			if (c.id === communityId) {
 				return {

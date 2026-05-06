@@ -13,6 +13,14 @@ const middleware: Middleware = {
         if (!request.headers.has('Accept')) {
             request.headers.set('Accept', 'application/json');
         }
+
+        if (browser) {
+            const token = localStorage.getItem('token');
+            if (token && !request.headers.has('Authorization')) {
+                request.headers.set('Authorization', `Bearer ${token}`);
+            }
+        }
+
         return request;
     },
 
