@@ -1,7 +1,8 @@
 import { type Post, type SortOption } from '$lib/types/post';
 import { PostsService } from '$lib/api/services/PostsService';
+import { CommunitiesService } from '$lib/api/services/CommunitiesService';
 
-function createPostsState() {
+export function createPostsState(communityId?: string | null) {
 	let posts = $state<Post[]>([]);
 	let sort = $state<SortOption>('new');
 	let page = $state(1);
@@ -14,12 +15,19 @@ function createPostsState() {
 		loading = true;
 
 		try {
-			const response = await PostsService.getGlobalFeed(page, pageSize, sort);
+			let response;
+			if (communityId) {
+				response = await CommunitiesService.getPosts(communityId, page, pageSize, sort);
+			} else {
+				response = await PostsService.getGlobalFeed(page, pageSize, sort);
+			}
 			
 			const mappedPosts: Post[] = response.items.map(p => ({
 				id: p.id,
+				title: p.title,
 				authorId: p.author?.id || 'anonymous',
 				authorName: p.author?.username || 'Anonymous', 
+				authorSurname: '', // The backend doesn't store surnames yet!
 				authorUsername: p.author?.username || 'anonymous',
 				authorAvatar: p.author?.avatar_key || undefined,
 				content: p.body || p.title,
@@ -27,7 +35,9 @@ function createPostsState() {
 				likes: p.score,
 				comments: p.comment_count,
 				liked: p.user_vote === 1,
-				university: p.community?.name || 'Global'
+				university: p.community?.name || 'Global',
+				communityId: p.community?.id,
+				communityName: p.community?.name
 			}));
 
 			posts = [...posts, ...mappedPosts];
@@ -73,6 +83,7 @@ function createPostsState() {
 			await PostsService.votePost(postId.toString(), newValue);
 		} catch (e) {
 			console.error("Failed to vote:", e);
+			// Revert optimisic update
 			posts = posts.map(p => {
 				if (p.id === postId) {
 					return {
@@ -88,7 +99,7 @@ function createPostsState() {
 
 	function reset() {
 		posts = [];
-		page = 0;
+		page = 1;
 		hasMore = true;
 		sort = 'new';
 	}
@@ -115,5 +126,3 @@ function createPostsState() {
 		reset
 	};
 }
-
-export const posts = createPostsState();

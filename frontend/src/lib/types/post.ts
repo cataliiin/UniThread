@@ -1,7 +1,9 @@
 export interface Post {
 	id: string | number;
+	title: string;
 	authorId: string | number;
 	authorName: string;
+	authorSurname?: string;
 	authorUsername: string;
 	authorAvatar?: string;
 	content: string;
@@ -10,6 +12,8 @@ export interface Post {
 	comments: number;
 	liked: boolean;
 	university: string;
+	communityId?: string;
+	communityName?: string;
 }
 
 export type SortOption = 'new' | 'top';
@@ -65,6 +69,7 @@ function generateMockPosts(university: string, count: number, startId: number): 
 
 		return {
 			id: startId + i,
+			title: 'Mock Post Title',
 			authorId: authorIndex + 1,
 			authorName: names[authorIndex],
 			authorUsername: usernames[authorIndex],

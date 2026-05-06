@@ -1,6 +1,7 @@
 import { AuthService, UsersService } from '$lib/api/services';
 
 function createUserState() {
+	let id = $state('');
 	let name = $state('');
 	let surname = $state('');
 	let username = $state('');
@@ -17,6 +18,7 @@ function createUserState() {
 		if (saved) {
 			try {
 				const data = JSON.parse(saved);
+				id = data.id || '';
 				name = data.name || '';
 				surname = data.surname || '';
 				username = data.username || '';
@@ -36,7 +38,7 @@ function createUserState() {
 
 	function updateProfileStorage() {
 		if (typeof window !== 'undefined' && isAuthenticated) {
-			const profile = { name, surname, username, email, university, memberSince, avatarInitials, avatarUrl };
+			const profile = { id, name, surname, username, email, university, memberSince, avatarInitials, avatarUrl };
 			localStorage.setItem('profile_' + email, JSON.stringify(profile));
 			localStorage.setItem('currentUser', JSON.stringify({ ...profile, isAuthenticated: true }));
 		}
@@ -61,7 +63,7 @@ function createUserState() {
 				localStorage.setItem('token', tokenData.access_token);
 			}
 			const me = await UsersService.getMe();
-
+			id = me.id;
 			username = me.username;
 			email = me.email;
 			memberSince = new Date(me.created_at).toLocaleString('en-US', { month: 'long', year: 'numeric' });
@@ -78,6 +80,7 @@ function createUserState() {
 	}
 
 	function logout() {
+		id = '';
 		name = '';
 		surname = '';
 		username = '';
@@ -113,6 +116,7 @@ function createUserState() {
 	}
 
 	return {
+		get id() { return id; },
 		get name() { return name; },
 		get surname() { return surname; },
 		get username() { return username; },

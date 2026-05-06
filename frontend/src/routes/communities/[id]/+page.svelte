@@ -3,6 +3,7 @@
 	import type { PageData } from './$types';
 	import { communityState } from '$lib/stores/community.svelte';
 	import { user } from '$lib/stores/user.svelte';
+	import Feed from '$lib/components/Feed.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -101,9 +102,9 @@
 				{/if}
 			</div>
 
-			<!-- Posts Feed Placeholder -->
-			<div class="rounded-xl border border-slate-800 bg-slate-900/50 p-8 text-center">
-				<p class="text-slate-400">Posts feed coming soon...</p>
+			<!-- Posts Feed -->
+			<div class="mt-8">
+				<Feed communityId={community.id} />
 			</div>
 		</div>
 	{:else}
