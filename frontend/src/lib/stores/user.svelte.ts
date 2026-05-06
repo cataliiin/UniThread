@@ -1,3 +1,5 @@
+import { AuthService, UsersService } from '$lib/api/services';
+
 function createUserState() {
 	let name = $state('');
 	let surname = $state('');
@@ -41,65 +43,35 @@ function createUserState() {
 	}
 
 	async function checkUsername(usernameParam: string): Promise<boolean> {
-		await new Promise((resolve) => setTimeout(resolve, 500));
-		if (localStorage.getItem('username_' + usernameParam) === usernameParam) {
-			return false;
-		}
+		// Mock implementation or future API check
 		return true;
 	}
 
 	async function checkEmail(emailParam: string): Promise<boolean> {
-		await new Promise((resolve) => setTimeout(resolve, 500));
-		if (localStorage.getItem('email_' + emailParam) === emailParam) {
-			return false;
-		}
+		// Mock implementation or future API check
 		return true;
 	}
 
 	async function login(emailParam: string, password: string): Promise<{ success: boolean; error?: string }> {
-		await new Promise((resolve) => setTimeout(resolve, 800));
-
 		if (typeof window === 'undefined') return { success: false, error: 'Not available server-side' };
 
-		const storedEmail = localStorage.getItem('email_' + emailParam);
-		if (storedEmail !== emailParam) {
-			return { success: false, error: 'No account found with this email address.' };
+		try {
+			await AuthService.login({ username: emailParam, password });
+			const me = await UsersService.getMe();
+
+			username = me.username;
+			email = me.email;
+			memberSince = new Date(me.created_at).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+			avatarInitials = me.username.substring(0, 2).toUpperCase();
+			avatarUrl = me.avatar_key;
+			isAuthenticated = true;
+
+			updateProfileStorage();
+
+			return { success: true };
+		} catch (error: any) {
+			return { success: false, error: error.message || 'Login failed.' };
 		}
-
-		const storedPassword = localStorage.getItem('password_' + emailParam);
-		if (storedPassword !== password) {
-			return { success: false, error: 'Incorrect password. Please try again.' };
-		}
-
-		const profileRaw = localStorage.getItem('profile_' + emailParam);
-		if (!profileRaw) {
-			return { success: false, error: 'User profile not found.' };
-		}
-
-		const profile = JSON.parse(profileRaw);
-		name = profile.name || '';
-		surname = profile.surname || '';
-		username = profile.username || '';
-		email = profile.email || '';
-		university = profile.university || '';
-		memberSince = profile.memberSince || '';
-		avatarInitials = profile.avatarInitials || '';
-		avatarUrl = profile.avatarUrl || null;
-		isAuthenticated = true;
-
-		localStorage.setItem('currentUser', JSON.stringify({
-			name,
-			surname,
-			username,
-			email,
-			university,
-			memberSince,
-			avatarInitials,
-			avatarUrl,
-			isAuthenticated: true
-		}));
-
-		return { success: true };
 	}
 
 	function logout() {
@@ -120,41 +92,19 @@ function createUserState() {
 	async function register(emailParam: string, usernameParam: string, password: string,
 		nameParam: string, surnameParam: string): Promise<void> {
 
-		await new Promise((resolve) => setTimeout(resolve, 1500));
+		await AuthService.register({
+			email: emailParam,
+			username: usernameParam,
+			password: password
+		});
 
-		email = emailParam;
-		username = usernameParam;
 		name = nameParam;
 		surname = surnameParam;
 		university = 'Transilvania University of Brașov';
 
-
-		const date = new Date();
-		memberSince = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-		avatarInitials = usernameParam.substring(0, 2).toUpperCase();
-		isAuthenticated = true;
-
-		if (typeof window !== 'undefined') {
-			localStorage.setItem('username_' + usernameParam, usernameParam);
-			localStorage.setItem('email_' + emailParam, emailParam);
-			localStorage.setItem('password_' + emailParam, password);
-
-			const profile = {
-				name,
-				surname,
-				username,
-				email,
-				university,
-				memberSince,
-				avatarInitials,
-				avatarUrl
-			};
-			localStorage.setItem('profile_' + emailParam, JSON.stringify(profile));
-
-			localStorage.setItem('currentUser', JSON.stringify({
-				...profile,
-				isAuthenticated: true
-			}));
+		const loginResult = await login(emailParam, password);
+		if (!loginResult.success) {
+			throw new Error(loginResult.error);
 		}
 	}
 

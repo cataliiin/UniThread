@@ -9,20 +9,20 @@ const baseUrl = !browser && publicBaseUrl.startsWith('/')
     : publicBaseUrl;
 
 const middleware: Middleware = {
-    async onRequest({ request }) {
+    async onRequest({ request }: { request: Request }): Promise<Request | void> {
         if (!request.headers.has('Accept')) {
             request.headers.set('Accept', 'application/json');
         }
         return request;
     },
 
-    async onResponse({ response }) {
+    async onResponse({ response }: { response: Response }): Promise<Response | void> {
         if (response.ok) return response;
 
         let message = `${response.status} ${response.statusText}`;
 
         try {
-            const data = await response.clone().json();
+            const data: any = await response.clone().json();
 
             if (typeof data?.message === 'string') {
                 message = data.message;
@@ -38,7 +38,7 @@ const middleware: Middleware = {
         throw new Error(message);
     },
 
-    async onError({ error }) {
+    async onError({ error }: { error: any }) {
         throw error instanceof Error ? error : new Error('Network error');
     },
 };

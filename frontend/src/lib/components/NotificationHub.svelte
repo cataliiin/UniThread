@@ -2,7 +2,7 @@
 	import { notifications } from '$lib/stores/notification.svelte';
 	import NotificationItem from './NotificationItem.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Bell, Check, Trash2 } from 'lucide-svelte';
+	import { Bell, Check, Trash2 } from '@lucide/svelte';
 	import { NotificationType } from '$lib/types/notification';
 
 	let isOpen = $state(false);
