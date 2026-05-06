@@ -58,9 +58,15 @@
 			{@render PostContent({ post, formatTimeAgo, handleLikeClick })}
 		</div>
 	{:else}
-		<a href={`/posts/${post.id}`} class="block outline-none">
+		<div
+			class="block cursor-pointer outline-none"
+			role="link"
+			tabindex="0"
+			onclick={() => goto(`/posts/${post.id}`)}
+			onkeydown={(e) => e.key === 'Enter' && goto(`/posts/${post.id}`)}
+		>
 			{@render PostContent({ post, formatTimeAgo, handleLikeClick })}
-		</a>
+		</div>
 	{/if}
 </article>
 
@@ -91,14 +97,13 @@
 						href={`/communities/${post.communityId}`}
 						onclick={(e) => e.stopPropagation()}
 						class="text-sm font-medium text-primary transition-colors hover:text-primary/70 hover:underline"
-					>{post.communityName}</a>
+						>{post.communityName}</a
+					>
 				{/if}
 			</div>
 			<span class="text-xs text-muted-foreground/60">{formatTimeAgo(post.createdAt)}</span>
 		</div>
 	</div>
-
-
 
 	<h1 class="mb-2 font-semibold text-foreground">{post.title}</h1>
 
