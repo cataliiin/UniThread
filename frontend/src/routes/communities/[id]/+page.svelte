@@ -22,12 +22,20 @@
 		return `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:9000/community-assets'}/${key}`;
 	}
 
+	async function handleJoin() {
+		if (!community) return;
+		await communityState.joinCommunity(community.id);
+	}
+
 	async function handleLeave() {
 		if (!community) return;
 		leavingLoading = true;
 		const ok = await communityState.leaveCommunity(community.id);
 		leavingLoading = false;
-		if (ok) goto('/communities');
+		if (ok) {
+			closeMenu();
+			// Stay on page to show Join button if public, or keep as is
+		}
 	}
 
 	function closeMenu() {
@@ -98,6 +106,51 @@
 
 				<!-- Action Buttons -->
 				<div class="mb-2 flex shrink-0 items-center gap-2">
+					{#if !community.user_membership_status}
+						{#if community.type === 'public'}
+							<button
+								onclick={handleJoin}
+								disabled={communityState.loading}
+								class="flex items-center gap-2 rounded-xl bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:brightness-110 disabled:opacity-70"
+							>
+								{#if communityState.loading}
+									<div class="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground"></div>
+									Joining...
+								{:else}
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+										<path d="M5 12h14m-7-7v14"/>
+									</svg>
+									Join
+								{/if}
+							</button>
+						{:else if community.type === 'request'}
+							<button
+								onclick={handleJoin}
+								disabled={communityState.loading}
+								class="flex items-center gap-2 rounded-xl bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:brightness-110 disabled:opacity-70"
+							>
+								{#if communityState.loading}
+									<div class="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground"></div>
+									Applying...
+								{:else}
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+										<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+										<circle cx="9" cy="7" r="4"/>
+										<path d="M19 8v6m-3-3h6"/>
+									</svg>
+									Apply to Join
+								{/if}
+							</button>
+						{/if}
+					{:else if community.user_membership_status === 'pending'}
+						<div class="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-500">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+							</svg>
+							Pending Approval
+						</div>
+					{/if}
+
 					<!-- Members Button -->
 					<a
 						href="/communities/{community.id}/members"
@@ -151,7 +204,7 @@
 									<div class="my-1 border-t border-border"></div>
 								{/if}
 
-								{#if !isOwner}
+								{#if !isOwner && community.user_membership_status === 'approved'}
 									{#if !leaveConfirm}
 										<button
 											onclick={() => (leaveConfirm = true)}
@@ -226,9 +279,31 @@
 				</div>
 				<p class="text-sm font-medium text-foreground">Posts feed coming soon</p>
 				<p class="mt-1 text-xs text-muted-foreground">This is where community posts will appear.</p>
+			</div>
 			<!-- Posts Feed -->
 			<div class="mt-8">
-				<Feed communityId={community.id} />
+				{#if community.type === 'public' || community.user_membership_status === 'approved' || isOwner}
+					<Feed communityId={community.id} />
+				{:else}
+					<div class="rounded-xl border border-border bg-sidebar/40 p-12 text-center">
+						<div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+							<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground">
+								<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+								<path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+							</svg>
+						</div>
+						<h3 class="text-lg font-semibold text-foreground">This community is private</h3>
+						<p class="mt-2 text-sm text-muted-foreground">You must be an approved member to see posts.</p>
+						{#if !community.user_membership_status}
+							<button
+								onclick={handleJoin}
+								class="mt-6 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:brightness-110"
+							>
+								Apply to Join
+							</button>
+						{/if}
+					</div>
+				{/if}
 			</div>
 		</div>
 	{:else}

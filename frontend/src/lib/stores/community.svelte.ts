@@ -16,6 +16,8 @@ import { api } from '$lib/api/client';
 type CommunityType = components['schemas']['CommunityType'];
 type BucketName = components['schemas']['BucketName'];
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+
 function createCommunityState() {
 	let currentCommunity = $state<Community | null>(null);
 	let myCommunities = $state<Community[]>([]);
@@ -232,26 +234,44 @@ function createCommunityState() {
 		}
 	}
 
-	async function leaveCommunity(communityId: string): Promise<boolean> {
+	async function joinCommunity(communityId: string): Promise<boolean> {
+		loading = true;
 		try {
-			const response = await fetch(`${API_BASE}/communities/${communityId}/leave`, {
-				method: 'DELETE',
-				headers: await getAuthHeaders()
-			});
-			if (!response.ok) throw new Error('Failed to leave community');
+			const communityData = await CommunitiesService.join(communityId);
+			if (currentCommunity && currentCommunity.id === communityId) {
+				currentCommunity.user_membership_status = communityData.status as any;
+				currentCommunity.member_count++;
+			}
+			toasts.show(
+				communityData.status === 'approved' 
+					? 'Joined community successfully!' 
+					: 'Join request sent successfully!', 
+				'success'
+			);
+			return true;
+		} catch (error: any) {
+			toasts.show(error.message || 'Failed to join community', 'error');
+			return false;
+		} finally {
+			loading = false;
+		}
+	}
+
+	async function leaveCommunity(communityId: string): Promise<boolean> {
+		loading = true;
+		try {
+			await CommunitiesService.leave(communityId);
+			if (currentCommunity && currentCommunity.id === communityId) {
+				currentCommunity.user_membership_status = null;
+				currentCommunity.member_count--;
+			}
 			toasts.show('Left community successfully', 'success');
 			return true;
-		} catch {
-			// Mock: remove from localStorage
-			if (typeof window !== 'undefined') {
-				const all: Community[] = JSON.parse(localStorage.getItem('mock_communities') || '[]');
-				const updated = all.filter((c) => c.id !== communityId);
-				localStorage.setItem('mock_communities', JSON.stringify(updated));
-				myCommunities = updated;
-				toasts.show('Left community (local mode)', 'success');
-				return true;
-			}
+		} catch (error: any) {
+			toasts.show(error.message || 'Failed to leave community', 'error');
 			return false;
+		} finally {
+			loading = false;
 		}
 	}
 
@@ -346,6 +366,7 @@ function createCommunityState() {
 		fetchCommunity,
 		fetchMyCommunities,
 		fetchMembers,
+		joinCommunity,
 		leaveCommunity,
 		promoteToAdmin,
 		removeMember,

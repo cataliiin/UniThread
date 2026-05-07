@@ -5,7 +5,9 @@ import {
 	type PostResult,
 } from '$lib/types/search';
 import { SearchService } from '$lib/api/services/SearchService';
+import { CommunitiesService } from '$lib/api/services/CommunitiesService';
 import { user } from './user.svelte';
+import { toasts } from './toast.svelte';
 
 function createSearchState() {
 	let query = $state('');
@@ -107,17 +109,30 @@ function createSearchState() {
 		loading = false;
 	}
 
-	function toggleJoinCommunity(communityId: string | number) {
-		communities = communities.map((c) => {
-			if (c.id === communityId) {
-				return {
-					...c,
-					isJoined: !c.isJoined,
-					members: c.isJoined ? c.members - 1 : c.members + 1
-				};
+	async function toggleJoinCommunity(communityId: string | number) {
+		const idStr = communityId.toString();
+		const community = communities.find(c => c.id === communityId);
+		if (!community) return;
+
+		try {
+			if (community.isJoined) {
+				await CommunitiesService.leave(idStr);
+				community.isJoined = false;
+				community.members--;
+				toasts.show('Left community', 'success');
+			} else {
+				const res = await CommunitiesService.join(idStr);
+				community.isJoined = res.status === 'approved';
+				if (res.status === 'approved') {
+					community.members++;
+					toasts.show('Joined community', 'success');
+				} else {
+					toasts.show('Join request sent', 'success');
+				}
 			}
-			return c;
-		});
+		} catch (error: any) {
+			toasts.show(error.message || 'Action failed', 'error');
+		}
 	}
 
 	return {
