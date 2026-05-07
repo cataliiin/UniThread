@@ -1,6 +1,7 @@
 import createClient, { type Middleware } from 'openapi-fetch';
 import type { paths } from '$lib/api/openapi-generated-schema';
 import { browser } from '$app/environment';
+import { goto } from '$app/navigation';
 
 const publicBaseUrl = 'http://localhost:8000';
 
@@ -26,6 +27,16 @@ const middleware: Middleware = {
 
     async onResponse({ response }: { response: Response }): Promise<Response | void> {
         if (response.ok) return response;
+
+        // Token expired or invalid — clear session and redirect to login
+        if (response.status === 401 && browser) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('currentUser'); // matches what user.logout() removes
+            // Notify the user store to reset its in-memory state without a circular import
+            window.dispatchEvent(new Event('auth:expired'));
+            goto('/login');
+            throw new Error('__AUTH_REDIRECT__');
+        }
 
         let message = `${response.status} ${response.statusText}`;
 

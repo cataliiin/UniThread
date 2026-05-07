@@ -32,6 +32,9 @@ function createUserState() {
 				console.error('Failed to parse user data from localStorage');
 			}
 		}
+
+		// Reset in-memory state when the API client detects an expired/invalid token
+		window.addEventListener('auth:expired', () => logout());
 	}
 
 	let avatarSource = $derived(avatarUrl);

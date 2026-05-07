@@ -40,7 +40,11 @@
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
 
-		if (!formData.title.trim() || !formData.content.trim() || (mode === 'create' && !formData.community_id)) {
+		if (
+			!formData.title.trim() ||
+			!formData.content.trim() ||
+			(mode === 'create' && !formData.community_id)
+		) {
 			toast.error('Title, content, and community are required.');
 			return;
 		}
@@ -110,7 +114,7 @@
 		/>
 	</div>
 
-	{#if mode === 'create'}
+	{#if mode === 'create' && communities.find((c) => c.id === formData.community_id)?.allow_anonymous}
 		<div class="flex items-center space-x-2">
 			<input
 				type="checkbox"
@@ -124,8 +128,17 @@
 
 	<div class="flex justify-end space-x-4 border-t pt-4">
 		<Button variant="outline" type="button" onclick={() => history.back()}>Cancel</Button>
-		<Button type="submit" disabled={isSubmitting || (mode === 'create' && communities.length === 0)}>
-			{isSubmitting ? (mode === 'create' ? 'Posting...' : 'Saving...') : (mode === 'create' ? 'Post' : 'Save Changes')}
+		<Button
+			type="submit"
+			disabled={isSubmitting || (mode === 'create' && communities.length === 0)}
+		>
+			{isSubmitting
+				? mode === 'create'
+					? 'Posting...'
+					: 'Saving...'
+				: mode === 'create'
+					? 'Post'
+					: 'Save Changes'}
 		</Button>
 	</div>
 </form>
