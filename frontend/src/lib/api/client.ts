@@ -1,6 +1,7 @@
 import createClient, { type Middleware } from 'openapi-fetch';
 import type { paths } from '$lib/api/openapi-generated-schema';
 import { browser } from '$app/environment';
+import { goto } from '$app/navigation';
 
 const publicBaseUrl = 'http://localhost:8000';
 
@@ -9,20 +10,38 @@ const baseUrl = !browser && publicBaseUrl.startsWith('/')
     : publicBaseUrl;
 
 const middleware: Middleware = {
-    async onRequest({ request }) {
+    async onRequest({ request }: { request: Request }): Promise<Request | void> {
         if (!request.headers.has('Accept')) {
             request.headers.set('Accept', 'application/json');
         }
+
+        if (browser) {
+            const token = localStorage.getItem('token');
+            if (token && !request.headers.has('Authorization')) {
+                request.headers.set('Authorization', `Bearer ${token}`);
+            }
+        }
+
         return request;
     },
 
-    async onResponse({ response }) {
+    async onResponse({ response }: { response: Response }): Promise<Response | void> {
         if (response.ok) return response;
+
+        // Token expired or invalid — clear session and redirect to login
+        if (response.status === 401 && browser) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('currentUser'); // matches what user.logout() removes
+            // Notify the user store to reset its in-memory state without a circular import
+            window.dispatchEvent(new Event('auth:expired'));
+            goto('/login');
+            throw new Error('__AUTH_REDIRECT__');
+        }
 
         let message = `${response.status} ${response.statusText}`;
 
         try {
-            const data = await response.clone().json();
+            const data: any = await response.clone().json();
 
             if (typeof data?.message === 'string') {
                 message = data.message;
@@ -38,7 +57,7 @@ const middleware: Middleware = {
         throw new Error(message);
     },
 
-    async onError({ error }) {
+    async onError({ error }: { error: any }) {
         throw error instanceof Error ? error : new Error('Network error');
     },
 };

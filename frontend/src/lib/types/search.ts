@@ -1,12 +1,12 @@
 export type SearchFilter = 'all' | 'users' | 'communities' | 'posts';
 
 export interface SearchResult {
-	id: number;
+	id: string | number;
 	type: 'user' | 'community' | 'post';
 }
 
 export interface UserResult {
-	id: number;
+	id: string | number;
 	name: string;
 	username: string;
 	avatarInitials: string;
@@ -16,7 +16,7 @@ export interface UserResult {
 }
 
 export interface CommunityResult {
-	id: number;
+	id: string | number;
 	name: string;
 	description: string;
 	members: number;
@@ -26,8 +26,8 @@ export interface CommunityResult {
 }
 
 export interface PostResult {
-	id: number;
-	authorId: number;
+	id: string | number;
+	authorId: string | number;
 	authorName: string;
 	authorUsername: string;
 	content: string;

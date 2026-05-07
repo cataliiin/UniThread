@@ -4,6 +4,7 @@
 	import { communityState } from '$lib/stores/community.svelte';
 	import { user } from '$lib/stores/user.svelte';
 	import { toasts } from '$lib/stores/toast.svelte';
+	import Feed from '$lib/components/Feed.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -225,6 +226,9 @@
 				</div>
 				<p class="text-sm font-medium text-foreground">Posts feed coming soon</p>
 				<p class="mt-1 text-xs text-muted-foreground">This is where community posts will appear.</p>
+			<!-- Posts Feed -->
+			<div class="mt-8">
+				<Feed communityId={community.id} />
 			</div>
 		</div>
 	{:else}

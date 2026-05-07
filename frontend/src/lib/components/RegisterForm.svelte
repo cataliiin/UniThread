@@ -103,8 +103,8 @@
 			setTimeout(() => {
 				goto('/');
 			}, 1500);
-		} catch (error) {
-			toasts.show('An error occurred during registration.', 'error');
+		} catch (error: any) {
+			toasts.show(error.message || 'An error occurred during registration.', 'error');
 		} finally {
 			isLoading = false;
 		}

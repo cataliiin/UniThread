@@ -9,8 +9,12 @@ import type {
 	CommunityMember
 } from '$lib/types/community';
 import { toasts } from './toast.svelte';
+import { CommunitiesService } from '$lib/api/services/CommunitiesService';
+import type { components } from '$lib/api/openapi-generated-schema';
+import { api } from '$lib/api/client';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+type CommunityType = components['schemas']['CommunityType'];
+type BucketName = components['schemas']['BucketName'];
 
 function createCommunityState() {
 	let currentCommunity = $state<Community | null>(null);
@@ -30,55 +34,35 @@ function createCommunityState() {
 	async function createCommunity(data: CommunityCreateRequest): Promise<Community | null> {
 		loading = true;
 		try {
-			const response = await fetch(`${API_BASE}/communities`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					...(await getAuthHeaders())
-				},
-				body: JSON.stringify(data)
+			const communityData = await CommunitiesService.create({
+				name: data.name,
+				description: data.description,
+				type: data.type as CommunityType,
+				allow_anonymous: data.allow_anonymous || false,
+				icon_key: data.icon_key,
+				banner_key: data.banner_key
 			});
 
-			if (!response.ok) {
-				const error = await response.json();
-				throw new Error(error.error?.message || 'Failed to create community');
-			}
+			const community: Community = {
+				id: communityData.id,
+				name: communityData.name,
+				description: communityData.description ?? null,
+				type: communityData.type,
+				allow_anonymous: communityData.allow_anonymous,
+				icon_key: communityData.icon_key ?? null,
+				banner_key: communityData.banner_key ?? null,
+				university_id: communityData.university_id,
+				owner_id: communityData.owner_id,
+				created_at: communityData.created_at,
+				member_count: communityData.member_count,
+				user_membership_status: communityData.user_membership_status as any
+			};
 
-			const community: Community = await response.json();
 			currentCommunity = community;
 			toasts.show('Community created successfully!', 'success');
 			return community;
-		} catch {
-			// Backend not available - fallback to localStorage (dev mode)
-			if (typeof window !== 'undefined') {
-				const userData = localStorage.getItem('currentUser');
-				const user = userData ? JSON.parse(userData) : null;
-
-				// Generate mock community
-				const mockCommunity: Community = {
-					id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-					name: data.name,
-					description: data.description || null,
-					type: data.type,
-					allow_anonymous: data.allow_anonymous || false,
-					icon_key: data.icon_key || null,
-					banner_key: data.banner_key || null,
-					university_id: user?.university || 'local_university',
-					owner_id: user?.email || 'local_user',
-					created_at: new Date().toISOString(),
-					member_count: 1,
-					user_membership_status: 'approved'
-				};
-
-				// Save to localStorage
-				const communities = JSON.parse(localStorage.getItem('mock_communities') || '[]');
-				communities.push(mockCommunity);
-				localStorage.setItem('mock_communities', JSON.stringify(communities));
-
-				currentCommunity = mockCommunity;
-				toasts.show('Community created (local mode)!', 'success');
-				return mockCommunity;
-			}
+		} catch (error: any) {
+			toasts.show(error.message || 'Failed to create community', 'error');
 			return null;
 		} finally {
 			loading = false;
@@ -91,43 +75,28 @@ function createCommunityState() {
 	): Promise<Community | null> {
 		loading = true;
 		try {
-			const response = await fetch(`${API_BASE}/communities/${communityId}`, {
-				method: 'PATCH',
-				headers: {
-					'Content-Type': 'application/json',
-					...(await getAuthHeaders())
-				},
-				body: JSON.stringify(data)
+			const communityData = await CommunitiesService.update(communityId, {
+				name: data.name,
+				description: data.description,
+				type: data.type as CommunityType,
+				allow_anonymous: data.allow_anonymous,
+				icon_key: data.icon_key,
+				banner_key: data.banner_key
 			});
 
-			if (!response.ok) {
-				if (response.status === 403) {
-					throw new Error('Only admins can edit this community');
-				}
-				const error = await response.json();
-				throw new Error(error.error?.message || 'Failed to update community');
-			}
+			const community: Community = {
+				...communityData,
+				description: communityData.description ?? null,
+				icon_key: communityData.icon_key ?? null,
+				banner_key: communityData.banner_key ?? null,
+				user_membership_status: communityData.user_membership_status as any
+			};
 
-			const community: Community = await response.json();
 			currentCommunity = community;
 			toasts.show('Community updated successfully!', 'success');
 			return community;
-		} catch {
-			// Backend not available - fallback to localStorage (dev mode)
-			if (typeof window !== 'undefined') {
-				const communities = JSON.parse(localStorage.getItem('mock_communities') || '[]');
-				const index = communities.findIndex((c: Community) => c.id === communityId);
-
-				if (index !== -1) {
-					// Update existing
-					const updated = { ...communities[index], ...data };
-					communities[index] = updated;
-					localStorage.setItem('mock_communities', JSON.stringify(communities));
-					currentCommunity = updated;
-					toasts.show('Community updated (local mode)!', 'success');
-					return updated;
-				}
-			}
+		} catch (error: any) {
+			toasts.show(error.message || 'Failed to update community', 'error');
 			return null;
 		} finally {
 			loading = false;
@@ -137,30 +106,18 @@ function createCommunityState() {
 	async function fetchCommunity(communityId: string): Promise<Community | null> {
 		loading = true;
 		try {
-			const response = await fetch(`${API_BASE}/communities/${communityId}`, {
-				headers: await getAuthHeaders()
-			});
-
-			if (!response.ok) {
-				if (response.status === 404) {
-					throw new Error('Community not found');
-				}
-				throw new Error('Failed to fetch community');
-			}
-
-			const community: Community = await response.json();
+			const communityData = await CommunitiesService.get(communityId);
+			const community: Community = {
+				...communityData,
+				description: communityData.description ?? null,
+				icon_key: communityData.icon_key ?? null,
+				banner_key: communityData.banner_key ?? null,
+				user_membership_status: communityData.user_membership_status as any
+			};
 			currentCommunity = community;
 			return community;
-		} catch {
-			// Backend not available - fallback to localStorage (dev mode)
-			if (typeof window !== 'undefined') {
-				const communities = JSON.parse(localStorage.getItem('mock_communities') || '[]');
-				const community = communities.find((c: Community) => c.id === communityId);
-				if (community) {
-					currentCommunity = community;
-					return community;
-				}
-			}
+		} catch (error) {
+			currentCommunity = null;
 			return null;
 		} finally {
 			loading = false;
@@ -179,24 +136,12 @@ function createCommunityState() {
 
 	async function getPresignedUrl(): Promise<PresignedUrlResponse | null> {
 		try {
-			const requestData: PresignedUrlRequest = { bucket_name: 'community_assets' };
-			const response = await fetch(`${API_BASE}/storage/presigned-url`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					...(await getAuthHeaders())
-				},
-				body: JSON.stringify(requestData)
+			const { data } = await api.POST('/api/v1/storage/presigned-url', {
+				body: { bucket_name: 'community-assets' as BucketName }
 			});
-
-			if (!response.ok) {
-				return null;
-			}
-
-			return await response.json();
+			if (!data) return null;
+			return data;
 		} catch {
-			// Backend not available, return null to trigger localStorage fallback
-			// This is expected during development without backend
 			return null;
 		}
 	}

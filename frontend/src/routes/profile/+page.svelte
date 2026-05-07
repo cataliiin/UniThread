@@ -22,8 +22,17 @@
 			<div class="mb-6 text-center sm:mb-8">
 				<!-- Avatar Section -->
 				<div
-					class="group relative mx-auto mb-6 flex cursor-pointer justify-center"
+					role="button"
+					tabindex="0"
+					class="group relative mx-auto mb-6 flex cursor-pointer justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
 					onclick={() => profileEditor.handleAvatarClick()}
+					onkeydown={(e) => {
+						if (e.key === 'Enter' || e.key === ' ') {
+							e.preventDefault();
+							profileEditor.handleAvatarClick();
+						}
+					}}
+					aria-label="Change profile picture"
 				>
 					<UserAvatar
 						src={profileEditor.currentAvatar}
@@ -277,9 +286,7 @@
 		}
 	}
 
-	.animate-in {
-		animation: fadeIn 0.6s ease-out forwards;
-	}
+
 
 	.custom-scrollbar::-webkit-scrollbar {
 		width: 4px;
