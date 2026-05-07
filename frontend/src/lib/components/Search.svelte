@@ -198,7 +198,7 @@
 						{#each searchState.users as user (user.id)}
 							<button
 								class="group flex w-full items-center gap-4 rounded-xl border border-border bg-card p-4 text-left transition-all duration-300 hover:border-primary/30 hover:shadow-md"
-								onclick={() => goto('/profile')}
+								onclick={() => goto(`/profile/${user.id}`)}
 							>
 								<div
 									class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
@@ -269,18 +269,34 @@
 					<div class="space-y-3">
 						{#each searchState.posts as post (post.id)}
 							<article class="group rounded-xl border border-border bg-card p-4 transition-all duration-300 hover:border-primary/30">
-								<div class="mb-2 flex items-center gap-3">
-									<div
-										class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
+								{#if post.authorId === 'anonymous'}
+									<div class="flex items-center gap-3">
+										<div
+											class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary transition-all duration-300"
+										>
+											{post.authorName.charAt(0)}
+										</div>
+										<div>
+											<span class="font-medium text-card-foreground">{post.authorName}</span>
+											<span class="text-sm text-muted-foreground"> @{post.authorUsername}</span>
+										</div>
+									</div>
+								{:else}
+									<button 
+										class="flex items-center gap-3 hover:opacity-80 transition-opacity"
+										onclick={(e) => { e.stopPropagation(); goto(`/profile/${post.authorId}`); }}
 									>
-										{post.authorName.charAt(0)}
-									</div>
-									<div>
-										<span class="font-medium text-card-foreground">{post.authorName}</span>
-										<span class="text-sm text-muted-foreground"> @{post.authorUsername}</span>
-									</div>
-									<span class="text-xs text-muted-foreground/60">· {formatTimeAgo(post.createdAt)}</span>
-								</div>
+										<div
+											class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
+										>
+											{post.authorName.charAt(0)}
+										</div>
+										<div>
+											<span class="font-medium text-card-foreground">{post.authorName}</span>
+											<span class="text-sm text-muted-foreground"> @{post.authorUsername}</span>
+										</div>
+									</button>
+								{/if}
 								<p class="text-card-foreground/90 leading-relaxed">{post.content}</p>
 								<div class="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
 									<span>{post.likes} likes</span>

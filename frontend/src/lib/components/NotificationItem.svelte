@@ -35,15 +35,20 @@
 >
 	<!-- Left Column: Avatar (Shared by all notifications) -->
 	<div class="shrink-0 pt-0.5">
-		{#if notification.sender_avatar}
-			<img src={notification.sender_avatar} alt="" class="h-8 w-8 rounded-full object-cover" />
-		{:else}
-			<img
-				src="https://ui-avatars.com/api/?name={notification.sender_name}&background=random"
-				alt=""
-				class="h-8 w-8 rounded-full"
-			/>
-		{/if}
+		<button 
+			class="h-8 w-8 overflow-hidden rounded-full transition-opacity hover:opacity-80"
+			onclick={() => goto(`/profile/${notification.sender_id}`)}
+		>
+			{#if notification.sender_avatar}
+				<img src={notification.sender_avatar} alt="" class="h-full w-full object-cover" />
+			{:else}
+				<img
+					src="https://ui-avatars.com/api/?name={notification.sender_name}&background=random"
+					alt=""
+					class="h-full w-full"
+				/>
+			{/if}
+		</button>
 	</div>
 
 	<!-- Right Column: Text & Buttons -->
@@ -51,34 +56,34 @@
 		<!-- Notification Text -->
 		{#if notification.type === NotificationType.Invitation}
 			<div class="text-sm">
-				<strong>{notification.sender_name}</strong> invited you to join
+				<button class="font-bold hover:text-primary transition-colors" onclick={() => goto(`/profile/${notification.sender_id}`)}>{notification.sender_name}</button> invited you to join
 				<strong>{notification.community_name}</strong>
 			</div>
 		{:else if notification.type === NotificationType.AcceptInvitation}
 			<div class="text-sm">
-				<strong>{notification.sender_name}</strong> accepted your invitation to join
+				<button class="font-bold hover:text-primary transition-colors" onclick={() => goto(`/profile/${notification.sender_id}`)}>{notification.sender_name}</button> accepted your invitation to join
 				<strong>{notification.community_name}</strong>
 			</div>
 		{:else if notification.type === NotificationType.DeclineInvitation}
 			<div class="text-sm">
-				<strong>{notification.sender_name}</strong> declined your invitation to join
+				<button class="font-bold hover:text-primary transition-colors" onclick={() => goto(`/profile/${notification.sender_id}`)}>{notification.sender_name}</button> declined your invitation to join
 				<strong>{notification.community_name}</strong>
 			</div>
 		{:else if notification.type === NotificationType.Message}
 			<div class="text-sm">
-				<strong>{notification.sender_name}</strong> sent you a message
+				<button class="font-bold hover:text-primary transition-colors" onclick={() => goto(`/profile/${notification.sender_id}`)}>{notification.sender_name}</button> sent you a message
 			</div>
 		{:else if notification.type === NotificationType.Post}
 			<div class="text-sm">
-				<strong>{notification.sender_name}</strong> posted a new post
+				<button class="font-bold hover:text-primary transition-colors" onclick={() => goto(`/profile/${notification.sender_id}`)}>{notification.sender_name}</button> posted a new post
 			</div>
 		{:else if notification.type === NotificationType.Like}
 			<div class="text-sm">
-				<strong>{notification.sender_name}</strong> liked your post
+				<button class="font-bold hover:text-primary transition-colors" onclick={() => goto(`/profile/${notification.sender_id}`)}>{notification.sender_name}</button> liked your post
 			</div>
 		{:else if notification.type === NotificationType.Comment}
 			<div class="text-sm">
-				<strong>{notification.sender_name}</strong> commented on your post
+				<button class="font-bold hover:text-primary transition-colors" onclick={() => goto(`/profile/${notification.sender_id}`)}>{notification.sender_name}</button> commented on your post
 			</div>
 		{/if}
 

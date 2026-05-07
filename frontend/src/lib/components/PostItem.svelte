@@ -79,17 +79,39 @@
 	formatTimeAgo: (d: string) => string;
 	handleLikeClick: (e: Event) => void;
 })}
-	<!-- Author Header -->
 	<div class="mb-3 flex items-center gap-3">
-		<div
-			class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
-		>
-			{post.authorName.charAt(0)}
-		</div>
-		<div class="flex-1">
+		<!-- Avatar -->
+		{#if post.authorId === 'anonymous'}
+			<div
+				class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
+			>
+				{post.authorName.charAt(0)}
+			</div>
+		{:else}
+			<button 
+				class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary transition-all duration-300 hover:bg-primary/20"
+				onclick={(e) => { e.stopPropagation(); goto(`/profile/${post.authorId}`); }}
+			>
+				{post.authorName.charAt(0)}
+			</button>
+		{/if}
+
+		<!-- Author Info & Community -->
+		<div class="flex-1 min-w-0">
 			<div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-				<span class="font-semibold text-card-foreground">{post.authorName}</span>
+				{#if post.authorId === 'anonymous'}
+					<span class="font-semibold text-card-foreground">{post.authorName}</span>
+				{:else}
+					<button 
+						class="font-semibold text-card-foreground hover:text-primary transition-colors"
+						onclick={(e) => { e.stopPropagation(); goto(`/profile/${post.authorId}`); }}
+					>
+						{post.authorName}
+					</button>
+				{/if}
+				
 				<span class="text-sm text-muted-foreground">@{post.authorUsername}</span>
+
 				{#if showCommunity && post.communityName}
 					<span class="text-sm text-muted-foreground/50">·</span>
 					<span class="text-sm text-muted-foreground">in</span>
@@ -104,6 +126,7 @@
 			<span class="text-xs text-muted-foreground/60">{formatTimeAgo(post.createdAt)}</span>
 		</div>
 	</div>
+
 
 	<h1 class="mb-2 font-semibold text-foreground">{post.title}</h1>
 
