@@ -18,11 +18,31 @@ function createUserState() {
 		if (saved) {
 			try {
 				const data = JSON.parse(saved);
+				// Migration: if id is an email, it's legacy/invalid, clear it
+				if (data.id && data.id.includes('@')) {
+					localStorage.removeItem('currentUser');
+					localStorage.removeItem('token');
+					window.location.reload();
+					return;
+				}
 				id = data.id || '';
 				name = data.name || '';
 				surname = data.surname || '';
 				username = data.username || '';
 				email = data.email || '';
+				
+				// Fallback name parsing from email (e.g. cezar.mihai.vieru@...)
+				if (email && email.includes('.') && (!name || !surname)) {
+					const parts = email.split('@')[0].split('.');
+					if (parts.length >= 2) {
+						if (!name) name = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+						if (!surname) {
+							surname = parts.slice(1)
+								.map(p => p.charAt(0).toUpperCase() + p.slice(1))
+								.join(' ');
+						}
+					}
+				}
 				university = data.university || '';
 				memberSince = data.memberSince || '';
 				avatarInitials = data.avatarInitials || '';
@@ -42,7 +62,6 @@ function createUserState() {
 	function updateProfileStorage() {
 		if (typeof window !== 'undefined' && isAuthenticated) {
 			const profile = { id, name, surname, username, email, university, memberSince, avatarInitials, avatarUrl };
-			localStorage.setItem('profile_' + email, JSON.stringify(profile));
 			localStorage.setItem('currentUser', JSON.stringify({ ...profile, isAuthenticated: true }));
 		}
 	}
@@ -69,6 +88,20 @@ function createUserState() {
 			id = me.id;
 			username = me.username;
 			email = me.email;
+			
+			// Parse name and surname from email if possible (e.g., name.surname@...)
+			if (me.email.includes('.')) {
+				const parts = me.email.split('@')[0].split('.');
+				if (parts.length >= 2) {
+					name = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+					surname = parts.slice(1)
+						.map(p => p.charAt(0).toUpperCase() + p.slice(1))
+						.join(' ');
+				}
+			}
+			
+			// Fallback for university name if not in schema yet
+			university = 'Transilvania University of Brașov'; 
 			memberSince = new Date(me.created_at).toLocaleString('en-US', { month: 'long', year: 'numeric' });
 			avatarInitials = me.username.substring(0, 2).toUpperCase();
 			avatarUrl = me.avatar_key;

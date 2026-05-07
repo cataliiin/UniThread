@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import type { PageData } from './$types';
 	import { communityState } from '$lib/stores/community.svelte';
@@ -28,10 +29,10 @@
 	const regularMembers = $derived(filteredMembers.filter((m) => !m.is_admin));
 
 	onMount(async () => {
-		// Load community name from localStorage
-		const allCommunities = JSON.parse(localStorage.getItem('mock_communities') || '[]');
-		const community = allCommunities.find((c: { id: string; name: string }) => c.id === communityId);
-		if (community) communityName = community.name;
+		const community = await communityState.fetchCommunity(communityId);
+		if (community) {
+			communityName = community.name;
+		}
 
 		members = await communityState.fetchMembers(communityId);
 		loading = false;
@@ -131,7 +132,10 @@
 				</div>
 				<div class="mb-6 space-y-2">
 					{#each adminMembers as member (member.user_id)}
-						<div class="flex items-center gap-3 rounded-xl border border-border bg-sidebar px-4 py-3 transition-colors hover:border-primary/30 hover:bg-primary/5">
+						<button
+							onclick={() => member.user_id !== 'anonymous' && goto(`/profile/${member.user_id}`)}
+							class="flex w-full items-center gap-3 rounded-xl border border-border bg-sidebar px-4 py-3 text-left transition-colors hover:border-primary/30 hover:bg-primary/5"
+						>
 							<!-- Avatar -->
 							<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white shadow-md">
 								{#if member.avatar_url}
@@ -156,7 +160,7 @@
 							<span class="shrink-0 text-xs text-muted-foreground">
 								{formatDate(member.joined_at)}
 							</span>
-						</div>
+						</button>
 					{/each}
 				</div>
 			{/if}
@@ -170,7 +174,10 @@
 				</div>
 				<div class="space-y-2">
 					{#each regularMembers as member (member.user_id)}
-						<div class="flex items-center gap-3 rounded-xl border border-border bg-sidebar px-4 py-3 transition-colors hover:border-border/60 hover:bg-sidebar/80">
+						<button
+							onclick={() => member.user_id !== 'anonymous' && goto(`/profile/${member.user_id}`)}
+							class="flex w-full items-center gap-3 rounded-xl border border-border bg-sidebar px-4 py-3 text-left transition-colors hover:border-border/60 hover:bg-sidebar/80"
+						>
 							<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-700 text-sm font-semibold text-slate-300">
 								{#if member.avatar_url}
 									<img src={member.avatar_url} alt="" class="h-full w-full rounded-full object-cover" />
@@ -189,7 +196,7 @@
 							<span class="shrink-0 text-xs text-muted-foreground">
 								{formatDate(member.joined_at)}
 							</span>
-						</div>
+						</button>
 					{/each}
 				</div>
 			{/if}

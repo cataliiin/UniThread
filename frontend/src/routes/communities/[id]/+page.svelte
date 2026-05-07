@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
 	import { communityState } from '$lib/stores/community.svelte';
@@ -42,6 +43,12 @@
 		menuOpen = false;
 		leaveConfirm = false;
 	}
+
+	onMount(() => {
+		if (isAdmin && community) {
+			communityState.fetchJoinRequests(community.id);
+		}
+	});
 </script>
 
 <svelte:head>
@@ -68,10 +75,10 @@
 					class="h-full w-full object-cover"
 				/>
 			{:else}
-				<div class="h-full w-full bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500"></div>
+				<div class="h-full w-full bg-linear-to-br from-indigo-600 via-purple-600 to-pink-500"></div>
 			{/if}
 			<!-- Dark gradient overlay bottom -->
-			<div class="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent"></div>
+			<div class="absolute inset-0 bg-linear-to-t from-background/80 via-transparent to-transparent"></div>
 		</div>
 
 		<div class="mx-auto max-w-4xl px-4">
@@ -161,10 +168,29 @@
 							<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
 							<circle cx="9" cy="7" r="4"/>
 							<path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-							<path d="M16 3.13a4 4 0 0 1 0 7.75"/>
 						</svg>
 						Members
 					</a>
+
+					<!-- Requests Button (Admin Only) -->
+					{#if isAdmin}
+						<a
+							href="/communities/{community.id}/requests"
+							class="relative flex items-center gap-2 rounded-xl border border-border bg-sidebar px-4 py-2 text-sm font-medium text-foreground transition-all duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+								<circle cx="9" cy="7" r="4"/>
+								<line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
+							</svg>
+							Requests
+							{#if communityState.joinRequests.length > 0}
+								<span class="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-background">
+									{communityState.joinRequests.length}
+								</span>
+							{/if}
+						</a>
+					{/if}
 
 					<!-- 3-dot Menu -->
 					<div class="relative z-30">
@@ -247,7 +273,7 @@
 			<!-- Description -->
 			{#if community.description}
 				<div class="mb-6 rounded-xl border border-border bg-sidebar/60 p-4">
-					<p class="break-words text-sm text-muted-foreground leading-relaxed">{community.description}</p>
+					<p class="wrap-break-word text-sm text-muted-foreground leading-relaxed">{community.description}</p>
 				</div>
 			{/if}
 
@@ -270,16 +296,7 @@
 				</span>
 			</div>
 
-			<!-- Posts Feed Placeholder -->
-			<div class="rounded-xl border border-dashed border-border bg-sidebar/40 p-10 text-center">
-				<div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-					<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-primary">
-						<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-					</svg>
-				</div>
-				<p class="text-sm font-medium text-foreground">Posts feed coming soon</p>
-				<p class="mt-1 text-xs text-muted-foreground">This is where community posts will appear.</p>
-			</div>
+
 			<!-- Posts Feed -->
 			<div class="mt-8">
 				{#if community.type === 'public' || community.user_membership_status === 'approved' || isOwner}

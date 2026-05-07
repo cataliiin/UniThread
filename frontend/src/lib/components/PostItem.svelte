@@ -40,7 +40,7 @@
 	function handleEditClick(e: Event) {
 		e.preventDefault();
 		e.stopPropagation();
-		if (user.id !== post.authorId) {
+		if (user?.id !== post.authorId) {
 			toast.error('You are not authorized to edit this post.');
 			return;
 		}
@@ -181,7 +181,7 @@
 			>
 			<span>{post.comments}</span>
 		</div>
-		{#if user.isAuthenticated && user.id === post.authorId}
+		{#if user?.isAuthenticated && user?.id === post.authorId}
 			<button
 				class="flex items-center gap-1.5 text-sm text-muted-foreground transition-all duration-300 hover:text-primary"
 				onclick={handleEditClick}

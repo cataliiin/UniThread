@@ -10,7 +10,17 @@
 	let { data }: { data: PageData } = $props();
 
 	let targetUser = $derived(data.targetUser);
-	let isMe = $derived(currentUser.isAuthenticated && currentUser.id === targetUser.id);
+	let isMe = $derived(currentUser?.isAuthenticated && currentUser?.id === targetUser.id);
+	
+	let displayName = $derived.by(() => {
+		if (targetUser.username.includes('.')) {
+			return targetUser.username.split('.')
+				.map(part => part.charAt(0).toUpperCase() + part.slice(1))
+				.join(' ');
+		}
+		return "@" + targetUser.username;
+	});
+
 	let initials = $derived(targetUser.username.substring(0, 2).toUpperCase());
 	let memberSince = $derived(new Date(targetUser.created_at).toLocaleString('en-US', { month: 'long', year: 'numeric' }));
 
@@ -45,9 +55,11 @@
 
 				<!-- Names -->
 				<h1 class="m-0 px-2 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-					{targetUser.username}
+					{displayName}
 				</h1>
-				<p class="mt-1 text-sm font-medium text-muted-foreground sm:text-base">@{targetUser.username}</p>
+				{#if displayName !== "@" + targetUser.username && displayName !== targetUser.username}
+					<p class="mt-1 text-sm font-medium text-muted-foreground sm:text-base">@{targetUser.username}</p>
+				{/if}
 
 				<!-- Profile Actions -->
 				{#if !isMe}
@@ -89,9 +101,9 @@
 					</div>
 					<div class="flex min-w-0 flex-col">
 						<span class="text-[9px] font-semibold tracking-wider text-muted-foreground uppercase sm:text-[10px]">
-							University ID
+							University
 						</span>
-						<span class="text-sm font-medium text-foreground sm:text-base">{targetUser.university_id}</span>
+						<span class="text-sm font-medium text-foreground sm:text-base">Transilvania University of Brașov</span>
 					</div>
 				</div>
 

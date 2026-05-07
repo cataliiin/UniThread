@@ -36,7 +36,7 @@
 				>
 					<UserAvatar
 						src={profileEditor.currentAvatar}
-						initials={user.avatarInitials}
+						initials={user?.avatarInitials}
 						size="lg"
 						className="ring-4 ring-border shadow-xl transition-transform duration-300 group-hover:scale-105"
 					>
@@ -75,10 +75,7 @@
 
 				<!-- Names -->
 				<h1 class="m-0 px-2 text-xl leading-tight font-extrabold tracking-tight text-foreground sm:text-3xl">
-					{user.name}
-				</h1>
-				<h1 class="m-0 px-2 text-xl leading-tight font-extrabold tracking-tight text-foreground sm:text-3xl">
-					{user.surname}
+					{user?.name || ''} {user?.surname || (user?.name ? '' : 'User')}
 				</h1>
 
 				<!-- Inline Username Editing -->
@@ -94,7 +91,7 @@
 							/>
 						</div>
 					{:else}
-						<p class="text-sm font-medium text-muted-foreground sm:text-base">@{user.username}</p>
+						<p class="text-sm font-medium text-muted-foreground sm:text-base">@{user?.username}</p>
 						<button
 							onclick={() => profileEditor.startEditingUsername()}
 							class="cursor-pointer rounded-lg p-1.5 text-muted-foreground transition-all duration-300 hover:bg-primary/10 hover:text-primary"
@@ -116,7 +113,7 @@
 						<span class="text-[9px] font-semibold tracking-wider text-muted-foreground uppercase sm:text-[10px]">
 							Email
 						</span>
-						<span class="text-sm font-medium break-all text-foreground sm:text-base">{user.email}</span>
+						<span class="text-sm font-medium break-all text-foreground sm:text-base">{user?.email}</span>
 					</div>
 				</div>
 
@@ -128,7 +125,7 @@
 						<span class="text-[9px] font-semibold tracking-wider text-muted-foreground uppercase sm:text-[10px]">
 							University
 						</span>
-						<span class="text-sm font-medium text-foreground sm:text-base">{user.university}</span>
+						<span class="text-sm font-medium text-foreground sm:text-base">{user?.university || 'Transilvania University of Brașov'}</span>
 					</div>
 				</div>
 
@@ -141,7 +138,7 @@
 							<span class="text-[9px] font-semibold tracking-wider text-muted-foreground uppercase sm:text-[10px]">
 								Member Since
 							</span>
-							<span class="text-sm font-medium text-foreground sm:text-base">{user.memberSince}</span>
+							<span class="text-sm font-medium text-foreground sm:text-base">{user?.memberSince}</span>
 						</div>
 					</div>
 

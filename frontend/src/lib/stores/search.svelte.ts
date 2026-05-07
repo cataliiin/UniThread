@@ -6,8 +6,12 @@ import {
 } from '$lib/types/search';
 import { SearchService } from '$lib/api/services/SearchService';
 import { CommunitiesService } from '$lib/api/services/CommunitiesService';
+import { PostsService } from '$lib/api/services/PostsService';
 import { user } from './user.svelte';
 import { toasts } from './toast.svelte';
+import type { components } from '$lib/api/openapi-generated-schema';
+
+type PostFeedResponse = components['schemas']['PostFeedResponse'];
 
 function createSearchState() {
 	let query = $state('');
@@ -21,16 +25,14 @@ function createSearchState() {
 	async function search(searchQuery: string, searchFilter: SearchFilter) {
 		query = searchQuery;
 		filter = searchFilter;
-		hasSearched = true;
 		
 		if (!searchQuery.trim()) {
-			users = [];
-			communities = [];
-			posts = [];
-			loading = false;
+			hasSearched = false;
+			await loadDiscovery();
 			return;
 		}
 
+		hasSearched = true;
 		loading = true;
 
 		try {
@@ -59,6 +61,8 @@ function createSearchState() {
 					description: c.description || '',
 					members: c.member_count,
 					isJoined: c.user_membership_status === 'approved',
+					isPending: c.user_membership_status === 'pending',
+					type: c.type,
 					icon: c.icon_key || undefined,
 					posts: 0,
 					university: 'University'
@@ -68,7 +72,56 @@ function createSearchState() {
 			}
 
 			if (searchFilter === 'all' || searchFilter === 'posts') {
-				posts = results.posts.map(p => ({
+				posts = results.posts.map((p: PostFeedResponse) => ({
+					id: p.id,
+					title: p.title,
+					content: p.body || p.title,
+					authorId: p.author?.id || 'anonymous',
+					authorName: p.author?.username || 'Anonymous',
+					authorUsername: p.author?.username || 'anonymous',
+					createdAt: p.created_at,
+					likes: p.score,
+					comments: p.comment_count,
+					communityName: p.community?.name || 'Global',
+					university: 'University'
+				}));
+			}
+		} catch (e) {
+			console.error("Search failed:", e);
+			users = [];
+			communities = [];
+			posts = [];
+		} finally {
+			loading = false;
+		}
+	}
+
+	async function loadDiscovery() {
+		if (query.trim()) return;
+		loading = true;
+		
+		try {
+			if (filter === 'all' || filter === 'communities') {
+				const commRes = await CommunitiesService.list(1, filter === 'all' ? 3 : 6);
+				communities = commRes.items.map(c => ({
+					id: c.id,
+					name: c.name,
+					description: c.description || '',
+					members: c.member_count,
+					isJoined: c.user_membership_status === 'approved',
+					isPending: c.user_membership_status === 'pending',
+					type: c.type,
+					icon: c.icon_key || undefined,
+					posts: 0,
+					university: 'University'
+				}));
+			} else {
+				communities = [];
+			}
+
+			if (filter === 'all' || filter === 'posts') {
+				const postRes = await PostsService.getGlobalFeed(1, 5, 'top');
+				posts = postRes.items.map((p: PostFeedResponse) => ({
 					id: p.id,
 					title: p.title,
 					content: p.body || p.title,
@@ -84,11 +137,11 @@ function createSearchState() {
 			} else {
 				posts = [];
 			}
-		} catch (e) {
-			console.error("Search failed:", e);
+
+			// Users always empty on discovery as requested
 			users = [];
-			communities = [];
-			posts = [];
+		} catch (e) {
+			console.error("Discovery load failed:", e);
 		} finally {
 			loading = false;
 		}
@@ -102,11 +155,8 @@ function createSearchState() {
 
 	function clearSearch() {
 		query = '';
-		users = [];
-		communities = [];
-		posts = [];
 		hasSearched = false;
-		loading = false;
+		loadDiscovery();
 	}
 
 	async function toggleJoinCommunity(communityId: string | number) {
@@ -118,11 +168,13 @@ function createSearchState() {
 			if (community.isJoined) {
 				await CommunitiesService.leave(idStr);
 				community.isJoined = false;
+				community.isPending = false;
 				community.members--;
 				toasts.show('Left community', 'success');
 			} else {
 				const res = await CommunitiesService.join(idStr);
 				community.isJoined = res.status === 'approved';
+				community.isPending = res.status === 'pending';
 				if (res.status === 'approved') {
 					community.members++;
 					toasts.show('Joined community', 'success');
@@ -160,6 +212,7 @@ function createSearchState() {
 		search,
 		setFilter,
 		clearSearch,
+		loadDiscovery,
 		toggleJoinCommunity
 	};
 }

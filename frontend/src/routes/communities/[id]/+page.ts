@@ -8,15 +8,15 @@ export const ssr = false;
 export const load: PageLoad = async ({ params }) => {
 	const communityId = params.id;
 
-	if (!user.isAuthenticated) {
+	if (!user?.isAuthenticated) {
 		throw redirect(307, '/login');
 	}
 
 	try {
 		const communityData = await CommunitiesService.get(communityId);
 		
-		const isOwner = communityData.owner_id === user.email || communityData.owner_id === (user as any).id;
-		const isAdmin = isOwner || communityData.user_membership_status === 'approved';
+		const isOwner = communityData.owner_id === user?.email || communityData.owner_id === user?.id;
+		const isAdmin = isOwner; // Only owner is admin by default unless role is checked
 
 		return {
 			community: communityData,

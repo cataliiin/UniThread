@@ -22,6 +22,8 @@ export interface CommunityResult {
 	members: number;
 	posts: number;
 	isJoined: boolean;
+	isPending?: boolean;
+	type?: string;
 	university: string;
 }
 

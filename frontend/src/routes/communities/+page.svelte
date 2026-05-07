@@ -9,29 +9,18 @@
 	let communities = $state<Community[]>([]);
 	let loading = $state(true);
 
-	const currentUserId = $derived(user.email);
+	const currentUserId = $derived(user?.id);
 
 	const memberCommunities = $derived(
 		communities.filter(
-			(c) => c.user_membership_status === 'approved' && c.owner_id !== currentUserId
+			(c) => c.user_membership_status === 'approved' || c.owner_id === currentUserId
 		)
 	);
 
-	const adminCommunities = $derived(
-		communities.filter((c) => c.owner_id === currentUserId || c.owner_id === currentUserId)
-	);
-
-	// For mock: all communities owned by user
 	const ownedCommunities = $derived(communities.filter((c) => c.owner_id === currentUserId));
-	// For mock: all communities member of (not owner)
-	const joinedCommunities = $derived(
-		communities.filter(
-			(c) => c.user_membership_status === 'approved' && c.owner_id !== currentUserId
-		)
-	);
 
 	const displayedCommunities = $derived(
-		activeTab === 'member' ? communities : ownedCommunities
+		activeTab === 'member' ? memberCommunities : ownedCommunities
 	);
 
 	onMount(async () => {
@@ -71,7 +60,7 @@
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M12 5v14M5 12h14"/>
 				</svg>
-				New Community
+				Create Community
 			</a>
 		</div>
 	</div>
@@ -155,12 +144,6 @@
 					<h3 class="text-lg font-semibold text-foreground">No communities created</h3>
 					<p class="mt-1 text-sm text-muted-foreground">Create your first community and become an admin.</p>
 				{/if}
-				<a
-					href="/communities/new"
-					class="mt-6 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:brightness-110"
-				>
-					Create Community
-				</a>
 			</div>
 
 		<!-- Communities Grid -->
@@ -181,7 +164,7 @@
 									class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
 								/>
 							{:else}
-								<div class="h-full w-full bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 transition-transform duration-500 group-hover:scale-105"></div>
+								<div class="h-full w-full bg-linear-to-br from-indigo-600 via-purple-600 to-pink-500 transition-transform duration-500 group-hover:scale-105"></div>
 							{/if}
 							<!-- Type badge -->
 							<span class="absolute top-2 right-2 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-medium capitalize text-white backdrop-blur-sm">

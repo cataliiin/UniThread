@@ -1,6 +1,13 @@
 <script lang="ts">
 	import { searchState } from '$lib/stores/search.svelte';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+
+	onMount(() => {
+		if (!searchState.hasSearched && !searchInput) {
+			searchState.loadDiscovery();
+		}
+	});
 
 	let searchInput = $state('');
 
@@ -53,8 +60,8 @@
 
 	// Check if results are empty after search
 	function hasNoResults(): boolean {
-		if (!searchState.hasSearched) return false;
 		if (searchState.loading) return false;
+		if (!searchState.hasSearched && searchState.filter === 'users') return false; // Show placeholder instead
 
 		const { users, communities, posts } = searchState;
 		return users.length === 0 && communities.length === 0 && posts.length === 0;
@@ -144,26 +151,30 @@
 			</svg>
 		</div>
 		<!-- Empty State - No query for users/posts -->
-	{:else if !searchState.hasSearched && (searchState.filter === 'users' || searchState.filter === 'posts')}
-		<div class="flex flex-col items-center justify-center py-16 text-center">
-			<div class="mb-4 rounded-full bg-secondary p-4 transition-all duration-300 hover:bg-secondary/80">
+	{:else if !searchState.hasSearched && searchState.filter === 'users'}
+		<div class="flex flex-col items-center justify-center py-20 text-center">
+			<div class="mb-6 rounded-full bg-primary/10 p-8 shadow-inner">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					width="32"
-					height="32"
+					width="48"
+					height="48"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
-					stroke-width="2"
+					stroke-width="1.5"
 					stroke-linecap="round"
 					stroke-linejoin="round"
-					class="text-muted-foreground"
-					><circle cx="11" cy="11" r="8" /><line x1="21" x2="16.65" y1="21" y2="16.65" /></svg
+					class="text-primary"
 				>
+					<circle cx="10" cy="7" r="4" />
+					<path d="M10.3 15H7a4 4 0 0 0-4 4v2" />
+					<circle cx="17" cy="17" r="3" />
+					<path d="m21 21-1.9-1.9" />
+				</svg>
 			</div>
-			<h3 class="mb-2 text-lg font-semibold text-foreground">Start searching</h3>
-			<p class="max-w-sm text-muted-foreground">
-				Enter a search term to find {searchState.filter === 'users' ? 'users' : 'posts'}
+			<h3 class="mb-2 text-xl font-bold text-foreground">Find People</h3>
+			<p class="max-w-xs text-muted-foreground">
+				Search for your friends, classmates or researchers by their name or username.
 			</p>
 		</div>
 		<!-- No Results -->
@@ -193,7 +204,10 @@
 			<!-- Users Section -->
 			{#if searchState.users.length > 0}
 				<section>
-					<h2 class="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">Users</h2>
+					<h2 class="mb-4 flex items-center gap-2 text-sm font-bold tracking-wider text-muted-foreground uppercase">
+						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+						Users
+					</h2>
 					<div class="space-y-3">
 						{#each searchState.users as user (user.id)}
 							<button
@@ -229,19 +243,26 @@
 			<!-- Communities Section -->
 			{#if searchState.communities.length > 0}
 				<section>
-					<h2 class="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-						Communities
+					<h2 class="mb-4 flex items-center gap-2 text-sm font-bold tracking-wider text-muted-foreground uppercase">
+						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 6.1H3"/><path d="M21 12.1H3"/><path d="M15.1 18.1H3"/></svg>
+						{searchState.hasSearched ? 'Communities' : 'Suggested Communities'}
 					</h2>
 					<div class="grid gap-3 sm:grid-cols-2">
 						{#each searchState.communities as community (community.id)}
-							<div class="group flex flex-col rounded-xl border border-border bg-card p-4 transition-all duration-300 hover:border-primary/30">
+							<div 
+								role="button"
+								tabindex="0"
+								class="group flex flex-col text-left rounded-xl border border-border bg-card p-4 transition-all duration-300 hover:border-primary/30 cursor-pointer"
+								onclick={() => goto(`/communities/${community.id}`)}
+								onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/communities/${community.id}`); }}
+							>
 								<div class="mb-2 flex items-start justify-between">
 									<div>
 										<h3 class="font-semibold text-card-foreground">{community.name}</h3>
 										<p class="text-sm text-muted-foreground">{community.description}</p>
 									</div>
 								</div>
-								<div class="mt-auto flex items-center justify-between">
+								<div class="mt-auto flex w-full items-center justify-between">
 									<div class="flex gap-4 text-sm text-muted-foreground">
 										<span>{community.members} members</span>
 										<span>{community.posts} posts</span>
@@ -250,10 +271,16 @@
 										class="rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-300
 										{community.isJoined
 											? 'border border-border bg-card text-foreground hover:bg-secondary'
-											: 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 hover:shadow-primary/40'}"
-										onclick={() => searchState.toggleJoinCommunity(community.id)}
+											: community.isPending
+												? 'border border-amber-500/30 bg-amber-500/10 text-amber-500 cursor-not-allowed'
+												: 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 hover:shadow-primary/40'}"
+										onclick={(e) => {
+											e.stopPropagation();
+											if (!community.isPending) searchState.toggleJoinCommunity(community.id);
+										}}
+										disabled={community.isPending}
 									>
-										{community.isJoined ? 'Joined' : 'Join'}
+										{community.isJoined ? 'Joined' : community.isPending ? 'Pending' : (community.type === 'request' ? 'Request' : 'Join')}
 									</button>
 								</div>
 							</div>
@@ -265,7 +292,10 @@
 			<!-- Posts Section -->
 			{#if searchState.posts.length > 0}
 				<section>
-					<h2 class="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">Posts</h2>
+					<h2 class="mb-4 flex items-center gap-2 text-sm font-bold tracking-wider text-muted-foreground uppercase">
+						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+						{searchState.hasSearched ? 'Posts' : 'Top Discussions'}
+					</h2>
 					<div class="space-y-3">
 						{#each searchState.posts as post (post.id)}
 							<article class="group rounded-xl border border-border bg-card p-4 transition-all duration-300 hover:border-primary/30">

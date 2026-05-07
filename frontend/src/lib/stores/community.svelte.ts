@@ -22,8 +22,10 @@ function createCommunityState() {
 	let currentCommunity = $state<Community | null>(null);
 	let myCommunities = $state<Community[]>([]);
 	let members = $state<CommunityMember[]>([]);
+	let joinRequests = $state<any[]>([]); // Using any for now, matches JoinRequestResponse
 	let loading = $state(false);
 	let membersLoading = $state(false);
+	let requestsLoading = $state(false);
 	let isAdmin = $state(false);
 	let isOwner = $state(false);
 
@@ -131,7 +133,7 @@ function createCommunityState() {
 		if (!community) return false;
 
 		isOwner = community.owner_id === userId;
-		isAdmin = isOwner || community.user_membership_status === 'approved';
+		isAdmin = isOwner; // Only owner is admin for now
 
 		return isAdmin;
 	}
@@ -172,15 +174,34 @@ function createCommunityState() {
 	async function fetchMyCommunities(): Promise<Community[]> {
 		loading = true;
 		try {
+			// Try the dedicated endpoint first
 			const response = await fetch(`${API_BASE}/communities/me`, {
 				headers: await getAuthHeaders()
 			});
-			if (!response.ok) throw new Error('Failed to fetch communities');
-			const data: Community[] = await response.json();
-			myCommunities = data;
-			return data;
-		} catch {
-			// Fallback to localStorage (dev mode)
+			
+			if (response.ok) {
+				const data: Community[] = await response.json();
+				myCommunities = data;
+				return data;
+			}
+			
+			// If not available, fallback to listing all and filtering
+			const allCommRes = await CommunitiesService.list(1, 100);
+			const filtered = allCommRes.items
+				.filter(c => c.user_membership_status === 'approved' || c.owner_id === localStorage.getItem('currentUserId'))
+				.map(c => ({
+					...c,
+					description: c.description ?? null,
+					icon_key: c.icon_key ?? null,
+					banner_key: c.banner_key ?? null,
+					user_membership_status: c.user_membership_status as any
+				}));
+			
+			myCommunities = filtered;
+			return filtered;
+		} catch (error) {
+			console.error("Failed to fetch my communities:", error);
+			// Final fallback to mock data
 			if (typeof window !== 'undefined') {
 				const all: Community[] = JSON.parse(localStorage.getItem('mock_communities') || '[]');
 				myCommunities = all;
@@ -195,39 +216,40 @@ function createCommunityState() {
 	async function fetchMembers(communityId: string): Promise<CommunityMember[]> {
 		membersLoading = true;
 		try {
-			const response = await fetch(`${API_BASE}/communities/${communityId}/members`, {
-				headers: await getAuthHeaders()
+			const { data: res, error: apiError } = await api.GET('/api/v1/communities/{community_id}/members', {
+				params: {
+					path: { community_id: communityId },
+					query: { page: 1, size: 100 }
+				}
 			});
-			if (!response.ok) throw new Error('Failed to fetch members');
-			const data: CommunityMember[] = await response.json();
+
+			if (apiError) {
+				const msg = (apiError as any).message || (apiError as any).detail || 'Failed to fetch members';
+				throw new Error(typeof msg === 'string' ? msg : 'Failed to fetch members');
+			}
+			
+			console.log('Members API Response for ' + communityId + ':', res);
+			const items = res?.items || [];
+			
+			// We need community details for the owner check
+			const community = currentCommunity || await fetchCommunity(communityId);
+
+			const data: CommunityMember[] = items.map((u: any) => ({
+				user_id: u.id,
+				username: u.username,
+				name: u.username,
+				community_id: communityId,
+				status: 'approved',
+				is_admin: u.id === community?.owner_id,
+				joined_at: new Date().toISOString(),
+				avatar_url: u.avatar_key
+			}));
+			
 			members = data;
 			return data;
-		} catch {
-			// Fallback to mock data
-			if (typeof window !== 'undefined') {
-				const key = `mock_members_${communityId}`;
-				const stored: CommunityMember[] = JSON.parse(localStorage.getItem(key) || '[]');
-				// Seed with a default owner member if empty
-				if (stored.length === 0) {
-					const userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
-					const seed: CommunityMember[] = [
-						{
-							user_id: userData.email || 'local_user',
-							username: userData.username || 'you',
-							name: userData.name || 'You',
-							community_id: communityId,
-							status: 'approved',
-							is_admin: true,
-							joined_at: new Date().toISOString()
-						}
-					];
-					localStorage.setItem(key, JSON.stringify(seed));
-					members = seed;
-					return seed;
-				}
-				members = stored;
-				return stored;
-			}
+		} catch (error: any) {
+			console.error("Fetch members error:", error);
+			members = [];
 			return [];
 		} finally {
 			membersLoading = false;
@@ -331,6 +353,64 @@ function createCommunityState() {
 		}
 	}
 
+	async function fetchJoinRequests(communityId: string) {
+		requestsLoading = true;
+		try {
+			const { data: res, error: apiError } = await api.GET('/api/v1/communities/{community_id}/requests', {
+				params: { path: { community_id: communityId } }
+			});
+
+			if (apiError) throw new Error((apiError as any).detail || 'Failed to fetch requests');
+			
+			joinRequests = res || [];
+			return joinRequests;
+		} catch (error) {
+			console.error('Fetch requests error:', error);
+			joinRequests = [];
+			return [];
+		} finally {
+			requestsLoading = false;
+		}
+	}
+
+	async function approveJoinRequest(communityId: string, userId: string) {
+		try {
+			const { error: apiError } = await api.POST('/api/v1/communities/{community_id}/requests/{user_id}/approve', {
+				params: { path: { community_id: communityId, user_id: userId } }
+			});
+
+			if (apiError) throw new Error((apiError as any).detail || 'Failed to approve request');
+			
+			toasts.show('Member approved!', 'success');
+			// Refresh requests and member count
+			await fetchJoinRequests(communityId);
+			if (currentCommunity) {
+				currentCommunity.member_count++;
+			}
+			return true;
+		} catch (error: any) {
+			toasts.show(error.message, 'error');
+			return false;
+		}
+	}
+
+	async function rejectJoinRequest(communityId: string, userId: string) {
+		try {
+			const { error: apiError } = await api.POST('/api/v1/communities/{community_id}/requests/{user_id}/reject', {
+				params: { path: { community_id: communityId, user_id: userId } }
+			});
+
+			if (apiError) throw new Error((apiError as any).detail || 'Failed to reject request');
+			
+			toasts.show('Request rejected', 'success');
+			await fetchJoinRequests(communityId);
+			return true;
+		} catch (error: any) {
+			toasts.show(error.message, 'error');
+			return false;
+		}
+	}
+
 	function reset() {
 		currentCommunity = null;
 		myCommunities = [];
@@ -349,11 +429,17 @@ function createCommunityState() {
 		get members() {
 			return members;
 		},
+		get joinRequests() {
+			return joinRequests;
+		},
 		get loading() {
 			return loading;
 		},
 		get membersLoading() {
 			return membersLoading;
+		},
+		get requestsLoading() {
+			return requestsLoading;
 		},
 		get isAdmin() {
 			return isAdmin;
@@ -366,6 +452,9 @@ function createCommunityState() {
 		fetchCommunity,
 		fetchMyCommunities,
 		fetchMembers,
+		fetchJoinRequests,
+		approveJoinRequest,
+		rejectJoinRequest,
 		joinCommunity,
 		leaveCommunity,
 		promoteToAdmin,
