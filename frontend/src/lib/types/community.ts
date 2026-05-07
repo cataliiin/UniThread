@@ -57,6 +57,10 @@ export interface CommunityMember {
 	status: 'pending' | 'approved';
 	is_admin: boolean;
 	joined_at: string;
+	// Optional display fields (populated by backend or mock)
+	username?: string;
+	name?: string;
+	avatar_url?: string;
 }
 
 export const communityTypeLabels: Record<CommunityType, { label: string; description: string }> = {
