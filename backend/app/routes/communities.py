@@ -38,6 +38,7 @@ from app.schemas.community import (
     CommunityResponse,
     CommunityUpdate,
     TransferOwnershipRequest,
+    normalize_member_status,
 )
 from app.schemas.user import UserPublic
 from app.schemas.pagination import PaginatedResponse
@@ -149,7 +150,7 @@ async def list_communities(
     for comm, member_count, user_membership_status in rows:
         c_resp = CommunityResponse.model_validate(comm)
         c_resp.member_count = member_count or 0
-        c_resp.user_membership_status = user_membership_status
+        c_resp.user_membership_status = normalize_member_status(user_membership_status)
         items.append(c_resp)
 
     pages = (total + actual_size - 1) // actual_size if total else 0
@@ -181,6 +182,7 @@ async def get_community(community_id: UUID, current_user: CurrentUser, db: DbDep
             & (CommunityMember.user_id == current_user.id)
         )
     )
+    user_membership_status = normalize_member_status(user_membership_status)
 
     if comm.type == CommunityType.invite:
         is_owner = comm.owner_id == current_user.id
@@ -568,5 +570,5 @@ async def transfer_ownership(
     c, member_count, status_val = row
     c_resp = CommunityResponse.model_validate(c)
     c_resp.member_count = member_count or 0
-    c_resp.user_membership_status = status_val
+    c_resp.user_membership_status = normalize_member_status(status_val)
     return c_resp

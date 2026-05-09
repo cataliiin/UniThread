@@ -8,7 +8,7 @@ from app.database.models.community import Community, CommunityMember
 from app.database.models.enums import MemberStatus, CommunityType
 from app.database.models.post import Post
 from app.database.models.user import User
-from app.schemas.community import CommunityResponse
+from app.schemas.community import CommunityResponse, normalize_member_status
 from app.schemas.post import PostFeedResponse
 from app.schemas.search import GlobalSearchResponse
 from app.schemas.user import UserProfileResponse
@@ -95,7 +95,9 @@ async def global_search(
         for comm, member_count, user_membership_status in comm_rows:
             c_resp = CommunityResponse.model_validate(comm)
             c_resp.member_count = member_count or 0
-            c_resp.user_membership_status = user_membership_status
+            c_resp.user_membership_status = normalize_member_status(
+                user_membership_status
+            )
             comm_results.append(c_resp)
 
     # 3. Search Posts
