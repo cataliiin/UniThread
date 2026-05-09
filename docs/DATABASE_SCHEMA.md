@@ -285,7 +285,32 @@ CREATE INDEX idx_posts_author           ON posts(author_id) WHERE author_id IS N
 
 ---
 
-## 10. Votes
+## 10. Comments
+
+Comments belong to a post and follow the parent post's visibility rules at the application layer. They are deleted automatically when the parent post is deleted. If a user account is removed, the comment remains for thread continuity but loses its author reference.
+
+```sql
+CREATE TABLE comments (
+    id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    post_id    UUID         NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    author_id  UUID         REFERENCES users(id) ON DELETE SET NULL,
+    body       TEXT         NOT NULL,
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- Used by: loading comments for a post in chronological order
+CREATE INDEX idx_comments_post_created ON comments(post_id, created_at);
+
+-- Used by: moderation / author activity lookups
+CREATE INDEX idx_comments_author ON comments(author_id) WHERE author_id IS NOT NULL;
+```
+
+`comment_count` is not stored on `posts`; it is derived dynamically from `comments` to avoid stale counters.
+
+---
+
+## 11. Votes
 
 Upvote (`+1`) and downvote (`-1`) on posts. `PRIMARY KEY (user_id, post_id)` guarantees one vote per user per post. Changing a vote = `UPDATE value`, not a new `INSERT`.
 
@@ -357,7 +382,7 @@ LIMIT 50 OFFSET $2;
 
 ---
 
-## Summary — 10 Tables, 0 Redundancies
+## Summary — 11 Tables, 0 Redundancies
 
 | Table | Role |
 |---|---|
@@ -370,4 +395,5 @@ LIMIT 50 OFFSET $2;
 | `community_join_questions` | Admin-defined questions for join forms (`type='request'`) |
 | `community_join_answers` | User's answers submitted with the join request |
 | `posts` | Community content |
+| `comments` | Replies attached to posts |
 | `votes` | Upvotes and downvotes on posts |

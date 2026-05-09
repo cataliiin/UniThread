@@ -45,6 +45,8 @@ async def register_user(user_in: UserCreate, db: DbDep):
     new_user = User(
         email=user_in.email,
         username=user_in.username,
+        first_name=user_in.first_name,
+        last_name=user_in.last_name,
         password_hash=hashed_password,
         university_id=university.id,
     )

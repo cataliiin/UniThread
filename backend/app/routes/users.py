@@ -30,7 +30,7 @@ async def update_user_me(
     user_in: UserUpdateProfile, current_user: CurrentUser, db: DbDep
 ):
     """
-    Update the current user's profile (username, avatar).
+    Update the current user's profile.
     Only fields explicitly sent in the request body are updated.
     """
     update_data = user_in.model_dump(exclude_unset=True)

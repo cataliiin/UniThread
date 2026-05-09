@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.models.base import Base
 
 if TYPE_CHECKING:
+    from app.database.models.comment import Comment
     from app.database.models.university import University
     from app.database.models.community import (
         Community,
@@ -37,6 +38,8 @@ class User(Base):
     )
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    first_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
 
     # MinIO object key — bucket: "profile-pictures". NULL = use default avatar.
@@ -60,6 +63,9 @@ class User(Base):
     )
     posts: Mapped[list["Post"]] = relationship(
         "Post", back_populates="author", foreign_keys="Post.author_id"
+    )
+    comments: Mapped[list["Comment"]] = relationship(
+        "Comment", back_populates="author", foreign_keys="Comment.author_id"
     )
     votes: Mapped[list["Vote"]] = relationship(
         "Vote", back_populates="user", cascade="all, delete-orphan"
