@@ -40,19 +40,21 @@ const middleware: Middleware = {
 
         let message = `${response.status} ${response.statusText}`;
 
-        try {
-            const data: any = await response.clone().json();
+		try {
+			const data: any = await response.clone().json();
 
-            if (typeof data?.message === 'string') {
-                message = data.message;
-            } else if (typeof data?.detail === 'string') {
-                message = data.detail;
-            } else if (Array.isArray(data?.detail)) {
-                const firstError = data.detail[0];
-                const field = firstError?.loc?.at(-1) ?? 'field';
-                message = `${field}: ${firstError.msg}`;
-            }
-        } catch {}
+			if (data?.error?.message) {
+				message = data.error.message;
+			} else if (typeof data?.message === 'string') {
+				message = data.message;
+			} else if (typeof data?.detail === 'string') {
+				message = data.detail;
+			} else if (Array.isArray(data?.detail)) {
+				const firstError = data.detail[0];
+				const field = firstError?.loc?.at(-1) ?? 'field';
+				message = `${field}: ${firstError.msg}`;
+			}
+		} catch {}
 
         throw new Error(message);
     },

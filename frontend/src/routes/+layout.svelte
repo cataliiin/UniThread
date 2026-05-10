@@ -4,6 +4,7 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import MobileNav from '$lib/components/MobileNav.svelte';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
+	import NotificationListener from '$lib/components/NotificationListener.svelte';
 	import logo from '$lib/assets/UniThread_Logo.svg';
 
 	let { children } = $props();
@@ -45,6 +46,7 @@
 		{/if}
 	</div>
 	<ToastContainer />
+	<NotificationListener />
 </div>
 
 <svelte:head>

@@ -4,8 +4,8 @@
 	import { invitationsState } from '$lib/stores/invitations.svelte';
 	import UserAvatar from './UserAvatar.svelte';
 
-	let avatarUrl = $derived(user.avatarUrl);
-	let pendingInvites = $derived(invitationsState.pendingCount);
+	let avatarUrl = $derived(user?.avatarUrl);
+	let pendingInvites = $derived(invitationsState?.pendingCount || 0);
 
 	interface MobileNavLink {
 		href: string;
@@ -70,7 +70,7 @@
 	>
 		<span class="relative flex items-center justify-center">
 			{#if link.isAvatar}
-				<UserAvatar src={avatarUrl} initials={user.avatarInitials} size="xs" />
+				<UserAvatar src={avatarUrl} initials={user?.avatarInitials || ''} size="xs" />
 			{:else}
 				{@html link.icon}
 			{/if}

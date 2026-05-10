@@ -3,15 +3,24 @@ export interface ToastMessage {
 	message: string;
 	type: 'success' | 'error' | 'warning' | 'info';
 	duration: number;
+	action?: {
+		label: string;
+		onClick: () => void;
+	};
 }
 
 function createToastState() {
 	let messages = $state<ToastMessage[]>([]);
 	let nextId = 0;
 
-	function show(message: string, type: ToastMessage['type'] = 'success', duration = 4000) {
+	function show(
+		message: string,
+		type: ToastMessage['type'] = 'success',
+		duration = 4000,
+		action?: ToastMessage['action']
+	) {
 		const id = nextId++;
-		messages.push({ id, message, type, duration });
+		messages.push({ id, message, type, duration, action });
 
 		setTimeout(() => {
 			remove(id);
@@ -24,20 +33,20 @@ function createToastState() {
 		messages = messages.filter((m) => m.id !== id);
 	}
 
-	function success(message: string, duration = 4000) {
-		return show(message, 'success', duration);
+	function success(message: string, duration = 4000, action?: ToastMessage['action']) {
+		return show(message, 'success', duration, action);
 	}
 
-	function error(message: string, duration = 4000) {
-		return show(message, 'error', duration);
+	function error(message: string, duration = 4000, action?: ToastMessage['action']) {
+		return show(message, 'error', duration, action);
 	}
 
-	function warning(message: string, duration = 4000) {
-		return show(message, 'warning', duration);
+	function warning(message: string, duration = 4000, action?: ToastMessage['action']) {
+		return show(message, 'warning', duration, action);
 	}
 
-	function info(message: string, duration = 4000) {
-		return show(message, 'info', duration);
+	function info(message: string, duration = 4000, action?: ToastMessage['action']) {
+		return show(message, 'info', duration, action);
 	}
 
 	return {
@@ -57,8 +66,12 @@ export const toasts = createToastState();
 
 // Export helper functions for convenience
 export const toast = {
-	success: (message: string, duration = 4000) => toasts.success(message, duration),
-	error: (message: string, duration = 4000) => toasts.error(message, duration),
-	warning: (message: string, duration = 4000) => toasts.warning(message, duration),
-	info: (message: string, duration = 4000) => toasts.info(message, duration)
+	success: (message: string, duration = 4000, action?: ToastMessage['action']) =>
+		toasts.success(message, duration, action),
+	error: (message: string, duration = 4000, action?: ToastMessage['action']) =>
+		toasts.error(message, duration, action),
+	warning: (message: string, duration = 4000, action?: ToastMessage['action']) =>
+		toasts.warning(message, duration, action),
+	info: (message: string, duration = 4000, action?: ToastMessage['action']) =>
+		toasts.info(message, duration, action)
 };

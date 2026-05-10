@@ -51,8 +51,21 @@
 				</div>
 			{/if}
 
-			<div class="flex-1 text-sm font-semibold">
-				{toast.message}
+			<div class="flex flex-1 flex-col gap-1">
+				<div class="text-sm font-semibold">
+					{toast.message}
+				</div>
+				{#if toast.action}
+					<button
+						onclick={() => {
+							toast.action?.onClick();
+							toasts.remove(toast.id);
+						}}
+						class="w-fit text-xs font-bold uppercase tracking-wider underline underline-offset-4 transition-all hover:opacity-80"
+					>
+						{toast.action.label}
+					</button>
+				{/if}
 			</div>
 
 			<button

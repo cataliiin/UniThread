@@ -5,7 +5,12 @@
 	import { communityState } from '$lib/stores/community.svelte';
 	import { user } from '$lib/stores/user.svelte';
 	import { toasts } from '$lib/stores/toast.svelte';
+	import { CommunityAdminService } from '$lib/api/services';
 	import Feed from '$lib/components/Feed.svelte';
+	import { Link2, X, Copy, Trash2, Loader2 } from '@lucide/svelte';
+	import type { components } from '$lib/api/openapi-generated-schema';
+
+	type CommunityInviteLinkResponse = components['schemas']['CommunityInviteLinkResponse'];
 
 	let { data }: { data: PageData } = $props();
 
@@ -16,6 +21,10 @@
 	let menuOpen = $state(false);
 	let leaveConfirm = $state(false);
 	let leavingLoading = $state(false);
+	let showInviteLinksModal = $state(false);
+	let inviteLinks = $state<CommunityInviteLinkResponse[]>([]);
+	let linksLoading = $state(false);
+	let creatingLink = $state(false);
 
 	function getImageUrl(key: string | null): string | null {
 		if (!key) return null;
@@ -42,6 +51,55 @@
 	function closeMenu() {
 		menuOpen = false;
 		leaveConfirm = false;
+	}
+
+	async function loadInviteLinks() {
+		if (!community) return;
+		linksLoading = true;
+		try {
+			inviteLinks = await CommunityAdminService.listInviteLinks(community.id);
+		} catch (error: any) {
+			toasts.show('Failed to load invite links', 'error');
+		} finally {
+			linksLoading = false;
+		}
+	}
+
+	async function createInviteLink() {
+		if (!community) return;
+		creatingLink = true;
+		try {
+			await CommunityAdminService.createInviteLink(community.id, {});
+			await loadInviteLinks();
+			toasts.show('Invite link created!', 'success');
+		} catch (error: any) {
+			toasts.show('Failed to create invite link', 'error');
+		} finally {
+			creatingLink = false;
+		}
+	}
+
+	async function deleteInviteLink(linkId: string) {
+		if (!community) return;
+		try {
+			await CommunityAdminService.deleteInviteLink(community.id, linkId);
+			await loadInviteLinks();
+			toasts.show('Invite link deleted', 'success');
+		} catch (error: any) {
+			toasts.show('Failed to delete invite link', 'error');
+		}
+	}
+
+	function copyInviteLink(code: string) {
+		const link = `${window.location.origin}/invite/${code}`;
+		navigator.clipboard.writeText(link);
+		toasts.show('Invite link copied to clipboard!', 'success');
+	}
+
+	function openInviteLinksModal() {
+		showInviteLinksModal = true;
+		loadInviteLinks();
+		closeMenu();
 	}
 
 	onMount(() => {
@@ -227,6 +285,13 @@
 										</svg>
 										Admin Dashboard
 									</a>
+									<button
+										onclick={openInviteLinksModal}
+										class="flex w-full items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted"
+									>
+										<Link2 class="h-3.75 w-3.75" />
+										Invite Links
+									</button>
 									<div class="my-1 border-t border-border"></div>
 								{/if}
 
@@ -332,3 +397,81 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Invite Links Modal -->
+{#if showInviteLinksModal}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+		<div class="w-full max-w-md rounded-2xl border border-border bg-card shadow-xl">
+			<div class="flex items-center justify-between border-b border-border p-6">
+				<h2 class="flex items-center gap-2 text-lg font-bold text-foreground">
+					<Link2 class="h-5 w-5" />
+					Invite Links
+				</h2>
+				<button
+					onclick={() => {
+						showInviteLinksModal = false;
+						inviteLinks = [];
+					}}
+					class="text-muted-foreground transition-colors hover:text-foreground"
+					aria-label="Close"
+				>
+					<X class="h-5 w-5" />
+				</button>
+			</div>
+			<div class="space-y-4 p-6">
+				<button
+					onclick={createInviteLink}
+					disabled={creatingLink || linksLoading}
+					class="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-60"
+				>
+					{#if creatingLink}
+						<Loader2 class="mr-2 h-4 w-4 animate-spin inline" />
+						Creating...
+					{:else}
+						+ Generate New Link
+					{/if}
+				</button>
+
+				<div class="space-y-3 max-h-64 overflow-y-auto">
+					{#if linksLoading}
+						<div class="flex items-center justify-center py-8">
+							<div class="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+						</div>
+					{:else if inviteLinks.length === 0}
+						<p class="text-sm text-muted-foreground text-center py-6">
+							No invite links yet. Create one to share!
+						</p>
+					{:else}
+						{#each inviteLinks as link (link.id)}
+							<div class="rounded-lg border border-border bg-sidebar/50 p-3">
+								<div class="flex items-start justify-between gap-2 mb-2">
+									<div class="flex-1 min-w-0">
+										<code class="text-xs font-mono text-foreground break-all">
+											{link.code}
+										</code>
+										<p class="text-xs text-muted-foreground mt-1">
+											Used {link.use_count}{#if link.max_uses}/{link.max_uses}{/if}
+										</p>
+									</div>
+									<button
+										onclick={() => copyInviteLink(link.code)}
+										class="shrink-0 text-muted-foreground transition-colors hover:text-foreground p-1"
+										title="Copy link"
+									>
+										<Copy class="h-4 w-4" />
+									</button>
+								</div>
+								<button
+									onclick={() => deleteInviteLink(link.id)}
+									class="w-full text-xs text-destructive transition-colors hover:text-destructive/80 mt-2"
+								>
+									Delete
+								</button>
+							</div>
+						{/each}
+					{/if}
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}

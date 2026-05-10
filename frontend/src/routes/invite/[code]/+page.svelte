@@ -18,8 +18,14 @@
 			await InvitationsService.acceptInviteLink($page.data.invite.code);
 			toast.success('Successfully joined the community!');
 			await goto(`/communities/${$page.data.invite.community.id}`);
-		} catch (e) {
-			toast.error('Failed to join the community. The link may be expired or already used.');
+		} catch (e: any) {
+			const message = e.message || '';
+			if (message.includes('already a member')) {
+				toast.info('You are already a member of this community.');
+				await goto(`/communities/${$page.data.invite.community.id}`);
+			} else {
+				toast.error(message || 'Failed to join the community. The link may be expired or already used.');
+			}
 		} finally {
 			loading = false;
 		}

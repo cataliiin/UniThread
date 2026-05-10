@@ -1,6 +1,8 @@
 import type { Invitation } from '$lib/types/invitation';
 import { toasts } from './toast.svelte';
 import { InvitationsService } from '$lib/api/services/InvitationsService';
+import { CommunitiesService } from '$lib/api/services/CommunitiesService';
+import { UsersService } from '$lib/api/services/UsersService';
 
 function createInvitationsState() {
 	let invitations = $state<Invitation[]>([]);
@@ -17,17 +19,41 @@ function createInvitationsState() {
 		try {
 			const data = await InvitationsService.listMyInvitations();
 
-			invitations = data.map((invite) => ({
-				id: invite.id,
-				community_id: invite.community_id,
-				community_name: 'Community (ID: ' + invite.community_id.substring(0, 4) + ')', // Need backend to include name
-				invited_by: invite.invited_by,
-				inviter_name: 'User ' + invite.invited_by.substring(0, 4), // Need backend to include inviter details
-				status: invite.status as 'pending' | 'accepted' | 'declined',
-				created_at: invite.created_at
-			}));
+			// Enrich invitations with community and inviter details in parallel
+			const enrichedInvitations = await Promise.all(
+				data.map(async (invite) => {
+					try {
+						const [community, inviter] = await Promise.all([
+							CommunitiesService.get(invite.community_id).catch(() => null),
+							UsersService.getUserProfile(invite.invited_by).catch(() => null)
+						]);
+
+						return {
+							id: invite.id,
+							community_id: invite.community_id,
+							community_name: community?.name || `Community (${invite.community_id.substring(0, 4)})`,
+							invited_by: invite.invited_by,
+							inviter_name: inviter ? `${inviter.username}` : `User ${invite.invited_by.substring(0, 4)}`,
+							status: invite.status as 'pending' | 'accepted' | 'declined',
+							created_at: invite.created_at
+						};
+					} catch (err) {
+						return {
+							id: invite.id,
+							community_id: invite.community_id,
+							community_name: `Community (${invite.community_id.substring(0, 4)})`,
+							invited_by: invite.invited_by,
+							inviter_name: `User ${invite.invited_by.substring(0, 4)}`,
+							status: invite.status as 'pending' | 'accepted' | 'declined',
+							created_at: invite.created_at
+						};
+					}
+				})
+			);
+
+			invitations = enrichedInvitations;
 		} catch (e: any) {
-			console.error("Failed to load invitations:", e);
+			console.error('Failed to load invitations:', e);
 			error = e.message || 'Failed to fetch invitations';
 			invitations = [];
 		} finally {
