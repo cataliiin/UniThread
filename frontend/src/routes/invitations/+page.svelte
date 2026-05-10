@@ -7,8 +7,7 @@
 	<title>Invitations - UniThread</title>
 </svelte:head>
 
-<div class="min-h-screen bg-slate-950 py-8">
-	<div class="mx-auto max-w-2xl px-4">
+<div class="mx-auto max-w-2xl px-4 py-8">
 		<!-- Header -->
 		<header class="mb-6 flex items-center justify-between">
 			<div class="flex items-center gap-4">
@@ -47,6 +46,5 @@
 	<!-- Invitations List -->
 	<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 shadow-xl backdrop-blur-sm">
 		<InvitationsList />
-	</div>
 	</div>
 </div>

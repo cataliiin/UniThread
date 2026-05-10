@@ -104,7 +104,16 @@
 				goto('/');
 			}, 1500);
 		} catch (error: any) {
-			toasts.show(error.message || 'An error occurred during registration.', 'error');
+			let errorMessage = error.message || 'An error occurred during registration.';
+			
+			// Handle 409 Conflict (email already exists) with a more suggestive message
+			if (errorMessage.includes('409') || errorMessage.toLowerCase().includes('conflict') || 
+				errorMessage.toLowerCase().includes('already exists') || 
+				errorMessage.toLowerCase().includes('email')) {
+				errorMessage = 'This email is already registered. Try logging in instead, or use a different email address.';
+			}
+			
+			toasts.show(errorMessage, 'error');
 		} finally {
 			isLoading = false;
 		}
