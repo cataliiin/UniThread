@@ -25,6 +25,7 @@ function createUserState() {
 					window.location.reload();
 					return;
 				}
+				
 				id = data.id || '';
 				name = data.name || '';
 				surname = data.surname || '';
