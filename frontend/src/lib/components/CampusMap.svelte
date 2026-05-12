@@ -158,33 +158,41 @@
 		}
 	}
 
-	onMount(async () => {
+	onMount(() => {
 		if (!browser) return;
 
-		const leaflet = await import('leaflet');
-		L = leaflet.default || leaflet;
+		(async () => {
+			const leaflet = await import('leaflet');
+			L = leaflet.default || leaflet;
 
-		map = L.map(mapContainer, {
-			center: [BRASOV_CENTER.lat, BRASOV_CENTER.lng],
-			zoom: 14,
-			zoomControl: false,
-			attributionControl: true
-		});
+			map = L.map(mapContainer, {
+				center: [BRASOV_CENTER.lat, BRASOV_CENTER.lng],
+				zoom: 14,
+				zoomControl: false,
+				attributionControl: true
+			});
 
-		L.control.zoom({ position: 'bottomright' }).addTo(map);
+			L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-		// Initialize markers
-		updateMarkers();
+			// Initialize markers
+			updateMarkers();
 
-		if (navigator.geolocation) {
-			navigator.geolocation.getCurrentPosition(
-				(pos) => {
-					userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-				},
-				() => {},
-				{ enableHighAccuracy: true, timeout: 5000 }
-			);
-		}
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(
+					(pos) => {
+						userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+						if (map && L) {
+							map.flyTo([userLocation.lat, userLocation.lng], 16, { duration: 1 });
+						}
+					},
+					(err) => {
+						locationError =
+							err.code === 1 ? 'Location access denied.' : 'Unable to determine your location.';
+					},
+					{ enableHighAccuracy: true, timeout: 10000 }
+				);
+			}
+		})();
 
 		return () => {
 			if (map) {
@@ -322,6 +330,7 @@
 		<button 
 			class="absolute top-4 left-4 z-20 flex h-11 w-11 items-center justify-center rounded-xl border border-sidebar-border bg-sidebar/90 text-foreground shadow-lg backdrop-blur-md transition-all hover:bg-sidebar" 
 			onclick={() => (sidebarOpen = true)}
+			aria-label="Open building list"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"

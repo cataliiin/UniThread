@@ -2,7 +2,7 @@ import { type Post, type SortOption } from '$lib/types/post';
 import { PostsService } from '$lib/api/services/PostsService';
 import { CommunitiesService } from '$lib/api/services/CommunitiesService';
 
-export function createPostsState(communityId?: string | null) {
+export function createPostsState(getCommunityId: () => string | null = () => null) {
 	let posts = $state<Post[]>([]);
 	let sort = $state<SortOption>('new');
 	let page = $state(1);
@@ -16,6 +16,7 @@ export function createPostsState(communityId?: string | null) {
 
 		try {
 			let response;
+			const communityId = getCommunityId();
 			if (communityId) {
 				response = await CommunitiesService.getPosts(communityId, page, pageSize, sort);
 			} else {

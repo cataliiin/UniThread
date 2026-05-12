@@ -11,7 +11,7 @@
 
 	const colors = $derived.by(() => {
 		const theme = themeState.current;
-		const c = {
+		const c: Record<string, string> = {
 			academic: '#32415f',
 			administrative: '#6b21a8',
 			library: '#b45309',

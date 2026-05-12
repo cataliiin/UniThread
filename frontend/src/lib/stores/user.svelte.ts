@@ -22,10 +22,8 @@ function createUserState() {
 				if (data.id && data.id.includes('@')) {
 					localStorage.removeItem('currentUser');
 					localStorage.removeItem('token');
-					window.location.reload();
-					return;
-				}
-				
+					if (typeof window !== 'undefined') window.location.reload();
+				} else {				
 				id = data.id || '';
 				name = data.name || '';
 				surname = data.surname || '';
@@ -49,6 +47,7 @@ function createUserState() {
 				avatarInitials = data.avatarInitials || '';
 				avatarUrl = data.avatarUrl || null;
 				isAuthenticated = data.isAuthenticated || false;
+				}
 			} catch (e) {
 				console.error('Failed to parse user data from localStorage');
 			}

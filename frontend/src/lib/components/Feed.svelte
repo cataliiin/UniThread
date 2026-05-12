@@ -7,7 +7,7 @@
 	let { communityId = null }: { communityId?: string | null } = $props();
 
 	// Instantiate the store explicitly for this feed
-	const posts = createPostsState(communityId);
+	const posts = createPostsState(() => communityId);
 
 	let containerRef: HTMLDivElement;
 
