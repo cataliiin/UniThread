@@ -4,6 +4,8 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import MobileNav from '$lib/components/MobileNav.svelte';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
+	import { onMount } from 'svelte';
+	import { themeState } from '$lib/stores/theme.svelte';
 	import NotificationListener from '$lib/components/NotificationListener.svelte';
 	import logo from '$lib/assets/UniThread_Logo.svg';
 
@@ -11,6 +13,10 @@
 
 	// Check if we are on the login or register page
 	let isAuthPage = $derived($page.url.pathname === '/login' || $page.url.pathname === '/register');
+
+	onMount(() => {
+		themeState.applyTheme();
+	});
 </script>
 
 <div class="flex h-screen overflow-hidden bg-background text-foreground">

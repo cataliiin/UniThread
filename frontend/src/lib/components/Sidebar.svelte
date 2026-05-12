@@ -87,13 +87,13 @@
 {#snippet navLink(link: NavLink)}
 	<a
 		href={link.href}
-		class="group flex items-center gap-3 rounded-lg px-4 py-3 transition-all duration-300
+		class="group glitch flex items-center gap-3 rounded-lg px-4 py-3 transition-all duration-300
 		{$page.url.pathname === link.href
 			? 'bg-primary/10 font-semibold text-primary shadow-[0_0_15px_rgba(50,65,95,0.15)]'
 			: 'text-muted-foreground hover:bg-secondary hover:text-foreground'}"
 	>
 		<span
-			class="flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
+			class="sidebar-icon flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
 		>
 			{@html link.icon}
 		</span>

@@ -7,7 +7,8 @@
 	import { Label } from '$lib/components/ui/label';
 	import * as Card from '$lib/components/ui/card';
 	import { slide, fade } from 'svelte/transition';
-	import { Camera, Trash2, Mail, Shield, Calendar, Eye, EyeOff, Pencil, Loader2 } from '@lucide/svelte';
+	import { Camera, Trash2, Mail, Shield, Calendar, Eye, EyeOff, Pencil, Loader2, Palette } from '@lucide/svelte';
+	import { themeState } from '$lib/stores/theme.svelte';
 </script>
 
 <svelte:head>
@@ -74,7 +75,7 @@
 				/>
 
 				<!-- Names -->
-				<h1 class="m-0 px-2 text-xl leading-tight font-extrabold tracking-tight text-foreground sm:text-3xl">
+				<h1 class="aura m-0 px-2 text-xl leading-tight font-extrabold tracking-tight text-foreground sm:text-3xl">
 					{user?.name || ''} {user?.surname || (user?.name ? '' : 'User')}
 				</h1>
 
@@ -129,18 +130,58 @@
 					</div>
 				</div>
 
-				<div class="flex flex-col gap-2">
-					<div class="flex items-center gap-3 rounded-xl p-2 transition-all duration-300 hover:bg-secondary/50 sm:gap-5">
-						<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-11 sm:w-11">
-							<Calendar class="h-5 w-5" />
-						</div>
-						<div class="flex min-w-0 flex-col">
-							<span class="text-[9px] font-semibold tracking-wider text-muted-foreground uppercase sm:text-[10px]">
-								Member Since
-							</span>
-							<span class="text-sm font-medium text-foreground sm:text-base">{user?.memberSince}</span>
-						</div>
+				<div class="flex items-center gap-3 rounded-xl p-2 transition-all duration-300 hover:bg-secondary/50 sm:gap-5">
+					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-11 sm:w-11">
+						<Calendar class="h-5 w-5" />
 					</div>
+					<div class="flex min-w-0 flex-col">
+						<span class="text-[9px] font-semibold tracking-wider text-muted-foreground uppercase sm:text-[10px]">
+							Member Since
+						</span>
+						<span class="text-sm font-medium text-foreground sm:text-base">{user?.memberSince}</span>
+					</div>
+				</div>
+
+				<!-- Appearance Section -->
+				<div class="space-y-3 rounded-2xl border border-border bg-secondary/30 p-4">
+					<div class="flex items-center gap-2 px-1">
+						<Palette class="h-4 w-4 text-primary" />
+						<span class="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">Appearance</span>
+					</div>
+					
+					<div class="grid grid-cols-5 gap-4 sm:gap-6">
+						{#each [
+							{ id: 'dark', label: 'Dark', color: 'bg-[#0f0f0f]' },
+							{ id: 'light', label: 'Light', color: 'bg-white border' },
+							{ id: 'midnight', label: 'Midnight', color: 'bg-black border-[#ff000033] border' },
+							{ id: 'wasteland', label: 'Wasteland', color: 'bg-[#1a1a1a] border-[#8b3d1f] border' },
+							{ id: 'amethyst', label: 'Amethyst', color: 'bg-[#0f0814] border-[#c084fc66] border' },
+							{ id: 'cyberpunk', label: 'Cyberpunk', color: 'bg-[#08090a] border-[#00ffc2] border' },
+							{ id: 'cyberpop', label: 'CyberPop', color: 'bg-[#120115] border-[#ff007f] border' },
+							{ id: 'sakura', label: 'Tokyo Cloud', color: 'bg-[#ffffff] border-[#ffb7c5] border' },
+							{ id: 'nordic', label: 'Nordic', color: 'bg-[#f0f4f8] border-[#a5d7e8] border' },
+							{ id: 'coffee', label: 'Espresso', color: 'bg-[#1a0f0a] border-[#c68642] border' }
+						] as theme}
+							<button
+								onclick={() => themeState.setTheme(theme.id as any)}
+								class="group flex flex-col items-center gap-1.5"
+								title={theme.label}
+							>
+								<div 
+									class="relative h-10 w-10 rounded-full {theme.color} transition-all duration-300 group-hover:scale-110 sm:h-12 sm:w-12
+									{themeState.current === theme.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-card' : ''}"
+								>
+									{#if themeState.current === theme.id}
+										<div class="absolute inset-0 flex items-center justify-center">
+											<div class="h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]"></div>
+										</div>
+									{/if}
+								</div>
+								<span class="text-[8px] font-bold text-muted-foreground uppercase">{theme.label}</span>
+							</button>
+						{/each}
+					</div>
+				</div>
 
 					<!-- Change Password Toggle -->
 					{#if !profileEditor.password.isChanging}
@@ -241,7 +282,6 @@
 							</div>
 						</div>
 					{/if}
-				</div>
 			</Card.Content>
 		</div>
 

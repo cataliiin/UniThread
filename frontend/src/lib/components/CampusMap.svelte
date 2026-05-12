@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, mount } from 'svelte';
+	import { onMount, mount, untrack } from 'svelte';
 	import { browser } from '$app/environment';
 	import {
 		campusBuildings,
@@ -11,9 +11,12 @@
 	import MapSidebar from './map/MapSidebar.svelte';
 	import MapMarker from './map/MapMarker.svelte';
 
+	import { themeState } from '$lib/stores/theme.svelte';
+
 	let mapContainer: HTMLDivElement;
 	let map: any = $state(null);
 	let L: any = $state(null);
+	let tileLayer: any = null;
 
 	let selectedBuilding = $state<CampusBuilding | null>(null);
 	let userLocation = $state<{ lat: number; lng: number } | null>(null);
@@ -21,12 +24,42 @@
 	let sidebarOpen = $state(true);
 	let markers = $state<Map<string, any>>(new Map());
 
-	const categoryColors: Record<string, string> = {
-		academic: '#32415f',
-		administrative: '#6b21a8',
-		library: '#b45309',
-		campus: '#047857'
-	};
+	const categoryColors = $derived.by(() => {
+		const theme = themeState.current;
+		
+		// Base colors
+		const colors = {
+			academic: '#32415f',
+			administrative: '#6b21a8',
+			library: '#b45309',
+			campus: '#047857'
+		};
+
+		if (theme === 'cyberpunk') {
+			colors.academic = '#00ffc2';
+			colors.administrative = '#ff003c';
+			colors.campus = '#dfff00';
+		} else if (theme === 'midnight') {
+			colors.academic = '#3f3f46';
+			colors.administrative = '#ff0000';
+			colors.campus = '#18181b';
+		} else if (theme === 'wasteland') {
+			colors.academic = '#a54a26'; // Rust
+			colors.administrative = '#f5c71a'; // Industrial Yellow
+			colors.campus = '#333333'; // Gunmetal
+		} else if (theme === 'amethyst' || theme === 'cyberpop') {
+			colors.academic = '#c084fc';
+			colors.administrative = '#ff007f';
+		} else if (theme === 'coffee') {
+			colors.academic = '#c68642';
+			colors.administrative = '#4a3429';
+		} else if (theme === 'sakura') {
+			colors.academic = '#ffb7c5';
+			colors.administrative = '#dcae96';
+		}
+
+		return colors;
+	});
 
 	const categoryLabels: Record<string, string> = {
 		academic: 'Academic',
@@ -129,7 +162,6 @@
 		if (!browser) return;
 
 		const leaflet = await import('leaflet');
-		await import('leaflet/dist/leaflet.css');
 		L = leaflet.default || leaflet;
 
 		map = L.map(mapContainer, {
@@ -141,28 +173,8 @@
 
 		L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-		L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-			attribution:
-				'&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
-			subdomains: 'abcd',
-			maxZoom: 19
-		}).addTo(map);
-
-		const newMarkers = new Map<string, any>();
-		for (const building of campusBuildings) {
-			const icon = createCustomIcon(L, building);
-			const marker = L.marker([building.lat, building.lng], { icon })
-				.addTo(map)
-				.bindPopup(createPopupContent(building), {
-					maxWidth: 300,
-					className: 'campus-popup-wrapper'
-				});
-			marker.on('click', () => {
-				selectedBuilding = building;
-			});
-			newMarkers.set(building.id, marker);
-		}
-		markers = newMarkers;
+		// Initialize markers
+		updateMarkers();
 
 		if (navigator.geolocation) {
 			navigator.geolocation.getCurrentPosition(
@@ -180,6 +192,51 @@
 				map = null;
 			}
 		};
+	});
+
+	function updateMarkers() {
+		if (!map || !L) return;
+		
+		// Clear existing markers
+		markers.forEach(m => map.removeLayer(m));
+		const newMarkers = new Map<string, any>();
+		
+		for (const building of campusBuildings) {
+			const icon = createCustomIcon(L, building);
+			const marker = L.marker([building.lat, building.lng], { icon })
+				.addTo(map)
+				.bindPopup(createPopupContent(building), {
+					maxWidth: 300,
+					className: 'campus-popup-wrapper'
+				});
+			marker.on('click', () => {
+				selectedBuilding = building;
+			});
+			newMarkers.set(building.id, marker);
+		}
+		markers = newMarkers;
+	}
+
+	// Reactive Tile Layer & Filter
+	$effect(() => {
+		if (!map || !L) return;
+
+		const theme = themeState.current;
+		const isDark = ['dark', 'midnight', 'forest', 'amethyst', 'cyberpunk', 'coffee', 'cyberpop'].includes(theme);
+		const tileUrl = isDark 
+			? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+			: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+		if (tileLayer) map.removeLayer(tileLayer);
+		
+		tileLayer = L.tileLayer(tileUrl, {
+			attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+			subdomains: 'abcd',
+			maxZoom: 19
+		}).addTo(map);
+
+		// Re-render markers when theme (and category colors) change
+		untrack(() => updateMarkers());
 	});
 
 	let userMarker: any = null;
@@ -307,25 +364,25 @@
 
 	/* Popup Overrides to match theme */
 	:global(.campus-popup-wrapper .leaflet-popup-content-wrapper) {
-		background: #0a0a0a;
-		border: 1px solid #27272a;
+		background: var(--card) !important;
+		border: 1px solid var(--border) !important;
 		border-radius: 16px;
 		box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-		color: #fafafa;
+		color: var(--card-foreground) !important;
 		padding: 4px;
 	}
 
 	:global(.campus-popup-wrapper .leaflet-popup-tip) {
-		background: #0a0a0a;
-		border: 1px solid #27272a;
+		background: var(--card) !important;
+		border: 1px solid var(--border) !important;
 	}
 
 	:global(.campus-popup-wrapper .leaflet-popup-close-button) {
-		color: #a1a1aa !important;
+		color: var(--muted-foreground) !important;
 		padding: 8px !important;
 	}
 
 	:global(.campus-popup-wrapper .leaflet-popup-close-button:hover) {
-		color: #fafafa !important;
+		color: var(--foreground) !important;
 	}
 </style>

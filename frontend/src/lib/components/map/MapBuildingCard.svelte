@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { CampusBuilding } from '$lib/map-data/campusBuildings';
+	import { themeState } from '$lib/stores/theme.svelte';
 
 	let { building, isActive, distance, onclick } = $props<{
 		building: CampusBuilding;
@@ -8,12 +9,40 @@
 		onclick: () => void;
 	}>();
 
-	const categoryColors: Record<string, string> = {
-		academic: '#32415f',
-		administrative: '#6b21a8',
-		library: '#b45309',
-		campus: '#047857'
-	};
+	const colors = $derived.by(() => {
+		const theme = themeState.current;
+		const c = {
+			academic: '#32415f',
+			administrative: '#6b21a8',
+			library: '#b45309',
+			campus: '#047857'
+		};
+
+		if (theme === 'cyberpunk') {
+			c.academic = '#00ffc2';
+			c.administrative = '#ff003c';
+			c.campus = '#dfff00';
+		} else if (theme === 'midnight') {
+			c.academic = '#3f3f46';
+			c.administrative = '#ff0000';
+			c.campus = '#18181b';
+		} else if (theme === 'wasteland') {
+			c.academic = '#a54a26';
+			c.administrative = '#f5c71a';
+			c.campus = '#333333';
+		} else if (theme === 'amethyst' || theme === 'cyberpop') {
+			c.academic = '#c084fc';
+			c.administrative = '#ff007f';
+		} else if (theme === 'coffee') {
+			c.academic = '#c68642';
+			c.administrative = '#4a3429';
+		} else if (theme === 'sakura') {
+			c.academic = '#ffb7c5';
+			c.administrative = '#dcae96';
+		}
+
+		return c;
+	});
 </script>
 
 <button
@@ -22,8 +51,8 @@
 	{onclick}
 >
 	<div
-		class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[10px] font-extrabold tracking-tighter text-white"
-		style="background: {categoryColors[building.category]}"
+		class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[10px] font-extrabold tracking-tighter text-white transition-colors duration-300"
+		style="background: {colors[building.category]}"
 	>
 		{building.shortName}
 	</div>

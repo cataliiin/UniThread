@@ -31,6 +31,9 @@
 <div
 	class="relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-slate-600 shadow-sm {selectedSizeClass} {className}"
 >
+	<!-- Holographic Ring (Cyberpunk only) -->
+	<div class="hologram absolute inset-0 rounded-full border-2 border-primary/50 opacity-0 transition-opacity duration-300"></div>
+	
 	{#if src}
 		<img
 			{src}
@@ -45,3 +48,16 @@
 		{@render children()}
 	{/if}
 </div>
+
+<style>
+	:global(.cyberpunk) .hologram {
+		opacity: 1;
+		animation: holo-pulse 2s infinite ease-in-out;
+		box-shadow: 0 0 15px var(--primary);
+	}
+
+	@keyframes holo-pulse {
+		0%, 100% { transform: scale(1); opacity: 0.5; }
+		50% { transform: scale(1.1); opacity: 0.8; }
+	}
+</style>
