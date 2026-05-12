@@ -222,7 +222,6 @@
 
 					const geojson = data.routes[0].geometry;
 					
-					// Main path
 					const mainPath = L.geoJSON(geojson, {
 						style: {
 							color: '#3b82f6',
@@ -234,7 +233,6 @@
 						}
 					});
 
-					// Glow effect
 					const glowPath = L.geoJSON(geojson, {
 						style: {
 							color: '#3b82f6',

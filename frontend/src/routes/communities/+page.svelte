@@ -48,20 +48,11 @@
 <div class="min-h-screen bg-background">
 	<!-- Page Header -->
 	<div class="border-b border-border bg-sidebar px-6 py-5">
-		<div class="mx-auto max-w-4xl flex items-center justify-between">
+		<div class="mx-auto max-w-4xl">
 			<div>
 				<h1 class="text-2xl font-bold text-foreground">My Communities</h1>
 				<p class="text-sm text-muted-foreground mt-0.5">Communities you're part of</p>
 			</div>
-			<a
-				href="/communities/new"
-				class="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-all duration-300 hover:brightness-110 hover:shadow-primary/50"
-			>
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M12 5v14M5 12h14"/>
-				</svg>
-				Create Community
-			</a>
 		</div>
 	</div>
 
