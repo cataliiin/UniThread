@@ -38,9 +38,9 @@
 			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`
 		},
 		{
-			href: '/projects',
-			label: 'Projects',
-			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`
+			href: '/library',
+			label: 'My Library',
+			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>`
 		},
 		{
 			href: '/messages',
@@ -62,8 +62,7 @@
 			href: '/communities/new',
 			label: 'Create Community',
 			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`
-		},
-
+		}
 	]);
 
 	import { goto } from '$app/navigation';
@@ -90,7 +89,9 @@
 		</span>
 		<span class="text-sm tracking-wide">{link.label}</span>
 		{#if link.badge && link.badge > 0}
-			<span class="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground shadow-lg shadow-primary/30 animate-pulse">
+			<span
+				class="ml-auto animate-pulse rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground shadow-lg shadow-primary/30"
+			>
 				{link.badge}
 			</span>
 		{/if}
@@ -125,7 +126,9 @@
 			<a href="/profile" class="flex items-center gap-3">
 				<UserAvatar src={avatarUrl} initials={user.avatarInitials} size="sm" />
 				<div class="flex min-w-0 flex-col">
-					<span class="truncate text-sm font-semibold text-sidebar-accent-foreground">{user.name}</span>
+					<span class="truncate text-sm font-semibold text-sidebar-accent-foreground"
+						>{user.name}</span
+					>
 					<span class="truncate text-xs text-muted-foreground">@{user.username}</span>
 				</div>
 			</a>

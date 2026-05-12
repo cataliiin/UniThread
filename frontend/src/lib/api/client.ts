@@ -29,7 +29,7 @@ const middleware: Middleware = {
         if (response.ok) return response;
 
         // Token expired or invalid — clear session and redirect to login
-        if (response.status === 401 && browser) {
+        if (response.status === 401 && browser && !response.url.includes('/auth/login')) {
             localStorage.removeItem('token');
             localStorage.removeItem('currentUser'); // matches what user.logout() removes
             // Notify the user store to reset its in-memory state without a circular import
