@@ -2,97 +2,78 @@
 	import { toasts } from '$lib/stores/toast.svelte';
 	import { flip } from 'svelte/animate';
 	import { fly, fade } from 'svelte/transition';
+	import { CheckCircle2, XCircle, AlertTriangle, Info, X } from '@lucide/svelte';
+
+	// Limit to max 5 visible toasts
+	const MAX_TOASTS = 5;
+	let visibleToasts = $derived(toasts.messages.slice(-MAX_TOASTS));
+
+	const toastStyles = {
+		success: 'border-green-500/30 bg-green-950/80 text-green-400 shadow-[0_0_20px_rgba(34,197,94,0.15)]',
+		error: 'border-red-500/30 bg-red-950/80 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.15)]',
+		warning: 'border-amber-500/30 bg-amber-950/80 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.15)]',
+		info: 'border-primary/30 bg-primary-950/80 text-primary shadow-[0_0_20px_rgba(50,65,95,0.2)]'
+	};
+
+	const iconStyles = {
+		success: 'bg-green-500/20 text-green-400',
+		error: 'bg-red-500/20 text-red-400',
+		warning: 'bg-amber-500/20 text-amber-400',
+		info: 'bg-primary/20 text-primary'
+	};
 </script>
 
-<div class="pointer-events-none fixed top-6 right-6 z-[9999] flex flex-col gap-3">
-	{#each toasts.messages as toast (toast.id)}
+<div
+	class="pointer-events-none fixed bottom-20 left-1/2 z-9999 flex -translate-x-1/2 flex-col gap-3 sm:right-4 sm:bottom-4 sm:left-auto sm:translate-x-0 lg:right-6 lg:bottom-6"
+>
+	{#each visibleToasts as toast (toast.id)}
 		<div
 			animate:flip={{ duration: 300 }}
-			in:fly={{ x: 50, duration: 400 }}
-			out:fade={{ duration: 200 }}
-			class="pointer-events-auto flex min-w-[280px] items-center gap-3 rounded-2xl border p-4 shadow-2xl backdrop-blur-xl
-			{toast.type === 'success' ? 'border-green-200 bg-green-50/90 text-green-800' : ''}
-			{toast.type === 'error' ? 'border-red-200 bg-red-50/90 text-red-800' : ''}
-			{toast.type === 'info' ? 'border-indigo-200 bg-indigo-50/90 text-indigo-800' : ''}"
+			in:fly={{ x: 300, duration: 400, opacity: 0 }}
+			out:fly={{ x: 100, duration: 300, opacity: 0 }}
+			class="pointer-events-auto flex max-w-[350px] min-w-[280px] items-center gap-3 rounded-2xl border p-4 shadow-2xl backdrop-blur-xl transition-all duration-300 {toastStyles[toast.type]}"
 		>
 			{#if toast.type === 'success'}
-				<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-500/10">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="18"
-						height="18"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="3"
-						stroke-linecap="round"
-						stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg
-					>
+				<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full {iconStyles.success}">
+					<CheckCircle2 class="h-5 w-5" />
 				</div>
 			{:else if toast.type === 'error'}
-				<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500/10">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="18"
-						height="18"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="3"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line
-							x1="12"
-							x2="12.01"
-							y1="16"
-							y2="16"
-						/></svg
-					>
+				<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full {iconStyles.error}">
+					<XCircle class="h-5 w-5" />
+				</div>
+			{:else if toast.type === 'warning'}
+				<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full {iconStyles.warning}">
+					<AlertTriangle class="h-5 w-5" />
 				</div>
 			{:else}
-				<div
-					class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-500/10"
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="18"
-						height="18"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="3"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="16" y2="12" /><line
-							x1="12"
-							x2="12.01"
-							y1="8"
-							y2="8"
-						/></svg
-					>
+				<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full {iconStyles.info}">
+					<Info class="h-5 w-5" />
 				</div>
 			{/if}
 
-			<div class="flex-1 text-sm font-semibold">
-				{toast.message}
+			<div class="flex flex-1 flex-col gap-1">
+				<div class="text-sm font-semibold">
+					{toast.message}
+				</div>
+				{#if toast.action}
+					<button
+						onclick={() => {
+							toast.action?.onClick();
+							toasts.remove(toast.id);
+						}}
+						class="w-fit text-xs font-bold uppercase tracking-wider underline underline-offset-4 transition-all hover:opacity-80"
+					>
+						{toast.action.label}
+					</button>
+				{/if}
 			</div>
 
 			<button
 				onclick={() => toasts.remove(toast.id)}
-				class="p-1 text-current opacity-40 transition-opacity hover:opacity-100"
+				class="p-1 text-current opacity-50 transition-all duration-200 hover:opacity-100 hover:scale-110"
+				aria-label="Dismiss notification"
 			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="16"
-					height="16"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					><line x1="18" x2="6" y1="6" y2="18" /><line x1="6" x2="18" y1="6" y2="18" /></svg
-				>
+				<X class="h-4 w-4" />
 			</button>
 		</div>
 	{/each}

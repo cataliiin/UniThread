@@ -2,31 +2,45 @@
 	import { page } from '$app/stores';
 	import { user } from '$lib/stores/user.svelte';
 	import { toasts } from '$lib/stores/toast.svelte';
+	import { invitationsState } from '$lib/stores/invitations.svelte';
 	import UserAvatar from './UserAvatar.svelte';
+	import logo from '$lib/assets/UniThread_Logo.svg';
 
 	let avatarUrl = $derived(user.avatarUrl);
+	let pendingInvites = $derived(invitationsState.pendingCount);
 
 	interface NavLink {
 		href: string;
 		label: string;
 		icon: string;
+		badge?: number;
 	}
 
-	const navLinks = [
+	let navLinks = $derived([
 		{
 			href: '/',
 			label: 'Home',
 			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`
 		},
 		{
-			href: '/dashboard',
-			label: 'Dashboard',
-			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>`
+			href: '/posts/new',
+			label: 'Create Post',
+			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`
 		},
 		{
-			href: '/projects',
-			label: 'Projects',
-			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`
+			href: '/search',
+			label: 'Search',
+			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>`
+		},
+		{
+			href: '/map',
+			label: 'Campus Map',
+			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`
+		},
+		{
+			href: '/library',
+			label: 'My Library',
+			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>`
 		},
 		{
 			href: '/messages',
@@ -34,57 +48,67 @@
 			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`
 		},
 		{
-			href: '/settings',
-			label: 'Settings',
-			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`
+			href: '/invitations',
+			label: 'Invitations',
+			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="m9 9 2 2 4-4"/></svg>`,
+			badge: pendingInvites
+		},
+		{
+			href: '/communities',
+			label: 'My Communities',
+			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`
+		},
+		{
+			href: '/communities/new',
+			label: 'Create Community',
+			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`
 		}
-	];
+	]);
+
+	import { goto } from '$app/navigation';
 
 	function handleLogout() {
+		user.logout();
 		toasts.show('Logged out successfully', 'info');
-		// In a real app, we would also clear tokens and redirect
+		goto('/login');
 	}
 </script>
 
 {#snippet navLink(link: NavLink)}
 	<a
 		href={link.href}
-		class="group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200
+		class="group glitch flex items-center gap-3 rounded-lg px-4 py-3 transition-all duration-300
 		{$page.url.pathname === link.href
-			? 'bg-indigo-600/10 font-semibold text-indigo-400'
-			: 'text-slate-400 hover:bg-slate-800 hover:text-white'}"
+			? 'bg-primary/10 font-semibold text-primary shadow-[0_0_15px_rgba(50,65,95,0.15)]'
+			: 'text-muted-foreground hover:bg-secondary hover:text-foreground'}"
 	>
 		<span
-			class="flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+			class="sidebar-icon flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
 		>
 			{@html link.icon}
 		</span>
 		<span class="text-sm tracking-wide">{link.label}</span>
+		{#if link.badge && link.badge > 0}
+			<span
+				class="ml-auto animate-pulse rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground shadow-lg shadow-primary/30"
+			>
+				{link.badge}
+			</span>
+		{/if}
 	</a>
 {/snippet}
 
 <aside
-	class="hidden h-full w-72 flex-col border-r border-slate-800 bg-slate-950 transition-all duration-300 lg:flex"
+	class="hidden h-full w-72 flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300 lg:flex"
 >
 	<!-- Header -->
-	<div class="flex items-center gap-4 border-b border-slate-800/50 p-6">
+	<div class="flex items-center gap-4 border-b border-sidebar-border p-6">
 		<div
-			class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 shadow-lg shadow-indigo-500/20"
+			class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40"
 		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="24"
-				height="24"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				class="text-white"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg
-			>
+			<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
 		</div>
-		<span class="text-xl font-bold tracking-tight text-white">UniThread</span>
+		<span class="text-xl font-bold tracking-tight text-sidebar-foreground">UniThread</span>
 	</div>
 
 	<!-- Navigation -->
@@ -95,20 +119,22 @@
 	</nav>
 
 	<!-- Footer -->
-	<div class="mt-auto border-t border-slate-800/50 p-4">
+	<div class="mt-auto border-t border-sidebar-border p-4">
 		<div
-			class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900 p-3 transition-all duration-200"
+			class="flex items-center justify-between rounded-2xl border border-sidebar-border bg-sidebar-accent p-3 transition-all duration-300 hover:border-primary/30"
 		>
 			<a href="/profile" class="flex items-center gap-3">
 				<UserAvatar src={avatarUrl} initials={user.avatarInitials} size="sm" />
 				<div class="flex min-w-0 flex-col">
-					<span class="truncate text-sm font-semibold text-white">{user.name}</span>
-					<span class="truncate text-xs text-slate-500">@{user.username}</span>
+					<span class="truncate text-sm font-semibold text-sidebar-accent-foreground"
+						>{user.name}</span
+					>
+					<span class="truncate text-xs text-muted-foreground">@{user.username}</span>
 				</div>
 			</a>
 			<button
 				onclick={handleLogout}
-				class="rounded-lg p-2 text-slate-500 transition-all duration-200 hover:bg-red-400/10 hover:text-red-400"
+				class="rounded-lg p-2 text-muted-foreground transition-all duration-300 hover:bg-destructive/10 hover:text-destructive"
 				title="Logout"
 			>
 				<svg

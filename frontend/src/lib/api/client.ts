@@ -1,0 +1,72 @@
+import createClient, { type Middleware } from 'openapi-fetch';
+import type { paths } from '$lib/api/openapi-generated-schema';
+import { browser } from '$app/environment';
+import { goto } from '$app/navigation';
+
+const publicBaseUrl = 'http://localhost:8000';
+
+const baseUrl = !browser && publicBaseUrl.startsWith('/')
+    ? 'http://backend:8000'
+    : publicBaseUrl;
+
+const middleware: Middleware = {
+    async onRequest({ request }: { request: Request }): Promise<Request | void> {
+        if (!request.headers.has('Accept')) {
+            request.headers.set('Accept', 'application/json');
+        }
+
+        if (browser) {
+            const token = localStorage.getItem('token');
+            if (token && !request.headers.has('Authorization')) {
+                request.headers.set('Authorization', `Bearer ${token}`);
+            }
+        }
+
+        return request;
+    },
+
+    async onResponse({ response }: { response: Response }): Promise<Response | void> {
+        if (response.ok) return response;
+
+        // Token expired or invalid — clear session and redirect to login
+        if (response.status === 401 && browser && !response.url.includes('/auth/login')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('currentUser'); // matches what user.logout() removes
+            // Notify the user store to reset its in-memory state without a circular import
+            window.dispatchEvent(new Event('auth:expired'));
+            goto('/login');
+            throw new Error('__AUTH_REDIRECT__');
+        }
+
+        let message = `${response.status} ${response.statusText}`;
+
+		try {
+			const data: any = await response.clone().json();
+
+			if (data?.error?.message) {
+				message = data.error.message;
+			} else if (typeof data?.message === 'string') {
+				message = data.message;
+			} else if (typeof data?.detail === 'string') {
+				message = data.detail;
+			} else if (Array.isArray(data?.detail)) {
+				const firstError = data.detail[0];
+				const field = firstError?.loc?.at(-1) ?? 'field';
+				message = `${field}: ${firstError.msg}`;
+			}
+		} catch {}
+
+        throw new Error(message);
+    },
+
+    async onError({ error }: { error: any }) {
+        throw error instanceof Error ? error : new Error('Network error');
+    },
+};
+
+export const api = createClient<paths>({
+    baseUrl,
+    credentials: 'include', // moved here — the only correct place
+});
+
+api.use(middleware);

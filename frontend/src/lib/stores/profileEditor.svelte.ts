@@ -1,5 +1,6 @@
 import { user } from './user.svelte';
 import { toasts } from './toast.svelte';
+import { UsersService } from '$lib/api/services';
 
 class ProfileEditor {
 	avatar = $state({
@@ -24,7 +25,6 @@ class ProfileEditor {
 			confirm: false
 		}
 	});
-
 
 	currentAvatar = $derived(
 		this.avatar.shouldRemove ? null : this.avatar.previewUrl || user.avatarUrl
@@ -83,13 +83,14 @@ class ProfileEditor {
 		this.password.visibility.confirm = false;
 	}
 
-	saveChanges() {
+	async saveChanges() {
 		const updatedFields: string[] = [];
 		const hasAvatarChange = this.avatar.previewUrl !== null || this.avatar.shouldRemove;
 		const hasUsernameChange = this.username.isEditing && this.username.temp !== user.username;
-		
+
 		// Check if password form is active AND has any input
-		const isPasswordInputPresent = this.password.current !== '' || this.password.new !== '' || this.password.confirm !== '';
+		const isPasswordInputPresent =
+			this.password.current !== '' || this.password.new !== '' || this.password.confirm !== '';
 		const shouldValidatePassword = this.password.isChanging && isPasswordInputPresent;
 
 		if (shouldValidatePassword) {
@@ -103,31 +104,53 @@ class ProfileEditor {
 			}
 		}
 
-		if (hasAvatarChange) {
-			user.avatarUrl = this.avatar.shouldRemove ? null : this.avatar.previewUrl;
-			this.avatar.previewUrl = null;
-			this.avatar.shouldRemove = false;
-			updatedFields.push('Avatar');
-		}
+		try {
+			if (this.password.isChanging && isPasswordInputPresent) {
+				await UsersService.changePassword({
+					old_password: this.password.current,
+					new_password: this.password.new
+				});
+				updatedFields.push('Password');
+				this.password.isChanging = false;
+				this.resetPasswordFields();
+			}
 
-		if (this.username.isEditing) {
-			if (hasUsernameChange) {
+			if (this.username.isEditing && hasUsernameChange) {
+				await UsersService.updateMe({ username: this.username.temp });
 				user.username = this.username.temp;
 				updatedFields.push('Username');
+				this.username.isEditing = false;
 			}
-			this.username.isEditing = false;
-		}
-
-		if (this.password.isChanging) {
-			if (isPasswordInputPresent) {
-				updatedFields.push('Password');
+			
+			// Avatar update (Frontend only until MinIO is fixed)
+			if (hasAvatarChange) {
+				if (this.avatar.shouldRemove) {
+					user.avatarUrl = null;
+				} else if (this.avatar.previewUrl) {
+					try {
+						const response = await fetch(this.avatar.previewUrl);
+						const blob = await response.blob();
+						const base64 = await new Promise<string>((resolve) => {
+							const reader = new FileReader();
+							reader.onloadend = () => resolve(reader.result as string);
+							reader.readAsDataURL(blob);
+						});
+						user.avatarUrl = base64;
+					} catch {
+						user.avatarUrl = this.avatar.previewUrl;
+					}
+				}
+				this.avatar.previewUrl = null;
+				this.avatar.shouldRemove = false;
+				updatedFields.push('Avatar (Local)');
 			}
-			this.password.isChanging = false;
-			this.resetPasswordFields();
-		}
 
-		if (updatedFields.length > 0) {
-			toasts.show(`${updatedFields.join(', ')} updated successfully!`, 'success');
+			if (updatedFields.length > 0) {
+				toasts.show(`${updatedFields.join(', ')} updated successfully!`, 'success');
+				// Removing invalid saveToStorage call, as state binds reactively
+			}
+		} catch (e: any) {
+			toasts.show(e.message || 'Failed to update profile', 'error');
 		}
 	}
 

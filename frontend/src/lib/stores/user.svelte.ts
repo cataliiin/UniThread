@@ -1,88 +1,182 @@
-class UserState {
-	name = $state('');
-	username = $state('');
-	email = $state('');
-	university = $state('');
-	memberSince = $state('');
-	avatarInitials = $state('');
-	avatarUrl = $state<string | null>(null);
-	avatarSource = $derived(this.avatarUrl);
-	isAuthenticated = $state(false);
+import { AuthService, UsersService } from '$lib/api/services';
 
-	constructor() {
-		// Load from localStorage if available (client-side only)
-		if (typeof window !== 'undefined') {
-			const saved = localStorage.getItem('currentUser');
-			if (saved) {
-				try {
-					const data = JSON.parse(saved);
-					this.name = data.name || '';
-					this.username = data.username || '';
-					this.email = data.email || '';
-					this.university = data.university || '';
-					this.memberSince = data.memberSince || '';
-					this.avatarInitials = data.avatarInitials || '';
-					this.avatarUrl = data.avatarUrl || null;
-					this.isAuthenticated = data.isAuthenticated || false;
-				} catch (e) {
-					console.error('Failed to parse user data from localStorage');
+function createUserState() {
+	let id = $state('');
+	let name = $state('');
+	let surname = $state('');
+	let username = $state('');
+	let email = $state('');
+	let university = $state('');
+	let memberSince = $state('');
+	let avatarInitials = $state('');
+	let avatarUrl = $state<string | null>(null);
+	let isAuthenticated = $state(false);
+
+	// Initialize from localStorage
+	if (typeof window !== 'undefined') {
+		const saved = localStorage.getItem('currentUser');
+		if (saved) {
+			try {
+				const data = JSON.parse(saved);
+				// Migration: if id is an email, it's legacy/invalid, clear it
+				if (data.id && data.id.includes('@')) {
+					localStorage.removeItem('currentUser');
+					localStorage.removeItem('token');
+					if (typeof window !== 'undefined') window.location.reload();
+				} else {				
+				id = data.id || '';
+				name = data.name || '';
+				surname = data.surname || '';
+				username = data.username || '';
+				email = data.email || '';
+				
+				// Fallback name parsing from email (e.g. cezar.mihai.vieru@...)
+				if (email && email.includes('.') && (!name || !surname)) {
+					const parts = email.split('@')[0].split('.');
+					if (parts.length >= 2) {
+						if (!name) name = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+						if (!surname) {
+							surname = parts.slice(1)
+								.map(p => p.charAt(0).toUpperCase() + p.slice(1))
+								.join(' ');
+						}
+					}
 				}
+				university = data.university || '';
+				memberSince = data.memberSince || '';
+				avatarInitials = data.avatarInitials || '';
+				avatarUrl = data.avatarUrl || null;
+				isAuthenticated = data.isAuthenticated || false;
+				}
+			} catch (e) {
+				console.error('Failed to parse user data from localStorage');
 			}
 		}
+
+		// Reset in-memory state when the API client detects an expired/invalid token
+		window.addEventListener('auth:expired', () => logout());
 	}
 
-	async checkUsername(username: string): Promise<boolean> {
-		// Simulate API call to check username availability
-		await new Promise((resolve) => setTimeout(resolve, 500));
+	let avatarSource = $derived(avatarUrl);
 
-		if (localStorage.getItem('username_' + username) === username) {
-			return false;
+	function updateProfileStorage() {
+		if (typeof window !== 'undefined' && isAuthenticated) {
+			const profile = { id, name, surname, username, email, university, memberSince, avatarInitials, avatarUrl };
+			localStorage.setItem('currentUser', JSON.stringify({ ...profile, isAuthenticated: true }));
 		}
+	}
+
+	async function checkUsername(usernameParam: string): Promise<boolean> {
+		// Mock implementation or future API check
 		return true;
 	}
 
-	async checkEmail(email: string): Promise<boolean> {
-		// Simulate API call to check email availability
-		await new Promise((resolve) => setTimeout(resolve, 500));
-
-		if (localStorage.getItem('email_' + email) === email) {
-			return false;
-		}
+	async function checkEmail(emailParam: string): Promise<boolean> {
+		// Mock implementation or future API check
 		return true;
 	}
 
-	async register(email: string, username: string): Promise<void> {
-		// Simulate API call
-		await new Promise((resolve) => setTimeout(resolve, 1500));
+	async function login(emailParam: string, password: string): Promise<{ success: boolean; error?: string }> {
+		if (typeof window === 'undefined') return { success: false, error: 'Not available server-side' };
 
-		this.email = email;
-		this.username = username;
-		this.name = username; // Can be updated later
-		this.university = 'Transilvania University of Brașov';
+		try {
+			const tokenData = await AuthService.login({ username: emailParam, password });
+			if (typeof window !== 'undefined') {
+				localStorage.setItem('token', tokenData.access_token);
+			}
+			const me = await UsersService.getMe();
+			id = me.id;
+			username = me.username;
+			email = me.email;
+			
+			// Parse name and surname from email if possible (e.g., name.surname@...)
+			if (me.email.includes('.')) {
+				const parts = me.email.split('@')[0].split('.');
+				if (parts.length >= 2) {
+					name = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+					surname = parts.slice(1)
+						.map(p => p.charAt(0).toUpperCase() + p.slice(1))
+						.join(' ');
+				}
+			}
+			
+			// Fallback for university name if not in schema yet
+			university = 'Transilvania University of Brașov'; 
+			memberSince = new Date(me.created_at).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+			avatarInitials = me.username.substring(0, 2).toUpperCase();
+			avatarUrl = me.avatar_key;
+			isAuthenticated = true;
 
-		const date = new Date();
-		this.memberSince = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-		this.avatarInitials = username.substring(0, 2).toUpperCase();
-		this.isAuthenticated = true;
+			updateProfileStorage();
 
+			return { success: true };
+		} catch (error: any) {
+			return { success: false, error: error.message || 'Login failed.' };
+		}
+	}
+
+	function logout() {
+		id = '';
+		name = '';
+		surname = '';
+		username = '';
+		email = '';
+		university = '';
+		memberSince = '';
+		avatarInitials = '';
+		avatarUrl = null;
+		isAuthenticated = false;
 		if (typeof window !== 'undefined') {
-			// Save availability checks
-			localStorage.setItem('username_' + username, username);
-			localStorage.setItem('email_' + email, email);
-
-			// Save current user session
-			localStorage.setItem('currentUser', JSON.stringify({
-				name: this.name,
-				username: this.username,
-				email: this.email,
-				university: this.university,
-				memberSince: this.memberSince,
-				avatarInitials: this.avatarInitials,
-				avatarUrl: this.avatarUrl,
-				isAuthenticated: this.isAuthenticated
-			}));
+			localStorage.removeItem('currentUser');
+			localStorage.removeItem('token');
 		}
 	}
+
+	async function register(emailParam: string, usernameParam: string, password: string,
+		nameParam: string, surnameParam: string): Promise<void> {
+
+		await AuthService.register({
+			email: emailParam,
+			username: usernameParam,
+			password: password
+		});
+
+		name = nameParam;
+		surname = surnameParam;
+		university = 'Transilvania University of Brașov';
+
+		const loginResult = await login(emailParam, password);
+		if (!loginResult.success) {
+			throw new Error(loginResult.error);
+		}
+	}
+
+	return {
+		get id() { return id; },
+		get name() { return name; },
+		get surname() { return surname; },
+		get username() { return username; },
+		set username(val: string) {
+			username = val;
+			updateProfileStorage();
+		},
+		get email() { return email; },
+		get university() { return university; },
+		get memberSince() { return memberSince; },
+		get avatarInitials() { return avatarInitials; },
+		get avatarUrl() { return avatarUrl; },
+		set avatarUrl(val: string | null) {
+			avatarUrl = val;
+			updateProfileStorage();
+		},
+		get avatarSource() { return avatarSource; },
+		get isAuthenticated() { return isAuthenticated; },
+		checkUsername,
+		checkEmail,
+		login,
+		logout,
+		register
+	};
 }
 
-export const user = new UserState();
+export const user = createUserState();

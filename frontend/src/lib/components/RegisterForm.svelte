@@ -2,35 +2,80 @@
 	import { goto } from '$app/navigation';
 	import { toasts } from '$lib/stores/toast.svelte';
 	import { user } from '$lib/stores/user.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Loader2, AlertCircle, Eye, EyeOff } from '@lucide/svelte';
+	import logo from '$lib/assets/UniThread_Logo.svg';
 
 	let email = $state('');
 	let username = $state('');
 	let password = $state('');
+    let name = $state('');
+    let surname = $state('');
 	let confirmPassword = $state('');
 	let showPassword = $state(false);
 	let showConfirmPassword = $state(false);
 	let isLoading = $state(false);
+	let touched = $state({ email: false, username: false, password: false, confirmPassword: false , name: false , surname: false });
 
-	async function handleSubmit(event: Event) {
-		event.preventDefault();
+	const VALID_DOMAIN = '@student.unitbv.ro';
 
-		if (!email || !username || !password || !confirmPassword) {
-			toasts.show('Please fill in all fields', 'error');
-			return;
-		}
+	const emailError = $derived.by(() => {
+		if (!touched.email) return '';
+		if (!email) return 'Email is required.';
+		if (!email.endsWith(VALID_DOMAIN)) return `Must be a ${VALID_DOMAIN} address.`;
+		return '';
+	});
 
-		if (!email.endsWith('@student.unitbv.ro') && !email.endsWith('@unitbv.ro')) {
-			toasts.show('Email must be a student or staff email from unitbv.ro', 'error');
-			return;
-		}
+	const usernameError = $derived.by(() => {
+		if (!touched.username) return '';
+		if (!username) return 'Username is required.';
+		if (username.length < 3) return 'Username must be at least 3 characters.';
+		return '';
+	});
 
-		if (password.length < 8) {
-			toasts.show('Password must be at least 8 characters long', 'error');
-			return;
-		}
+	const passwordError = $derived.by(() => {
+		if (!touched.password) return '';
+		if (!password) return 'Password is required.';
+		if (password.length < 8) return 'Password must be at least 8 characters.';
+		return '';
+	});
 
-		if (password !== confirmPassword) {
-			toasts.show('Passwords do not match', 'error');
+	const confirmPasswordError = $derived.by(() => {
+		if (!touched.confirmPassword) return '';
+		if (confirmPassword !== password) return 'Passwords do not match.';
+		return '';
+	});
+
+    const nameError = $derived.by(() => {
+        if (!touched.name) return '';
+        if (!name) return 'First name is required.';
+        return '';
+    });
+
+    const surnameError = $derived.by(() => {
+        if (!touched.surname) return '';
+        if (!surname) return 'Last name is required.';
+        return '';
+    });
+
+	const isFormValid = $derived(
+		!emailError && !usernameError && !passwordError && !confirmPasswordError && !nameError && !surnameError &&
+		!!email && !!username && !!password && !!confirmPassword && !!name && !!surname
+	);
+
+	async function handleSubmit(e: Event) {
+		e.preventDefault();
+		touched.email = true;
+		touched.username = true;
+		touched.password = true;
+		touched.confirmPassword = true;
+		touched.name = true;
+		touched.surname = true;
+
+		if (!isFormValid) {
+			toasts.show('Please fix the errors before submitting.', 'error');
 			return;
 		}
 
@@ -52,14 +97,23 @@
 				return;
 			}
 
-			await user.register(email, username);
+			await user.register(email, username, password, name, surname);
 
 			toasts.show('Registration successful! Logging you in...', 'success');
 			setTimeout(() => {
 				goto('/');
 			}, 1500);
-		} catch (error) {
-			toasts.show('An error occurred during registration.', 'error');
+		} catch (error: any) {
+			let errorMessage = error.message || 'An error occurred during registration.';
+			
+			// Handle 409 Conflict (email already exists) with a more suggestive message
+			if (errorMessage.includes('409') || errorMessage.toLowerCase().includes('conflict') || 
+				errorMessage.toLowerCase().includes('already exists') || 
+				errorMessage.toLowerCase().includes('email')) {
+				errorMessage = 'This email is already registered. Try logging in instead, or use a different email address.';
+			}
+			
+			toasts.show(errorMessage, 'error');
 		} finally {
 			isLoading = false;
 		}
@@ -68,162 +122,165 @@
 
 <div class="mb-8 flex flex-col items-center">
 	<div
-		class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-500/20"
+		class="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40"
 	>
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="32"
-			height="32"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			class="text-white"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg
-		>
+		<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
 	</div>
-	<h1 class="text-2xl font-bold text-white">Create UniThread Account</h1>
-	<p class="text-slate-400">Join the community</p>
+	<h1 class="text-2xl font-bold text-foreground">Create UniThread Account</h1>
+	<p class="text-muted-foreground">Join the community</p>
 </div>
 
-<form class="space-y-4" onsubmit={handleSubmit}>
-	<div>
-		<label for="email" class="mb-1 block text-sm font-medium text-slate-300">Email</label>
-		<input
+<form class="space-y-4" onsubmit={handleSubmit} novalidate>
+	<div class="space-y-2">
+		<Label for="email" class="text-muted-foreground">Email</Label>
+		<Input
 			type="email"
 			id="email"
 			bind:value={email}
-			class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-indigo-500"
+			onblur={() => (touched.email = true)}
+			class="transition-all duration-300 {emailError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
 			placeholder="name.surname@student.unitbv.ro"
 		/>
+		{#if emailError}
+			<p class="flex items-center gap-1 text-xs text-destructive">
+				<AlertCircle class="h-3.5 w-3.5 shrink-0" />
+				{emailError}
+			</p>
+		{/if}
 	</div>
-
-	<div>
-		<label for="username" class="mb-1 block text-sm font-medium text-slate-300">Username</label>
-		<input
+	<div class="space-y-2">
+		<Label for="name" class="text-muted-foreground">First Name</Label>
+		<Input
+			type="text"
+			id="name"
+			bind:value={name}
+			onblur={() => (touched.name = true)}
+			class="transition-all duration-300 {nameError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
+			placeholder="First Name"
+		/>
+		{#if nameError}
+			<p class="flex items-center gap-1 text-xs text-destructive">
+				<AlertCircle class="h-3.5 w-3.5 shrink-0" />
+				{nameError}
+			</p>
+		{/if}
+	</div>
+	<div class="space-y-2">
+		<Label for="surname" class="text-muted-foreground">Last Name</Label>
+		<Input
+			type="text"
+			id="surname"
+			bind:value={surname}
+			onblur={() => (touched.surname = true)}
+			class="transition-all duration-300 {surnameError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
+			placeholder="Last Name"
+		/>
+		{#if surnameError}
+			<p class="flex items-center gap-1 text-xs text-destructive">
+				<AlertCircle class="h-3.5 w-3.5 shrink-0" />
+				{surnameError}
+			</p>
+		{/if}
+	</div>
+	<div class="space-y-2">
+		<Label for="username" class="text-muted-foreground">Username</Label>
+		<Input
 			type="text"
 			id="username"
 			bind:value={username}
-			class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-indigo-500"
+			onblur={() => (touched.username = true)}
+			class="transition-all duration-300 {usernameError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
 			placeholder="Choose a username"
 		/>
+		{#if usernameError}
+			<p class="flex items-center gap-1 text-xs text-destructive">
+				<AlertCircle class="h-3.5 w-3.5 shrink-0" />
+				{usernameError}
+			</p>
+		{/if}
 	</div>
 
-	<div>
-		<label for="password" class="mb-1 block text-sm font-medium text-slate-300">Password</label>
+	<div class="space-y-2">
+		<Label for="password" class="text-muted-foreground">Password</Label>
 		<div class="relative">
-			<input
+			<Input
 				type={showPassword ? 'text' : 'password'}
 				id="password"
 				bind:value={password}
-				class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-indigo-500"
+				onblur={() => (touched.password = true)}
+				class="pr-10 transition-all duration-300 {passwordError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
 				placeholder="Password must be at least 8 characters"
 			/>
 			<button
 				type="button"
 				onclick={() => (showPassword = !showPassword)}
-				class="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-300"
+				class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors duration-300 hover:text-foreground"
 			>
 				{#if showPassword}
-					<svg
-						class="h-5 w-5"
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><path
-							d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"
-						/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /><path
-							d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"
-						/><path d="m2 2 20 20" /></svg
-					>
+					<EyeOff class="h-5 w-5" />
 				{:else}
-					<svg
-						class="h-5 w-5"
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><path
-							d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"
-						/><circle cx="12" cy="12" r="3" /></svg
-					>
+					<Eye class="h-5 w-5" />
 				{/if}
 			</button>
 		</div>
+		{#if passwordError}
+			<p class="flex items-center gap-1 text-xs text-destructive">
+				<AlertCircle class="h-3.5 w-3.5 shrink-0" />
+				{passwordError}
+			</p>
+		{/if}
 	</div>
 
-	<div>
-		<label for="confirmPassword" class="mb-1 block text-sm font-medium text-slate-300"
-			>Confirm Password</label
-		>
+	<div class="space-y-2">
+		<Label for="confirmPassword" class="text-muted-foreground">Confirm Password</Label>
 		<div class="relative">
-			<input
+			<Input
 				type={showConfirmPassword ? 'text' : 'password'}
 				id="confirmPassword"
 				bind:value={confirmPassword}
-				class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-indigo-500"
+				onblur={() => (touched.confirmPassword = true)}
+				class="pr-10 transition-all duration-300 {confirmPasswordError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
 				placeholder="Passwords must match"
 			/>
 			<button
 				type="button"
 				onclick={() => (showConfirmPassword = !showConfirmPassword)}
-				class="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-300"
+				class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors duration-300 hover:text-foreground"
 			>
 				{#if showConfirmPassword}
-					<svg
-						class="h-5 w-5"
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><path
-							d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"
-						/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /><path
-							d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"
-						/><path d="m2 2 20 20" /></svg
-					>
+					<EyeOff class="h-5 w-5" />
 				{:else}
-					<svg
-						class="h-5 w-5"
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><path
-							d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"
-						/><circle cx="12" cy="12" r="3" /></svg
-					>
+					<Eye class="h-5 w-5" />
 				{/if}
 			</button>
 		</div>
+		{#if confirmPasswordError}
+			<p class="flex items-center gap-1 text-xs text-destructive">
+				<AlertCircle class="h-3.5 w-3.5 shrink-0" />
+				{confirmPasswordError}
+			</p>
+		{/if}
 	</div>
 
-	<button
+	<Button
 		type="submit"
 		disabled={isLoading}
-		class="w-full transform rounded-xl bg-indigo-600 py-3 font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:bg-indigo-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+		class="w-full bg-primary py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-300 hover:bg-primary/90 hover:shadow-primary/40 active:scale-[0.98]"
 	>
-		{isLoading ? 'Creating Account...' : 'Sign Up'}
-	</button>
+		{#if isLoading}
+			<span class="flex items-center justify-center gap-2">
+				<Loader2 class="h-4 w-4 animate-spin" />
+				Creating Account...
+			</span>
+		{:else}
+			Sign Up
+		{/if}
+	</Button>
 </form>
 
-<p class="mt-6 text-center text-sm text-slate-400">
+<p class="mt-6 text-center text-sm text-muted-foreground">
 	Already have an account?
-	<a href="/login" class="font-semibold text-indigo-400 transition-colors hover:text-indigo-300">
+	<a href="/login" class="font-semibold text-primary transition-all duration-300 hover:text-primary/80 hover:underline">
 		Sign In
 	</a>
 </p>
