@@ -4,6 +4,7 @@ from fastapi import APIRouter, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
+from app.core.post_access import build_post_metric_subqueries, to_post_feed_response
 from app.core.dependencies import (
     CurrentUser,
     DbDep,
@@ -29,7 +30,6 @@ from app.database.models.community import (
 )
 from app.database.models.enums import CommunityType, MemberStatus
 from app.database.models.post import Post
-from app.database.models.vote import Vote
 from app.database.models.user import User
 from app.schemas.community import (
     CommunityCreate,
@@ -38,6 +38,7 @@ from app.schemas.community import (
     CommunityResponse,
     CommunityUpdate,
     TransferOwnershipRequest,
+    normalize_member_status,
 )
 from app.schemas.user import UserPublic
 from app.schemas.pagination import PaginatedResponse
@@ -149,7 +150,7 @@ async def list_communities(
     for comm, member_count, user_membership_status in rows:
         c_resp = CommunityResponse.model_validate(comm)
         c_resp.member_count = member_count or 0
-        c_resp.user_membership_status = user_membership_status
+        c_resp.user_membership_status = normalize_member_status(user_membership_status)
         items.append(c_resp)
 
     pages = (total + actual_size - 1) // actual_size if total else 0
@@ -181,6 +182,7 @@ async def get_community(community_id: UUID, current_user: CurrentUser, db: DbDep
             & (CommunityMember.user_id == current_user.id)
         )
     )
+    user_membership_status = normalize_member_status(user_membership_status)
 
     if comm.type == CommunityType.invite:
         is_owner = comm.owner_id == current_user.id
@@ -270,22 +272,12 @@ async def get_community_posts(
     base_query = select(Post).where(Post.community_id == community_id)
     total = await db.scalar(select(func.count()).select_from(base_query.subquery()))
 
-    score_subq = (
-        select(func.sum(Vote.value))
-        .where(Vote.post_id == Post.id)
-        .scalar_subquery()
-        .label("score")
-    )
-
-    user_vote_subq = (
-        select(Vote.value)
-        .where((Vote.post_id == Post.id) & (Vote.user_id == current_user.id))
-        .scalar_subquery()
-        .label("user_vote")
+    score_subq, user_vote_subq, comment_count_subq = build_post_metric_subqueries(
+        current_user.id
     )
 
     stmt = (
-        select(Post, score_subq, user_vote_subq)
+        select(Post, score_subq, user_vote_subq, comment_count_subq)
         .where(Post.community_id == community_id)
         .options(selectinload(Post.author), selectinload(Post.community))
         .offset(offset)
@@ -300,11 +292,10 @@ async def get_community_posts(
     rows = (await db.execute(stmt)).all()
 
     items = []
-    for p, score, user_vote in rows:
-        p_resp = PostFeedResponse.model_validate(p)
-        p_resp.score = score or 0
-        p_resp.user_vote = user_vote
-        items.append(p_resp)
+    for post, score, user_vote, comment_count in rows:
+        items.append(
+            to_post_feed_response(post, score, user_vote, comment_count)
+        )
 
     pages = (total + actual_size - 1) // actual_size if total else 0
     return PaginatedResponse(
@@ -579,5 +570,5 @@ async def transfer_ownership(
     c, member_count, status_val = row
     c_resp = CommunityResponse.model_validate(c)
     c_resp.member_count = member_count or 0
-    c_resp.user_membership_status = status_val
+    c_resp.user_membership_status = normalize_member_status(status_val)
     return c_resp

@@ -104,10 +104,23 @@ def assert_status(resp, expected: int, msg: str = ""):
 		)
 
 
-def create_user_via_register(client: TestClient, username: str, email: str, password: str) -> dict[str, Any]:
+def create_user_via_register(
+	client: TestClient,
+	username: str,
+	email: str,
+	password: str,
+	first_name: str | None = None,
+	last_name: str | None = None,
+) -> dict[str, Any]:
 	resp = client.post(
 		"/api/v1/auth/register",
-		json={"username": username, "email": email, "password": password},
+		json={
+			"username": username,
+			"email": email,
+			"password": password,
+			"first_name": first_name,
+			"last_name": last_name,
+		},
 	)
 	assert_status(resp, 201, "register")
 	return {
@@ -115,6 +128,8 @@ def create_user_via_register(client: TestClient, username: str, email: str, pass
 		"username": username,
 		"email": email,
 		"password": password,
+		"first_name": first_name,
+		"last_name": last_name,
 	}
 
 
@@ -173,12 +188,16 @@ def test_auth_and_users(ctx: AuditContext):
 		username="alice_admin",
 		email="alice@unitbv.ro",
 		password="Password123!",
+		first_name="Alice",
+		last_name="Admin",
 	)
 	ctx.users["bob"] = create_user_via_register(
 		ctx.client,
 		username="bob_member",
 		email="bob@unitbv.ro",
 		password="Password123!",
+		first_name="Bob",
+		last_name="Member",
 	)
 
 	ctx.login("alice")
@@ -186,13 +205,22 @@ def test_auth_and_users(ctx: AuditContext):
 	me_resp = ctx.client.get("/api/v1/users/me")
 	assert_status(me_resp, 200, "users/me")
 	assert me_resp.json()["email"] == ctx.users["alice"]["email"]
+	assert me_resp.json()["first_name"] == "Alice"
+	assert me_resp.json()["last_name"] == "Admin"
 
 	patch_resp = ctx.client.patch(
 		"/api/v1/users/me",
-		json={"username": "alice_admin.updated", "avatar_key": "avatar-key-1"},
+		json={
+			"username": "alice_admin.updated",
+			"first_name": "AliceUpdated",
+			"last_name": "AdminUpdated",
+			"avatar_key": "avatar-key-1",
+		},
 	)
 	assert_status(patch_resp, 200, "users/me patch")
 	assert patch_resp.json()["username"] == "alice_admin.updated"
+	assert patch_resp.json()["first_name"] == "AliceUpdated"
+	assert patch_resp.json()["last_name"] == "AdminUpdated"
 
 	# Password change + re-login with new password.
 	change_pwd = ctx.client.patch(
@@ -214,6 +242,8 @@ def test_auth_and_users(ctx: AuditContext):
 	profile = ctx.client.get(f"/api/v1/users/{user_id}")
 	assert_status(profile, 200, "user profile")
 	assert profile.json()["id"] == user_id
+	assert profile.json()["first_name"] == "Bob"
+	assert profile.json()["last_name"] == "Member"
 
 
 def test_universities(ctx: AuditContext):

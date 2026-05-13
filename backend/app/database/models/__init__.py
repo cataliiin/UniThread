@@ -11,6 +11,7 @@ from app.database.models.community import (
     CommunityMember,
 )
 from app.database.models.post import Post
+from app.database.models.comment import Comment
 from app.database.models.vote import Vote
 
 __all__ = [
@@ -27,5 +28,6 @@ __all__ = [
     "CommunityJoinQuestion",
     "CommunityJoinAnswer",
     "Post",
+    "Comment",
     "Vote",
 ]

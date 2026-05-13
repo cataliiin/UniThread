@@ -158,6 +158,11 @@ class PostNotFoundException(NotFoundException):
         super().__init__(message=message)
 
 
+class CommentNotFoundException(NotFoundException):
+    def __init__(self, message: str = "Comment not found."):
+        super().__init__(message=message)
+
+
 class NotPostAuthorException(ForbiddenException):
     def __init__(self, message: str = "You must be the author to modify this post."):
         super().__init__(message=message)
