@@ -233,6 +233,7 @@ function createCommunityState() {
 	async function fetchMembers(communityId: string): Promise<CommunityMember[]> {
 		membersLoading = true;
 		try {
+			// 1. Fetch all approved members
 			const { data: res, error: apiError } = await api.GET('/api/v1/communities/{community_id}/members', {
 				params: {
 					path: { community_id: communityId },
@@ -240,26 +241,22 @@ function createCommunityState() {
 				}
 			});
 
-			if (apiError) {
-				const msg = (apiError as any).message || (apiError as any).detail || 'Failed to fetch members';
-				throw new Error(typeof msg === 'string' ? msg : 'Failed to fetch members');
-			}
+			if (apiError) throw new Error('Failed to fetch members');
 			
-			console.log('Members API Response for ' + communityId + ':', res);
+			// 2. Fetch admins to cross-reference (since UserPublic in members list lacks is_admin)
+			const { data: adminsRes } = await api.GET('/api/v1/communities/{community_id}/admins', {
+				params: { path: { community_id: communityId } }
+			});
+			
+			const adminIds = new Set((adminsRes || []).map(a => a.id));
 			const items = res?.items || [];
 			
-			// We need community details for the owner check
 			const community = currentCommunity || await fetchCommunity(communityId);
 
 			const data: CommunityMember[] = items.map((u: any) => {
 				let displayName = u.username;
-				
-				// Try to get real name from backend if available (even if not in schema)
 				if (u.first_name || u.last_name) {
 					displayName = [u.first_name, u.last_name].filter(Boolean).join(' ');
-				} else if (u.username.includes('.')) {
-					// Fallback: parse from dot-separated username
-					displayName = u.username.split('.').map((p: string) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
 				}
 
 				return {
@@ -268,8 +265,9 @@ function createCommunityState() {
 					name: displayName,
 					community_id: communityId,
 					status: 'approved',
-					is_admin: u.id === community?.owner_id,
-					joined_at: new Date().toISOString(),
+					// Cross-reference with admins list + check if owner
+					is_admin: adminIds.has(u.id) || u.id === community?.owner_id,
+					joined_at: u.joined_at || new Date().toISOString(),
 					avatar_url: u.avatar_key
 				};
 			});
@@ -327,24 +325,23 @@ function createCommunityState() {
 	}
 
 	async function promoteToAdmin(communityId: string, userId: string): Promise<boolean> {
+		// Basic safeguard
+		if (userId === currentCommunity?.owner_id) {
+			toasts.show('The owner is already an admin', 'info');
+			return true;
+		}
+
 		try {
 			await CommunityAdminService.updateMemberRole(communityId, userId, { is_admin: true });
-			toasts.show('Member promoted to admin', 'success');
+			toasts.show('Member promoted to admin successfully', 'success');
+			
+			// Refresh local state
+			await fetchMembers(communityId);
 			return true;
 		} catch (error: any) {
-			console.warn('Backend promotion failed, falling back to local mode:', error);
-			// Mock: update localStorage
-			if (typeof window !== 'undefined') {
-				const key = `mock_members_${communityId}`;
-				const stored: CommunityMember[] = JSON.parse(localStorage.getItem(key) || '[]');
-				const updated = stored.map((m) =>
-					m.user_id === userId ? { ...m, is_admin: true } : m
-				);
-				localStorage.setItem(key, JSON.stringify(updated));
-				members = updated;
-				toasts.show('Member promoted (local mode)', 'success');
-				return true;
-			}
+			const errorMsg = error.message || 'Failed to promote member';
+			toasts.show(errorMsg, 'error');
+			console.error('Promotion error:', error);
 			return false;
 		}
 	}

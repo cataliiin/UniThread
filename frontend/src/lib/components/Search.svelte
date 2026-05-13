@@ -223,10 +223,7 @@
 									<div class="font-semibold text-card-foreground">{user.name}</div>
 									<div class="text-sm text-muted-foreground">@{user.username}</div>
 								</div>
-								<div class="text-right">
-									<div class="text-sm font-medium text-card-foreground">{user.followers}</div>
-									<div class="text-xs text-muted-foreground">followers</div>
-								</div>
+
 							</button>
 						{/each}
 					</div>

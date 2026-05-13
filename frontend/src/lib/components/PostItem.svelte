@@ -6,6 +6,7 @@
 	import { PostsService } from '$lib/api/services';
 	import { communityState } from '$lib/stores/community.svelte';
 	import { Trash2, Megaphone } from 'lucide-svelte';
+	import ConfirmDialog from './ConfirmDialog.svelte';
 	let {
 		post,
 		isFullView = false,
@@ -17,6 +18,8 @@
 		showCommunity?: boolean;
 		onToggleLike?: (id: string | number) => void;
 	} = $props();
+
+	let confirmDeleteOpen = $state(false);
 
 	function formatTimeAgo(dateString: string): string {
 		const date = new Date(dateString);
@@ -50,11 +53,13 @@
 		goto(`/posts/${post.id}/edit`);
 	}
 
-	async function handleDeleteClick(e: Event) {
+	function handleDeleteClick(e: Event) {
 		e.preventDefault();
 		e.stopPropagation();
-		if (!confirm('Are you sure you want to delete this post?')) return;
+		confirmDeleteOpen = true;
+	}
 
+	async function confirmDeletePost() {
 		try {
 			await PostsService.deletePost(post.id.toString());
 			toast.success('Post deleted successfully');
@@ -144,7 +149,9 @@
 					</button>
 				{/if}
 				
-				<span class="text-sm text-muted-foreground">@{post.authorUsername}</span>
+				{#if post.authorId !== 'anonymous'}
+					<span class="text-sm text-muted-foreground">@{post.authorUsername}</span>
+				{/if}
 
 				{#if showCommunity && post.communityName}
 					<span class="text-sm text-muted-foreground/50">·</span>
@@ -255,3 +262,12 @@
 		{/if}
 	</div>
 {/snippet}
+
+<ConfirmDialog
+	bind:open={confirmDeleteOpen}
+	title="Delete Post"
+	description="Are you sure you want to delete this post? This action cannot be undone."
+	confirmText="Delete"
+	variant="destructive"
+	onConfirm={confirmDeletePost}
+/>

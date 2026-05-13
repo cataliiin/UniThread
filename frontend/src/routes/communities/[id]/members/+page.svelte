@@ -10,6 +10,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Shield, UserMinus, UserPlus, X, Trash2 } from 'lucide-svelte';
 	import { fade, scale } from 'svelte/transition';
+	import { getAuthorDisplayName } from '$lib/utils/user';
 
 	let { data }: { data: PageData } = $props();
 	let communityId = $derived(data.communityId);
@@ -71,18 +72,11 @@
 	}
 
 	function formatDisplayName(member: CommunityMember): string {
-		if (member.name && member.name !== member.username) return member.name;
-		
-		// If name was parsed from username (dot pattern), use it
-		if (member.username.includes('.')) {
-			return member.username
-				.split('.')
-				.map(p => p.charAt(0).toUpperCase() + p.slice(1))
-				.join(' ');
-		}
-		
-		// Return username as is
-		return member.username;
+		return getAuthorDisplayName({
+			first_name: member.name?.split(' ')[0] || null,
+			last_name: member.name?.split(' ').slice(1).join(' ') || null,
+			username: member.username
+		});
 	}
 
 	async function handlePromote(member: CommunityMember) {
@@ -219,26 +213,32 @@
 									>
 										{formatDisplayName(member)}
 									</button>
-									<span class="shrink-0 rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] font-semibold text-indigo-400">
-										{member.user_id === currentCommunity?.owner_id ? 'Owner' : 'Admin'}
-									</span>
+									{#if member.user_id === currentCommunity?.owner_id}
+										<span class="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-500 border border-amber-500/20 shadow-sm shadow-amber-500/10">
+											Owner
+										</span>
+									{:else}
+										<span class="shrink-0 rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-400 border border-indigo-500/20 shadow-sm shadow-indigo-500/10">
+											Admin
+										</span>
+									{/if}
 								</div>
 								{#if member.username}
-									<p class="text-xs text-muted-foreground">@{member.username}</p>
+									<p class="text-xs text-muted-foreground/70">@{member.username}</p>
 								{/if}
 							</div>
 							
-							<div class="flex items-center gap-2">
+							<div class="flex items-center gap-3">
 								{#if isOwner && member.user_id !== user.id && member.user_id !== currentCommunity?.owner_id}
 									<button
 										onclick={() => handleRemove(member)}
-										class="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+										class="rounded-lg p-2 text-muted-foreground/50 transition-all hover:bg-destructive/10 hover:text-destructive hover:scale-110 active:scale-95"
 										title="Remove Admin"
 									>
 										<Trash2 class="h-4 w-4" />
 									</button>
 								{/if}
-								<span class="shrink-0 text-xs text-muted-foreground">
+								<span class="shrink-0 text-[10px] font-medium text-muted-foreground/40 tabular-nums">
 									{formatDate(member.joined_at)}
 								</span>
 							</div>
@@ -249,17 +249,19 @@
 
 			<!-- Regular Members Section -->
 			{#if regularMembers.length > 0}
-				<div class="mb-2 px-1">
-					<h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-						Members ({regularMembers.length})
+				<div class="mb-4 mt-8 px-1">
+					<h2 class="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-2">
+						Members 
+						<span class="h-px flex-1 bg-border/40"></span>
+						<span class="text-[10px] tabular-nums bg-muted px-2 py-0.5 rounded-full">{regularMembers.length}</span>
 					</h2>
 				</div>
 				<div class="space-y-2">
 					{#each regularMembers as member (member.user_id)}
-						<div class="group/item relative flex w-full items-center gap-3 rounded-xl border border-border bg-sidebar px-4 py-3 text-left transition-colors hover:border-border/60 hover:bg-sidebar/80">
+						<div class="group/item relative flex w-full items-center gap-3 rounded-xl border border-border bg-sidebar/40 px-4 py-3 text-left transition-all duration-300 hover:border-primary/20 hover:bg-primary/5 hover:translate-x-1">
 							<button 
 								onclick={() => member.user_id !== 'anonymous' && goto(`/profile/${member.user_id}`)}
-								class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-700 text-sm font-semibold text-slate-300 hover:brightness-110 transition-all"
+								class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-800 text-sm font-bold text-slate-400 border border-slate-700 hover:border-primary/50 transition-all duration-300 shadow-sm group-hover/item:scale-105"
 							>
 								{#if member.avatar_url}
 									<img src={member.avatar_url} alt="" class="h-full w-full rounded-full object-cover" />
@@ -268,22 +270,27 @@
 								{/if}
 							</button>
 							<div class="min-w-0 flex-1">
-								<button 
-									onclick={() => member.user_id !== 'anonymous' && goto(`/profile/${member.user_id}`)}
-									class="truncate text-sm font-medium text-foreground hover:text-primary transition-colors"
-								>
-									{formatDisplayName(member)}
-								</button>
+								<div class="flex items-center gap-2">
+									<button 
+										onclick={() => member.user_id !== 'anonymous' && goto(`/profile/${member.user_id}`)}
+										class="truncate text-sm font-medium text-foreground hover:text-primary transition-colors"
+									>
+										{formatDisplayName(member)}
+									</button>
+									<span class="shrink-0 rounded-full bg-slate-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 border border-slate-500/10">
+										Member
+									</span>
+								</div>
 								{#if member.username}
-									<p class="text-xs text-muted-foreground">@{member.username}</p>
+									<p class="text-xs text-muted-foreground/60">@{member.username}</p>
 								{/if}
 							</div>
 
-							<div class="flex items-center gap-2">
+							<div class="flex items-center gap-3">
 								{#if isOwner}
 									<button
 										onclick={() => handlePromote(member)}
-										class="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+										class="rounded-lg p-2 text-muted-foreground/40 transition-all hover:bg-primary/10 hover:text-primary hover:scale-110 active:scale-95"
 										title="Promote to Admin"
 									>
 										<UserPlus class="h-4 w-4" />
@@ -292,13 +299,13 @@
 								{#if isAdmin}
 									<button
 										onclick={() => handleRemove(member)}
-										class="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+										class="rounded-lg p-2 text-muted-foreground/40 transition-all hover:bg-destructive/10 hover:text-destructive hover:scale-110 active:scale-95"
 										title="Remove Member"
 									>
 										<Trash2 class="h-4 w-4" />
 									</button>
 								{/if}
-								<span class="shrink-0 text-xs text-muted-foreground">
+								<span class="shrink-0 text-[10px] font-medium text-muted-foreground/30 tabular-nums">
 									{formatDate(member.joined_at)}
 								</span>
 							</div>

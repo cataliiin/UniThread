@@ -2,6 +2,8 @@ import { type Post, type SortOption } from '$lib/types/post';
 import { PostsService } from '$lib/api/services/PostsService';
 import { CommunitiesService } from '$lib/api/services/CommunitiesService';
 
+	import { getAuthorDisplayName } from '$lib/utils/user';
+
 export function createPostsState(getCommunityId: () => string | null = () => null) {
 	let posts = $state<Post[]>([]);
 	let sort = $state<SortOption>('new');
@@ -23,12 +25,12 @@ export function createPostsState(getCommunityId: () => string | null = () => nul
 				response = await PostsService.getGlobalFeed(page, pageSize, sort);
 			}
 			
-			const mappedPosts: Post[] = response.items.map(p => ({
+			const mappedPosts: Post[] = response.items.map((p: any) => ({
 				id: p.id,
 				title: p.title,
 				authorId: p.author?.id || 'anonymous',
-				authorName: p.author?.username || 'Anonymous', 
-				authorSurname: '', // The backend doesn't store surnames yet!
+				authorName: getAuthorDisplayName(p.author), 
+				authorSurname: '',
 				authorUsername: p.author?.username || 'anonymous',
 				authorAvatar: p.author?.avatar_key || undefined,
 				content: p.body || p.title,

@@ -4,6 +4,7 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { Trash2 } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
+	import { getAuthorDisplayName } from '$lib/utils/user';
 
 	let { 
 		comment, 
@@ -47,8 +48,13 @@
 					class="text-sm font-bold text-foreground hover:text-primary transition-colors truncate"
 					onclick={() => comment.author_id && goto(`/profile/${comment.author_id}`)}
 				>
-					{comment.author?.username || 'Anonymous'}
+					{getAuthorDisplayName(comment.author)}
 				</button>
+
+				{#if comment.author}
+					<span class="text-xs text-muted-foreground/60">@{comment.author.username}</span>
+				{/if}
+
 				<span class="text-xs text-muted-foreground/60">{formatTimeAgo(comment.created_at)}</span>
 			</div>
 

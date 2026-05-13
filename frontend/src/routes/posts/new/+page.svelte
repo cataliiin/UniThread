@@ -4,6 +4,7 @@
 	import { api } from '$lib/api/client';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { user } from '$lib/stores/user.svelte';
+	import { communityState } from '$lib/stores/community.svelte';
 	import PostForm from '$lib/components/PostForm.svelte';
 
 	let communities = $state<any[]>([]);
@@ -17,12 +18,9 @@
 		}
 
 		try {
-			const { data, error } = await api.GET('/api/v1/communities', {
-				params: { query: { page: 1, size: 100 } }
-			});
-
-			if (error) throw new Error('Failed to fetch communities');
-			if (data?.items) communities = data.items;
+			const myComms = await communityState.fetchMyCommunities();
+			// Only allow posting in approved communities
+			communities = myComms.filter(c => c.user_membership_status === 'approved' || c.owner_id === user.id);
 		} catch (e: any) {
 			toast.error(e.message || 'Could not load communities.');
 		} finally {

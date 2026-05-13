@@ -9,6 +9,7 @@
 	import { user as userStore } from '$lib/stores/user.svelte';
 	import { Loader2, Send } from 'lucide-svelte';
 
+	import { getAuthorDisplayName } from '$lib/utils/user';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 
 	let { data } = $props();
@@ -18,7 +19,7 @@
 		id: p.id,
 		title: p.title,
 		authorId: p.author?.id || 'anonymous',
-		authorName: p.author?.username || 'Anonymous',
+		authorName: getAuthorDisplayName(p.author),
 		authorSurname: '',
 		authorUsername: p.author?.username || 'anonymous',
 		authorAvatar: p.author?.avatar_key || undefined,
