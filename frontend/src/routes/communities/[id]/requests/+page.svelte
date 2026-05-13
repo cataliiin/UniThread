@@ -3,7 +3,9 @@
 	import type { PageData } from './$types';
 	import { communityState } from '$lib/stores/community.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { toast } from '$lib/stores/toast.svelte';
 	import { UserCheck, UserMinus, ShieldAlert } from 'lucide-svelte';
+	import { goto } from '$app/navigation';
 
 	let { data }: { data: PageData } = $props();
 	let communityId = $derived(data.communityId);
@@ -12,8 +14,17 @@
 
 	onMount(async () => {
 		await communityState.fetchCommunity(communityId);
-		await communityState.fetchJoinRequests(communityId);
+		if (communityState.isAdmin) {
+			await communityState.fetchJoinRequests(communityId);
+		}
 		loading = false;
+	});
+
+	$effect(() => {
+		if (!loading && !communityState.isAdmin && communityState.currentCommunity) {
+			toast.error('Access denied. Admins only.');
+			goto(`/communities/${communityId}`);
+		}
 	});
 
 	async function handleApprove(userId: string) {

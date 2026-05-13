@@ -9,9 +9,11 @@ import type {
 	CommunityMember
 } from '$lib/types/community';
 import { toasts } from './toast.svelte';
-import { CommunitiesService } from '$lib/api/services/CommunitiesService';
+import { CommunitiesService, CommunityAdminService } from '$lib/api/services';
 import type { components } from '$lib/api/openapi-generated-schema';
 import { api } from '$lib/api/client';
+import { user } from './user.svelte';
+import type { CommunityRole } from '$lib/types/community';
 
 type CommunityType = components['schemas']['CommunityType'];
 type BucketName = components['schemas']['BucketName'];
@@ -26,8 +28,24 @@ function createCommunityState() {
 	let loading = $state(false);
 	let membersLoading = $state(false);
 	let requestsLoading = $state(false);
-	let isAdmin = $state(false);
-	let isOwner = $state(false);
+
+	const userRole = $derived.by((): CommunityRole | null => {
+		if (!currentCommunity || !user.id) return null;
+		if (currentCommunity.owner_id === user.id) return 'owner';
+		
+		// Check if user is in the members list and is an admin
+		const member = members.find(m => m.user_id === user.id);
+		if (member?.is_admin) return 'admin';
+		
+		// Fallback to membership status if approved
+		if (currentCommunity.user_membership_status === 'approved') return 'member';
+		
+		return null;
+	});
+
+	const isAdmin = $derived(userRole === 'owner' || userRole === 'admin');
+	const isOwner = $derived(userRole === 'owner');
+	const isMember = $derived(userRole !== null);
 
 	async function getAuthHeaders(): Promise<Record<string, string>> {
 		if (typeof window === 'undefined') return {};
@@ -131,11 +149,10 @@ function createCommunityState() {
 	async function checkPermissions(communityId: string, userId: string): Promise<boolean> {
 		const community = await fetchCommunity(communityId);
 		if (!community) return false;
-
-		isOwner = community.owner_id === userId;
-		isAdmin = isOwner; // Only owner is admin for now
-
-		return isAdmin;
+		
+		// If we are checking for the current user, the derived isAdmin/isOwner will handle it.
+		// If we are checking for another user, we return based on owner_id for now.
+		return community.owner_id === userId;
 	}
 
 	async function getPresignedUrl(): Promise<PresignedUrlResponse | null> {
@@ -234,16 +251,28 @@ function createCommunityState() {
 			// We need community details for the owner check
 			const community = currentCommunity || await fetchCommunity(communityId);
 
-			const data: CommunityMember[] = items.map((u: any) => ({
-				user_id: u.id,
-				username: u.username,
-				name: u.username,
-				community_id: communityId,
-				status: 'approved',
-				is_admin: u.id === community?.owner_id,
-				joined_at: new Date().toISOString(),
-				avatar_url: u.avatar_key
-			}));
+			const data: CommunityMember[] = items.map((u: any) => {
+				let displayName = u.username;
+				
+				// Try to get real name from backend if available (even if not in schema)
+				if (u.first_name || u.last_name) {
+					displayName = [u.first_name, u.last_name].filter(Boolean).join(' ');
+				} else if (u.username.includes('.')) {
+					// Fallback: parse from dot-separated username
+					displayName = u.username.split('.').map((p: string) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+				}
+
+				return {
+					user_id: u.id,
+					username: u.username,
+					name: displayName,
+					community_id: communityId,
+					status: 'approved',
+					is_admin: u.id === community?.owner_id,
+					joined_at: new Date().toISOString(),
+					avatar_url: u.avatar_key
+				};
+			});
 			
 			members = data;
 			return data;
@@ -299,17 +328,11 @@ function createCommunityState() {
 
 	async function promoteToAdmin(communityId: string, userId: string): Promise<boolean> {
 		try {
-			const response = await fetch(
-				`${API_BASE}/communities/${communityId}/members/${userId}/promote`,
-				{
-					method: 'PATCH',
-					headers: await getAuthHeaders()
-				}
-			);
-			if (!response.ok) throw new Error('Failed to promote member');
+			await CommunityAdminService.updateMemberRole(communityId, userId, { is_admin: true });
 			toasts.show('Member promoted to admin', 'success');
 			return true;
-		} catch {
+		} catch (error: any) {
+			console.warn('Backend promotion failed, falling back to local mode:', error);
 			// Mock: update localStorage
 			if (typeof window !== 'undefined') {
 				const key = `mock_members_${communityId}`;
@@ -415,8 +438,7 @@ function createCommunityState() {
 		currentCommunity = null;
 		myCommunities = [];
 		members = [];
-		isAdmin = false;
-		isOwner = false;
+		joinRequests = [];
 	}
 
 	return {
@@ -446,6 +468,12 @@ function createCommunityState() {
 		},
 		get isOwner() {
 			return isOwner;
+		},
+		get isMember() {
+			return isMember;
+		},
+		get userRole() {
+			return userRole;
 		},
 		createCommunity,
 		updateCommunity,

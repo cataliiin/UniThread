@@ -3,6 +3,9 @@
 	import { user } from '$lib/stores/user.svelte';
 	import { goto } from '$app/navigation';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { PostsService } from '$lib/api/services';
+	import { communityState } from '$lib/stores/community.svelte';
+	import { Trash2, Megaphone } from 'lucide-svelte';
 	let {
 		post,
 		isFullView = false,
@@ -46,6 +49,37 @@
 		}
 		goto(`/posts/${post.id}/edit`);
 	}
+
+	async function handleDeleteClick(e: Event) {
+		e.preventDefault();
+		e.stopPropagation();
+		if (!confirm('Are you sure you want to delete this post?')) return;
+
+		try {
+			await PostsService.deletePost(post.id.toString());
+			toast.success('Post deleted successfully');
+			// In a real app, we'd trigger a refresh or remove from store
+			// For now, let's just refresh the page or goto community
+			if (isFullView) {
+				goto(`/communities/${post.communityId || ''}`);
+			} else {
+				window.location.reload();
+			}
+		} catch (error: any) {
+			toast.error(error.message || 'Failed to delete post');
+		}
+	}
+
+	const isAnnouncement = $derived(post.title.startsWith('📢 ANNOUNCEMENT: '));
+	const displayTitle = $derived(isAnnouncement ? post.title.replace('📢 ANNOUNCEMENT: ', '') : post.title);
+	
+	// Can delete if: is author OR (is admin/owner of the community and we are in that community context)
+	const canDelete = $derived(
+		(user?.isAuthenticated && user?.id === post.authorId) || 
+		(communityState.currentCommunity?.id === post.communityId && communityState.isAdmin)
+	);
+	
+	const canEdit = $derived(user?.isAuthenticated && user?.id === post.authorId);
 </script>
 
 <article
@@ -128,7 +162,14 @@
 	</div>
 
 
-	<h1 class="mb-2 font-semibold text-foreground">{post.title}</h1>
+	{#if isAnnouncement}
+		<div class="mb-2 flex items-center gap-2 rounded-lg bg-indigo-500/10 px-3 py-1.5 text-xs font-bold text-indigo-400 w-fit">
+			<Megaphone class="h-3.5 w-3.5" />
+			ANNOUNCEMENT
+		</div>
+	{/if}
+
+	<h1 class="mb-2 font-semibold text-foreground {isAnnouncement ? 'text-xl' : ''}">{displayTitle}</h1>
 
 	<!-- Content -->
 	<p
@@ -181,7 +222,7 @@
 			>
 			<span>{post.comments}</span>
 		</div>
-		{#if user?.isAuthenticated && user?.id === post.authorId}
+		{#if canEdit}
 			<button
 				class="flex items-center gap-1.5 text-sm text-muted-foreground transition-all duration-300 hover:text-primary"
 				onclick={handleEditClick}
@@ -200,6 +241,16 @@
 					<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
 				</svg>
 				<span>Edit</span>
+			</button>
+		{/if}
+
+		{#if canDelete}
+			<button
+				class="flex items-center gap-1.5 text-sm text-muted-foreground transition-all duration-300 hover:text-destructive"
+				onclick={handleDeleteClick}
+			>
+				<Trash2 class="h-4.5 w-4.5" />
+				<span>Delete</span>
 			</button>
 		{/if}
 	</div>

@@ -1,4 +1,6 @@
 export type CommunityType = 'public' | 'request' | 'invite';
+export type CommunityRole = 'owner' | 'admin' | 'member';
+
 
 export interface Community {
 	id: string;

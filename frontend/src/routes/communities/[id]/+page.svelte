@@ -6,8 +6,9 @@
 	import { user } from '$lib/stores/user.svelte';
 	import { toasts } from '$lib/stores/toast.svelte';
 	import { CommunityAdminService } from '$lib/api/services';
+	import { api } from '$lib/api/client';
 	import Feed from '$lib/components/Feed.svelte';
-	import { Link2, X, Copy, Trash2, Loader2 } from '@lucide/svelte';
+	import { Link2, X, Copy, Trash2, Loader2 } from 'lucide-svelte';
 	import type { components } from '$lib/api/openapi-generated-schema';
 
 	type CommunityInviteLinkResponse = components['schemas']['CommunityInviteLinkResponse'];
@@ -15,8 +16,9 @@
 	let { data }: { data: PageData } = $props();
 
 	let community = $derived(data.community);
-	let isAdmin = $derived(data.isAdmin);
-	let isOwner = $derived(data.isOwner);
+	let isAdmin = $derived(communityState.isAdmin);
+	let isOwner = $derived(communityState.isOwner);
+	let userRole = $derived(communityState.userRole);
 
 	let menuOpen = $state(false);
 	let leaveConfirm = $state(false);
@@ -102,11 +104,30 @@
 		closeMenu();
 	}
 
-	onMount(() => {
-		if (isAdmin && community) {
-			communityState.fetchJoinRequests(community.id);
+	onMount(async () => {
+		if (community) {
+			await communityState.fetchCommunity(community.id);
+			await communityState.fetchMembers(community.id);
+			if (communityState.isAdmin) {
+				communityState.fetchJoinRequests(community.id);
+			}
 		}
 	});
+
+	async function handleDeleteCommunity() {
+		if (!community || !confirm('Are you sure you want to delete this community? This action cannot be undone.')) return;
+		
+		try {
+			const { error } = await api.DELETE('/api/v1/communities/{community_id}', {
+				params: { path: { community_id: community.id } }
+			});
+			if (error) throw error;
+			toasts.show('Community deleted successfully', 'success');
+			goto('/communities');
+		} catch (error: any) {
+			toasts.show(error.message || 'Failed to delete community', 'error');
+		}
+	}
 </script>
 
 <svelte:head>
@@ -265,7 +286,7 @@
 
 						{#if menuOpen}
 							<div class="absolute right-0 top-11 w-52 overflow-hidden rounded-xl border border-border bg-popover shadow-xl shadow-black/20">
-								{#if isAdmin}
+								{#if isOwner}
 									<button
 										onclick={() => { goto(`/communities/${community.id}/edit`); closeMenu(); }}
 										class="flex w-full items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted"
@@ -273,9 +294,20 @@
 										<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 											<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
 										</svg>
-										Edit Community
+										Community Options
 									</button>
 
+									<button
+										onclick={handleDeleteCommunity}
+										class="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-500 transition-colors hover:bg-red-500/10"
+									>
+										<Trash2 class="h-3.75 w-3.75" />
+										Delete Community
+									</button>
+									<div class="my-1 border-t border-border"></div>
+								{/if}
+
+								{#if isAdmin}
 									<button
 										onclick={openInviteLinksModal}
 										class="flex w-full items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted"

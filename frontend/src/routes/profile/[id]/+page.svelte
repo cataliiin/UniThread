@@ -23,15 +23,26 @@
 	let selectedCommunity = $state<string | null>(null);
 	
 	let displayName = $derived.by(() => {
+		const u = targetUser as any;
+		if (u.first_name || u.last_name) {
+			return [u.first_name, u.last_name].filter(Boolean).join(' ');
+		}
+		
 		if (targetUser.username.includes('.')) {
 			return targetUser.username.split('.')
 				.map(part => part.charAt(0).toUpperCase() + part.slice(1))
 				.join(' ');
 		}
-		return "@" + targetUser.username;
+		return targetUser.username;
 	});
 
-	let initials = $derived(targetUser.username.substring(0, 2).toUpperCase());
+	let initials = $derived.by(() => {
+		const u = targetUser as any;
+		if (u.first_name && u.last_name) {
+			return (u.first_name[0] + u.last_name[0]).toUpperCase();
+		}
+		return targetUser.username.substring(0, 2).toUpperCase();
+	});
 	let memberSince = $derived(new Date(targetUser.created_at).toLocaleString('en-US', { month: 'long', year: 'numeric' }));
 
 	onMount(async () => {

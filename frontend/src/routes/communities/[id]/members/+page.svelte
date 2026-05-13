@@ -5,10 +5,32 @@
 	import type { PageData } from './$types';
 	import { communityState } from '$lib/stores/community.svelte';
 	import { user } from '$lib/stores/user.svelte';
+	import { toasts } from '$lib/stores/toast.svelte';
 	import type { CommunityMember } from '$lib/types/community';
+	import { Button } from '$lib/components/ui/button';
+	import { Shield, UserMinus, UserPlus, X, Trash2 } from 'lucide-svelte';
+	import { fade, scale } from 'svelte/transition';
 
 	let { data }: { data: PageData } = $props();
 	let communityId = $derived(data.communityId);
+	let currentCommunity = $derived(communityState.currentCommunity);
+	let isAdmin = $derived(communityState.isAdmin);
+	let isOwner = $derived(communityState.isOwner);
+	let dialogOpen = $state(false);
+	let dialogTitle = $state('');
+	let dialogDescription = $state('');
+	let dialogAction = $state<() => void>(() => {});
+	let dialogConfirmText = $state('Confirm');
+	let dialogVariant = $state<'primary' | 'destructive'>('primary');
+
+	function openConfirm(title: string, description: string, action: () => void, confirmText = 'Confirm', variant: 'primary' | 'destructive' = 'primary') {
+		dialogTitle = title;
+		dialogDescription = description;
+		dialogAction = action;
+		dialogConfirmText = confirmText;
+		dialogVariant = variant;
+		dialogOpen = true;
+	}
 
 	let members = $state<CommunityMember[]>([]);
 	let loading = $state(true);
@@ -46,6 +68,51 @@
 
 	function formatDate(dateStr: string): string {
 		return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+	}
+
+	function formatDisplayName(member: CommunityMember): string {
+		if (member.name && member.name !== member.username) return member.name;
+		
+		// If name was parsed from username (dot pattern), use it
+		if (member.username.includes('.')) {
+			return member.username
+				.split('.')
+				.map(p => p.charAt(0).toUpperCase() + p.slice(1))
+				.join(' ');
+		}
+		
+		// Return username as is
+		return member.username;
+	}
+
+	async function handlePromote(member: CommunityMember) {
+		openConfirm(
+			'Promote to Admin',
+			`Are you sure you want to promote ${member.username} to Admin? They will be able to manage members and moderate posts.`,
+			async () => {
+				const ok = await communityState.promoteToAdmin(communityId, member.user_id);
+				if (ok) {
+					members = await communityState.fetchMembers(communityId);
+				}
+			},
+			'Promote',
+			'primary'
+		);
+	}
+
+	async function handleRemove(member: CommunityMember) {
+		openConfirm(
+			'Remove Member',
+			`Are you sure you want to remove ${member.username} from the community?`,
+			async () => {
+				const ok = await communityState.removeMember(communityId, member.user_id);
+				if (ok) {
+					members = await communityState.fetchMembers(communityId);
+				}
+			},
+			'Remove',
+			'destructive'
+		);
 	}
 </script>
 
@@ -132,35 +199,50 @@
 				</div>
 				<div class="mb-6 space-y-2">
 					{#each adminMembers as member (member.user_id)}
-						<button
-							onclick={() => member.user_id !== 'anonymous' && goto(`/profile/${member.user_id}`)}
-							class="flex w-full items-center gap-3 rounded-xl border border-border bg-sidebar px-4 py-3 text-left transition-colors hover:border-primary/30 hover:bg-primary/5"
-						>
+						<div class="group/item relative flex w-full items-center gap-3 rounded-xl border border-border bg-sidebar px-4 py-3 text-left transition-colors hover:border-primary/30 hover:bg-primary/5">
 							<!-- Avatar -->
-							<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white shadow-md">
+							<button 
+								onclick={() => member.user_id !== 'anonymous' && goto(`/profile/${member.user_id}`)}
+								class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white shadow-md hover:brightness-110 transition-all"
+							>
 								{#if member.avatar_url}
 									<img src={member.avatar_url} alt="" class="h-full w-full rounded-full object-cover" />
 								{:else}
 									{getInitials(member.name, member.username)}
 								{/if}
-							</div>
+							</button>
 							<div class="min-w-0 flex-1">
 								<div class="flex items-center gap-2">
-									<span class="truncate text-sm font-semibold text-foreground">
-										{member.name || member.username || member.user_id}
-									</span>
+									<button 
+										onclick={() => member.user_id !== 'anonymous' && goto(`/profile/${member.user_id}`)}
+										class="truncate text-sm font-semibold text-foreground hover:text-primary transition-colors"
+									>
+										{formatDisplayName(member)}
+									</button>
 									<span class="shrink-0 rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] font-semibold text-indigo-400">
-										Admin
+										{member.user_id === currentCommunity?.owner_id ? 'Owner' : 'Admin'}
 									</span>
 								</div>
 								{#if member.username}
 									<p class="text-xs text-muted-foreground">@{member.username}</p>
 								{/if}
 							</div>
-							<span class="shrink-0 text-xs text-muted-foreground">
-								{formatDate(member.joined_at)}
-							</span>
-						</button>
+							
+							<div class="flex items-center gap-2">
+								{#if isOwner && member.user_id !== user.id && member.user_id !== currentCommunity?.owner_id}
+									<button
+										onclick={() => handleRemove(member)}
+										class="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+										title="Remove Admin"
+									>
+										<Trash2 class="h-4 w-4" />
+									</button>
+								{/if}
+								<span class="shrink-0 text-xs text-muted-foreground">
+									{formatDate(member.joined_at)}
+								</span>
+							</div>
+						</div>
 					{/each}
 				</div>
 			{/if}
@@ -174,32 +256,96 @@
 				</div>
 				<div class="space-y-2">
 					{#each regularMembers as member (member.user_id)}
-						<button
-							onclick={() => member.user_id !== 'anonymous' && goto(`/profile/${member.user_id}`)}
-							class="flex w-full items-center gap-3 rounded-xl border border-border bg-sidebar px-4 py-3 text-left transition-colors hover:border-border/60 hover:bg-sidebar/80"
-						>
-							<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-700 text-sm font-semibold text-slate-300">
+						<div class="group/item relative flex w-full items-center gap-3 rounded-xl border border-border bg-sidebar px-4 py-3 text-left transition-colors hover:border-border/60 hover:bg-sidebar/80">
+							<button 
+								onclick={() => member.user_id !== 'anonymous' && goto(`/profile/${member.user_id}`)}
+								class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-700 text-sm font-semibold text-slate-300 hover:brightness-110 transition-all"
+							>
 								{#if member.avatar_url}
 									<img src={member.avatar_url} alt="" class="h-full w-full rounded-full object-cover" />
 								{:else}
 									{getInitials(member.name, member.username)}
 								{/if}
-							</div>
+							</button>
 							<div class="min-w-0 flex-1">
-								<span class="truncate text-sm font-medium text-foreground">
-									{member.name || member.username || member.user_id}
-								</span>
+								<button 
+									onclick={() => member.user_id !== 'anonymous' && goto(`/profile/${member.user_id}`)}
+									class="truncate text-sm font-medium text-foreground hover:text-primary transition-colors"
+								>
+									{formatDisplayName(member)}
+								</button>
 								{#if member.username}
 									<p class="text-xs text-muted-foreground">@{member.username}</p>
 								{/if}
 							</div>
-							<span class="shrink-0 text-xs text-muted-foreground">
-								{formatDate(member.joined_at)}
-							</span>
-						</button>
+
+							<div class="flex items-center gap-2">
+								{#if isOwner}
+									<button
+										onclick={() => handlePromote(member)}
+										class="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+										title="Promote to Admin"
+									>
+										<UserPlus class="h-4 w-4" />
+									</button>
+								{/if}
+								{#if isAdmin}
+									<button
+										onclick={() => handleRemove(member)}
+										class="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+										title="Remove Member"
+									>
+										<Trash2 class="h-4 w-4" />
+									</button>
+								{/if}
+								<span class="shrink-0 text-xs text-muted-foreground">
+									{formatDate(member.joined_at)}
+								</span>
+							</div>
+						</div>
 					{/each}
 				</div>
 			{/if}
 		{/if}
 	</div>
 </div>
+
+{#if dialogOpen}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div 
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+		onclick={() => dialogOpen = false}
+		transition:fade={{ duration: 200 }}
+	>
+		<div 
+			class="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-sidebar shadow-2xl"
+			onclick={(e) => e.stopPropagation()}
+			transition:scale={{ duration: 200, start: 0.95 }}
+		>
+			<div class="p-6">
+				<h2 class="text-xl font-bold text-foreground">{dialogTitle}</h2>
+				<p class="mt-2 text-sm text-muted-foreground leading-relaxed">
+					{dialogDescription}
+				</p>
+			</div>
+			
+			<div class="flex items-center justify-end gap-3 bg-muted/30 px-6 py-4 border-t border-border">
+				<Button 
+					variant="outline" 
+					class="rounded-xl border-border bg-transparent hover:bg-muted"
+					onclick={() => dialogOpen = false}
+				>
+					Cancel
+				</Button>
+				<Button 
+					onclick={() => { dialogAction(); dialogOpen = false; }}
+					variant={dialogVariant === 'destructive' ? 'destructive' : 'default'}
+					class="rounded-xl font-bold shadow-lg shadow-primary/20"
+				>
+					{dialogConfirmText}
+				</Button>
+			</div>
+		</div>
+	</div>
+{/if}
