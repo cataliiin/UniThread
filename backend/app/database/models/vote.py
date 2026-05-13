@@ -14,6 +14,11 @@ if TYPE_CHECKING:
 
 
 class Vote(Base):
+    """
+    Dedicated votes table enables:
+    - Enforce one vote per user per post via composite primary key (user_id, post_id)
+    - Efficient score calculation: SELECT SUM(value) FROM votes WHERE post_id = ? (fast with index)
+    """
     __tablename__ = "votes"
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -34,6 +39,7 @@ class Vote(Base):
         nullable=False,
     )
 
+    # Timestamp for when the vote was cast. Useful for analytics and potential future features.
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

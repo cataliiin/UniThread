@@ -1,7 +1,10 @@
 from datetime import datetime
+from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints
+
+NameStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 
 
 # --- Shared / Embedded Schemas ---
@@ -10,6 +13,8 @@ class UserPublic(BaseModel):
 
     id: UUID
     username: str
+    first_name: str | None
+    last_name: str | None
     avatar_key: str | None
     university_id: UUID
 
@@ -26,6 +31,8 @@ class UserCreate(BaseModel):
     )
     email: EmailStr
     password: str = Field(..., min_length=8)
+    first_name: NameStr | None = None
+    last_name: NameStr | None = None
 
 
 class UserUpdateProfile(BaseModel):
@@ -37,6 +44,8 @@ class UserUpdateProfile(BaseModel):
         max_length=50,
         pattern=r"^[a-zA-Z0-9_.-]+$",
     )
+    first_name: NameStr | None = None
+    last_name: NameStr | None = None
     avatar_key: str | None = None
 
 

@@ -7,6 +7,14 @@ from app.database.models.enums import CommunityType, InvitationStatus, MemberSta
 from app.schemas.user import UserPublic
 
 
+def normalize_member_status(
+    value: MemberStatus | str | None,
+) -> MemberStatus | None:
+    if value is None or isinstance(value, MemberStatus):
+        return value
+    return MemberStatus(value)
+
+
 # --- Shared / Embedded Schemas ---
 class CommunityPublic(BaseModel):
     """Schema used when embedding community data in posts or feeds."""
@@ -61,7 +69,7 @@ class CommunityResponse(CommunityBase):
     # Crucial for the UI: is the current user a member, pending, or not in this community?
     user_membership_status: MemberStatus | None = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, validate_assignment=True)
 
 
 # ... (Other community schemas remain mostly similar but let's redefine them cleanly)

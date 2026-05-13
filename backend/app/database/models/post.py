@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.models.base import Base
 
 if TYPE_CHECKING:
+    from app.database.models.comment import Comment
     from app.database.models.community import Community
     from app.database.models.user import User
     from app.database.models.vote import Vote
@@ -70,6 +71,9 @@ class Post(Base):
     )
     votes: Mapped[list["Vote"]] = relationship(
         "Vote", back_populates="post", cascade="all, delete-orphan"
+    )
+    comments: Mapped[list["Comment"]] = relationship(
+        "Comment", back_populates="post", cascade="all, delete-orphan"
     )
 
     __table_args__ = (

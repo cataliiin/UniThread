@@ -3,12 +3,12 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from app.core.dependencies import CurrentUser, DbDep
+from app.core.post_access import build_post_metric_subqueries, to_post_feed_response
 from app.database.models.community import Community, CommunityMember
 from app.database.models.enums import MemberStatus, CommunityType
 from app.database.models.post import Post
 from app.database.models.user import User
-from app.database.models.vote import Vote
-from app.schemas.community import CommunityResponse
+from app.schemas.community import CommunityResponse, normalize_member_status
 from app.schemas.post import PostFeedResponse
 from app.schemas.search import GlobalSearchResponse
 from app.schemas.user import UserProfileResponse
@@ -95,27 +95,19 @@ async def global_search(
         for comm, member_count, user_membership_status in comm_rows:
             c_resp = CommunityResponse.model_validate(comm)
             c_resp.member_count = member_count or 0
-            c_resp.user_membership_status = user_membership_status
+            c_resp.user_membership_status = normalize_member_status(
+                user_membership_status
+            )
             comm_results.append(c_resp)
 
     # 3. Search Posts
     if search_type is None or search_type == "posts":
-        score_subq = (
-            select(func.sum(Vote.value))
-            .where(Vote.post_id == Post.id)
-            .scalar_subquery()
-            .label("score")
-        )
-
-        user_vote_subq = (
-            select(Vote.value)
-            .where((Vote.post_id == Post.id) & (Vote.user_id == current_user.id))
-            .scalar_subquery()
-            .label("user_vote")
+        score_subq, user_vote_subq, comment_count_subq = build_post_metric_subqueries(
+            current_user.id
         )
 
         post_stmt = (
-            select(Post, score_subq, user_vote_subq)
+            select(Post, score_subq, user_vote_subq, comment_count_subq)
             .join(Community, Post.community_id == Community.id)
             .outerjoin(
                 CommunityMember,
@@ -139,11 +131,10 @@ async def global_search(
         )
 
         post_rows = (await db.execute(post_stmt)).all()
-        for p, score, user_vote in post_rows:
-            p_resp = PostFeedResponse.model_validate(p)
-            p_resp.score = score or 0
-            p_resp.user_vote = user_vote
-            post_results.append(p_resp)
+        for post, score, user_vote, comment_count in post_rows:
+            post_results.append(
+                to_post_feed_response(post, score, user_vote, comment_count)
+            )
 
     return GlobalSearchResponse(
         users=user_results, communities=comm_results, posts=post_results
