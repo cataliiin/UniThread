@@ -154,12 +154,12 @@
 							{ id: 'dark', label: 'Dark', color: 'bg-[#0f0f0f]' },
 							{ id: 'light', label: 'Light', color: 'bg-white border' },
 							{ id: 'midnight', label: 'Midnight', color: 'bg-black border-[#ff000033] border' },
-							{ id: 'wasteland', label: 'Wasteland', color: 'bg-[#1a1a1a] border-[#8b3d1f] border' },
+							{ id: 'outpost', label: 'Outpost', color: 'bg-[#1a1a1a] border-[#8b3d1f] border' },
 							{ id: 'amethyst', label: 'Amethyst', color: 'bg-[#0f0814] border-[#c084fc66] border' },
 							{ id: 'cyberpunk', label: 'Cyberpunk', color: 'bg-[#08090a] border-[#00ffc2] border' },
 							{ id: 'cyberpop', label: 'CyberPop', color: 'bg-[#120115] border-[#ff007f] border' },
 							{ id: 'sakura', label: 'Tokyo Cloud', color: 'bg-[#ffffff] border-[#ffb7c5] border' },
-							{ id: 'nordic', label: 'Nordic', color: 'bg-[#f0f4f8] border-[#a5d7e8] border' },
+							{ id: 'nordic', label: 'Nordic', color: 'bg-[#1e293b] border-[#a5d7e8] border' },
 							{ id: 'coffee', label: 'Espresso', color: 'bg-[#1a0f0a] border-[#c68642] border' }
 						] as theme}
 							<button
