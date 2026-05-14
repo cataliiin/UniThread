@@ -187,7 +187,7 @@
 						<div class="flex items-center gap-3 px-4 py-3">
 							<!-- Avatar -->
 							<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-sm
-							{member.is_admin ? 'bg-indigo-600' : 'bg-slate-700'}">
+							{member.is_admin ? 'bg-indigo-600' : 'bg-muted'}">
 								{#if member.avatar_url}
 									<img src={member.avatar_url} alt="" class="h-full w-full rounded-full object-cover" />
 								{:else}

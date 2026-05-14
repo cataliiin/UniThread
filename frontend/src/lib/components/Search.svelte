@@ -10,13 +10,34 @@
 	});
 
 	let searchInput = $state('');
+	let debounceTimer: ReturnType<typeof setTimeout>;
 
 	function handleSearch() {
-		searchState.search(searchInput, searchState.filter);
+		if (searchInput.trim().length >= 2 || searchInput.trim().length === 0) {
+			searchState.search(searchInput, searchState.filter);
+		}
 	}
+
+	// Debounce search effect
+	$effect(() => {
+		const query = searchInput.trim();
+		clearTimeout(debounceTimer);
+		
+		// Don't search for < 2 characters
+		if (query.length >= 2) {
+			debounceTimer = setTimeout(() => {
+				searchState.search(query, searchState.filter);
+			}, 400);
+		} else if (query.length === 0 && searchState.hasSearched) {
+			searchState.clearSearch();
+		}
+
+		return () => clearTimeout(debounceTimer);
+	});
 
 	function handleKeydown(event: KeyboardEvent) {
 		if (event.key === 'Enter') {
+			clearTimeout(debounceTimer); // Cancel pending debounce
 			handleSearch();
 		}
 	}
@@ -56,6 +77,13 @@
 		return (
 			!hasQuery && searchState.hasSearched && filter === 'all' && searchState.posts.length === 0
 		);
+	}
+
+	function getImageUrl(key: string | undefined, bucket: 'user-assets' | 'community-assets'): string | null {
+		if (!key) return null;
+		if (key.startsWith('local_img_')) return localStorage.getItem(key);
+		const baseUrl = import.meta.env.VITE_STORAGE_URL || 'http://localhost:9000';
+		return `${baseUrl}/${bucket}/${key}`;
 	}
 
 	// Check if results are empty after search
@@ -215,18 +243,19 @@
 								onclick={() => goto(`/profile/${user.id}`)}
 							>
 								<div
-									class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
+									class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
 								>
-									{user.avatarInitials}
+									{#if user.avatar}
+										<img src={getImageUrl(user.avatar, 'user-assets')} alt={user.name} class="h-full w-full object-cover" />
+									{:else}
+										{user.avatarInitials}
+									{/if}
 								</div>
 								<div class="flex-1">
 									<div class="font-semibold text-card-foreground">{user.name}</div>
 									<div class="text-sm text-muted-foreground">@{user.username}</div>
 								</div>
-								<div class="text-right">
-									<div class="text-sm font-medium text-card-foreground">{user.followers}</div>
-									<div class="text-xs text-muted-foreground">followers</div>
-								</div>
+
 							</button>
 						{/each}
 					</div>
@@ -256,10 +285,19 @@
 								onclick={() => goto(`/communities/${community.id}`)}
 								onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/communities/${community.id}`); }}
 							>
-								<div class="mb-2 flex items-start justify-between">
-									<div>
-										<h3 class="font-semibold text-card-foreground">{community.name}</h3>
-										<p class="text-sm text-muted-foreground">{community.description}</p>
+								<div class="mb-4 flex items-center gap-4">
+									<div class="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-border bg-sidebar/50">
+										{#if community.icon}
+											<img src={getImageUrl(community.icon, 'community-assets')} alt={community.name} class="h-full w-full object-cover" />
+										{:else}
+											<div class="flex h-full w-full items-center justify-center bg-primary/10 text-lg font-bold text-primary">
+												{community.name.charAt(0).toUpperCase()}
+											</div>
+										{/if}
+									</div>
+									<div class="min-w-0">
+										<h3 class="truncate font-semibold text-card-foreground group-hover:text-primary transition-colors">{community.name}</h3>
+										<p class="truncate text-sm text-muted-foreground">{community.description}</p>
 									</div>
 								</div>
 								<div class="mt-auto flex w-full items-center justify-between">
@@ -317,9 +355,13 @@
 										onclick={(e) => { e.stopPropagation(); goto(`/profile/${post.authorId}`); }}
 									>
 										<div
-											class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
+											class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
 										>
-											{post.authorName.charAt(0)}
+											{#if post.authorAvatar}
+												<img src={getImageUrl(post.authorAvatar, 'user-assets')} alt={post.authorName} class="h-full w-full object-cover" />
+											{:else}
+												{post.authorName.charAt(0)}
+											{/if}
 										</div>
 										<div>
 											<span class="font-medium text-card-foreground">{post.authorName}</span>

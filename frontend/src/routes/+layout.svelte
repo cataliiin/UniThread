@@ -5,6 +5,7 @@
 	import MobileNav from '$lib/components/MobileNav.svelte';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import { onMount } from 'svelte';
+	import { invalidateAll } from '$app/navigation';
 	import { themeState } from '$lib/stores/theme.svelte';
 	import NotificationListener from '$lib/components/NotificationListener.svelte';
 	import logo from '$lib/assets/UniThread_Logo.svg';
@@ -16,6 +17,23 @@
 
 	onMount(() => {
 		themeState.applyTheme();
+
+		// Check health every 60 seconds in the background (Idle Heartbeat)
+		const interval = setInterval(async () => {
+			try {
+				const res = await fetch('http://localhost:8000/health');
+				const data = await res.json();
+
+				if (!res.ok || data.status === 'down') {
+					invalidateAll();
+				}
+			} catch (err) {
+				// Server dropped while idle
+				invalidateAll();
+			}
+		}, 60000);
+
+		return () => clearInterval(interval);
 	});
 </script>
 
@@ -33,7 +51,7 @@
 				class="flex items-center gap-3 border-b border-sidebar-border bg-sidebar p-4 lg:hidden"
 			>
 				<div
-					class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-white p-0.5 shadow-lg shadow-primary/20"
+					class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-card border border-border p-0.5 shadow-lg shadow-primary/20"
 				>
 					<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
 				</div>

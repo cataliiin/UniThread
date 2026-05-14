@@ -167,7 +167,7 @@
 						<!-- Content -->
 						<div class="flex items-start gap-3 px-4 pb-4 pt-0">
 							<!-- Icon (overlaps banner) -->
-							<div class="relative -mt-6 h-12 w-12 shrink-0 overflow-hidden rounded-xl border-2 border-sidebar bg-slate-800 shadow-md">
+							<div class="relative -mt-6 h-12 w-12 shrink-0 overflow-hidden rounded-xl border-2 border-sidebar bg-muted shadow-md">
 								{#if community.icon_key}
 									<img src={getImageUrl(community.icon_key)} alt="" class="h-full w-full object-cover" />
 								{:else}

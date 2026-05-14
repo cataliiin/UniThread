@@ -33,13 +33,14 @@
 
 	<div class="flex flex-wrap justify-center gap-3">
 		{#each actions as action}
-			<Button
-				variant={action.variant === 'secondary' ? 'secondary' : 'default'}
+			<button
 				onclick={() => handleActionClick(action)}
-				class="px-6 py-3 font-medium"
+				class="rounded-lg px-6 py-3 font-medium transition-all {action.variant === 'secondary'
+					? 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+					: 'bg-primary text-primary-foreground hover:bg-primary/90'}"
 			>
 				{action.label}
-			</Button>
+			</button>
 		{/each}
 	</div>
 </div>

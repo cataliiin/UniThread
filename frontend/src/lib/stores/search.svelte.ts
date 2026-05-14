@@ -1,4 +1,6 @@
+import { getAuthorDisplayName } from '$lib/utils/user';
 import {
+
 	type SearchFilter,
 	type UserResult,
 	type CommunityResult,
@@ -37,19 +39,26 @@ function createSearchState() {
 
 		try {
 			const typeParam = searchFilter === 'all' ? undefined : searchFilter;
-			const results = await SearchService.globalSearch(searchQuery, typeParam, 10);
+			
+			// If user searches for "@username", strip the "@" so the backend matches the raw username
+			const apiQuery = searchQuery.startsWith('@') ? searchQuery.substring(1) : searchQuery;
+			
+			const results = await SearchService.globalSearch(apiQuery, typeParam, 10);
 
 			if (searchFilter === 'all' || searchFilter === 'users') {
-				users = results.users.map(u => ({
-					id: u.id,
-					name: u.username,
-					username: u.username,
-					avatar: u.avatar_key || undefined,
-					avatarInitials: u.username.substring(0, 2).toUpperCase(),
-					memberSince: new Date(u.created_at).getFullYear().toString(),
-					followers: 0,
-					university: 'University' // Or derive from university_id
-				}));
+				users = results.users.map(u => {
+					const displayName = getAuthorDisplayName(u);
+					return {
+						id: u.id,
+						name: displayName,
+						username: u.username,
+						avatar: u.avatar_key || undefined,
+						avatarInitials: displayName.substring(0, 2).toUpperCase(),
+						memberSince: new Date(u.created_at).getFullYear().toString(),
+						followers: 0,
+						university: 'University' // Or derive from university_id
+					};
+				});
 			} else {
 				users = [];
 			}
@@ -77,7 +86,7 @@ function createSearchState() {
 					title: p.title,
 					content: p.body || p.title,
 					authorId: p.author?.id || 'anonymous',
-					authorName: p.author?.username || 'Anonymous',
+					authorName: getAuthorDisplayName(p.author),
 					authorUsername: p.author?.username || 'anonymous',
 					createdAt: p.created_at,
 					likes: p.score,
@@ -126,7 +135,7 @@ function createSearchState() {
 					title: p.title,
 					content: p.body || p.title,
 					authorId: p.author?.id || 'anonymous',
-					authorName: p.author?.username || 'Anonymous',
+					authorName: getAuthorDisplayName(p.author),
 					authorUsername: p.author?.username || 'anonymous',
 					createdAt: p.created_at,
 					likes: p.score,

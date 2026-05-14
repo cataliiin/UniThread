@@ -4,10 +4,15 @@
 	import { api } from '$lib/api/client';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { user } from '$lib/stores/user.svelte';
+	import { communityState } from '$lib/stores/community.svelte';
+	import { page } from '$app/stores';
 	import PostForm from '$lib/components/PostForm.svelte';
 
 	let communities = $state<any[]>([]);
 	let loading = $state(true);
+
+	// Get default community from URL if present
+	let defaultCommunityId = $derived($page.url.searchParams.get('communityId'));
 
 	onMount(async () => {
 		if (!user.isAuthenticated) {
@@ -17,12 +22,9 @@
 		}
 
 		try {
-			const { data, error } = await api.GET('/api/v1/communities', {
-				params: { query: { page: 1, size: 100 } }
-			});
-
-			if (error) throw new Error('Failed to fetch communities');
-			if (data?.items) communities = data.items;
+			const myComms = await communityState.fetchMyCommunities();
+			// Only allow posting in approved communities
+			communities = myComms.filter(c => c.user_membership_status === 'approved' || c.owner_id === user.id);
 		} catch (e: any) {
 			toast.error(e.message || 'Could not load communities.');
 		} finally {
@@ -47,7 +49,7 @@
 				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
 			</div>
 		{:else}
-			<PostForm mode="create" {communities} />
+			<PostForm mode="create" {communities} {defaultCommunityId} />
 		{/if}
 	</div>
 </div>

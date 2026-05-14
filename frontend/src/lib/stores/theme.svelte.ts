@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 
-export type Theme = 'dark' | 'light' | 'midnight' | 'wasteland' | 'amethyst' | 'cyberpunk' | 'nordic' | 'coffee' | 'cyberpop' | 'sakura';
+export type Theme = 'dark' | 'light' | 'midnight' | 'outpost' | 'amethyst' | 'cyberpunk' | 'nordic' | 'coffee' | 'cyberpop' | 'sakura';
 
 class ThemeState {
 	current = $state<Theme>('dark');
@@ -25,7 +25,7 @@ class ThemeState {
 	applyTheme() {
 		if (!browser) return;
 		const root = document.documentElement;
-		root.classList.remove('light', 'midnight', 'wasteland', 'amethyst', 'cyberpunk', 'nordic', 'coffee', 'cyberpop', 'sakura');
+		root.classList.remove('light', 'midnight', 'outpost', 'amethyst', 'cyberpunk', 'nordic', 'coffee', 'cyberpop', 'sakura');
 		if (this.current !== 'dark') {
 			root.classList.add(this.current);
 		}

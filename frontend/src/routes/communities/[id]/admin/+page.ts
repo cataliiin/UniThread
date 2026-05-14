@@ -6,7 +6,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 export const load: PageLoad = async ({ params }) => {
 	if (typeof window !== 'undefined') {
-		const saved = localStorage.getItem('currentUser');
+		const saved = sessionStorage.getItem('currentUser');
 		if (!saved) throw redirect(307, '/login');
 
 		let userData: { id?: string; email?: string; isAuthenticated?: boolean };
@@ -22,7 +22,7 @@ export const load: PageLoad = async ({ params }) => {
 		let isAdmin = false;
 
 		try {
-			const token = localStorage.getItem('token');
+			const token = sessionStorage.getItem('token');
 			const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 			if (token) headers.Authorization = `Bearer ${token}`;
 			const res = await fetch(`${API_BASE}/communities/${communityId}`, { headers });
@@ -34,8 +34,8 @@ export const load: PageLoad = async ({ params }) => {
 					community.user_membership_status === 'approved';
 			}
 		} catch {
-			// Fallback: check localStorage
-			const all: Community[] = JSON.parse(localStorage.getItem('mock_communities') || '[]');
+			// Fallback: check sessionStorage
+			const all: Community[] = JSON.parse(sessionStorage.getItem('mock_communities') || '[]');
 			const community = all.find((c) => c.id === communityId);
 			if (community) {
 				isAdmin =

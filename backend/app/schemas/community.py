@@ -85,6 +85,11 @@ class CommunityMemberResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class CommunityMemberDetailsResponse(CommunityMemberResponse):
+    """Includes the user profile info - useful for member lists."""
+    user: UserPublic
+
+
 class CommunityMemberUpdate(BaseModel):
     status: MemberStatus | None = None
     is_admin: bool | None = None
