@@ -11,6 +11,7 @@ from app.database.models.base import Base
 if TYPE_CHECKING:
     from app.database.models.comment import Comment
     from app.database.models.marketplace import MarketplaceFavorite, MarketplaceListing
+    from app.database.models.messaging import Message, UserRelationship
     from app.database.models.university import University
     from app.database.models.community import (
         Community,
@@ -88,6 +89,30 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
         foreign_keys="MarketplaceFavorite.user_id",
+    )
+    sent_messages: Mapped[list["Message"]] = relationship(
+        "Message",
+        back_populates="sender",
+        cascade="all, delete-orphan",
+        foreign_keys="Message.sender_id",
+    )
+    received_messages: Mapped[list["Message"]] = relationship(
+        "Message",
+        back_populates="recipient",
+        cascade="all, delete-orphan",
+        foreign_keys="Message.recipient_id",
+    )
+    outgoing_relationships: Mapped[list["UserRelationship"]] = relationship(
+        "UserRelationship",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="UserRelationship.user_id",
+    )
+    incoming_relationships: Mapped[list["UserRelationship"]] = relationship(
+        "UserRelationship",
+        back_populates="target_user",
+        cascade="all, delete-orphan",
+        foreign_keys="UserRelationship.target_user_id",
     )
     comments: Mapped[list["Comment"]] = relationship(
         "Comment", back_populates="author", foreign_keys="Comment.author_id"

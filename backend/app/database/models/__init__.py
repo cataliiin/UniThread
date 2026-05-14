@@ -17,6 +17,7 @@ from app.database.models.community import (
 )
 from app.database.models.post import Post
 from app.database.models.marketplace import MarketplaceFavorite, MarketplaceListing
+from app.database.models.messaging import Message, UserRelationship
 from app.database.models.comment import Comment
 from app.database.models.vote import Vote
 
@@ -37,6 +38,8 @@ __all__ = [
     "Post",
     "MarketplaceListing",
     "MarketplaceFavorite",
+    "Message",
+    "UserRelationship",
     "Comment",
     "Vote",
 ]

@@ -6,7 +6,9 @@ from app.routes import (
     community_admin,
     invitations,
     marketplace,
+    messages,
     posts,
+    relationships,
     search,
     storage,
     universities,
@@ -22,6 +24,8 @@ api_router.include_router(communities.router)
 api_router.include_router(community_admin.router)
 api_router.include_router(invitations.router)
 api_router.include_router(marketplace.router)
+api_router.include_router(messages.router)
 api_router.include_router(posts.router)
+api_router.include_router(relationships.router)
 api_router.include_router(search.router)
 api_router.include_router(storage.router)
