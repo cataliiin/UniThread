@@ -19,7 +19,9 @@ from app.core.dependencies import (
 )
 from app.core.exceptions import (
     AlreadyCommunityMemberException,
+    ForbiddenException,
     NotFoundException,
+    NotCommunityMemberException,
     UserNotFoundException,
 )
 from app.database.models.community import (
@@ -498,3 +500,42 @@ async def update_member_role(
     await db.refresh(target_member)
 
     return target_member
+
+
+@router.delete(
+    "/{community_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+async def kick_member(
+    community_id: UUID,
+    user_id: UUID,
+    current_user: CurrentUser,
+    db: DbDep,
+):
+    """
+    Remove an approved member from a community (Admin only).
+    The owner cannot be removed, and admins must use the leave endpoint for themselves.
+    """
+    comm = await require_community_admin(community_id, current_user, db)
+
+    if user_id == comm.owner_id:
+        raise ForbiddenException("The owner of the community cannot be removed.")
+
+    if user_id == current_user.id:
+        raise ForbiddenException(
+            "You cannot remove yourself from the community. Use the leave endpoint instead."
+        )
+
+    target_member = await db.scalar(
+        select(CommunityMember).where(
+            (CommunityMember.community_id == community_id)
+            & (CommunityMember.user_id == user_id)
+            & (CommunityMember.status == MemberStatus.approved)
+        )
+    )
+    if not target_member:
+        raise NotCommunityMemberException(
+            "Target user is not an approved member of this community."
+        )
+
+    await db.delete(target_member)
+    await db.commit()
