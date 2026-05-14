@@ -66,7 +66,9 @@ const middleware: Middleware = {
 
 export const api = createClient<paths>({
     baseUrl,
-    credentials: 'include', // moved here — the only correct place
+    fetchOptions: {
+        credentials: 'include'
+    }
 });
 
 api.use(middleware);

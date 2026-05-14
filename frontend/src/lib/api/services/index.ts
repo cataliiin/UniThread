@@ -3,6 +3,7 @@ export { CommunitiesService } from './CommunitiesService';
 export { CommunityAdminService } from './CommunityAdminService';
 export { HealthService } from './HealthService';
 export { InvitationsService } from './InvitationsService';
+export { MarketplaceService } from './MarketplaceService';
 export { PostsService } from './PostsService';
 export { SearchService } from './SearchService';
 export { StorageService } from './StorageService';
