@@ -166,7 +166,7 @@
 			<!-- Community Header -->
 			<div class="relative -mt-16 mb-6 flex items-end gap-4">
 				<!-- Icon -->
-				<div class="h-32 w-32 shrink-0 overflow-hidden rounded-2xl border-4 border-background bg-slate-800 shadow-xl">
+				<div class="h-32 w-32 shrink-0 overflow-hidden rounded-2xl border-4 border-background bg-muted shadow-xl">
 					{#if community.icon_key}
 						<img src={getImageUrl(community.icon_key)} alt="{community.name} icon" class="h-full w-full object-cover" />
 					{:else}

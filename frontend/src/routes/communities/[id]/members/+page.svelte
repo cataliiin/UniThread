@@ -75,7 +75,7 @@
 		return getAuthorDisplayName({
 			first_name: member.name?.split(' ')[0] || null,
 			last_name: member.name?.split(' ').slice(1).join(' ') || null,
-			username: member.username
+			username: member.username || 'anonymous'
 		});
 	}
 
@@ -261,7 +261,7 @@
 						<div class="group/item relative flex w-full items-center gap-3 rounded-xl border border-border bg-sidebar/40 px-4 py-3 text-left transition-all duration-300 hover:border-primary/20 hover:bg-primary/5 hover:translate-x-1">
 							<button 
 								onclick={() => member.user_id !== 'anonymous' && goto(`/profile/${member.user_id}`)}
-								class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-800 text-sm font-bold text-slate-400 border border-slate-700 hover:border-primary/50 transition-all duration-300 shadow-sm group-hover/item:scale-105"
+								class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-muted-foreground border border-border hover:border-primary/50 transition-all duration-300 shadow-sm group-hover/item:scale-105"
 							>
 								{#if member.avatar_url}
 									<img src={member.avatar_url} alt="" class="h-full w-full rounded-full object-cover" />
@@ -277,7 +277,7 @@
 									>
 										{formatDisplayName(member)}
 									</button>
-									<span class="shrink-0 rounded-full bg-slate-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 border border-slate-500/10">
+									<span class="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground border border-border">
 										Member
 									</span>
 								</div>

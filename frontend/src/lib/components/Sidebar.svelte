@@ -104,7 +104,7 @@
 	<!-- Header -->
 	<div class="flex items-center gap-4 border-b border-sidebar-border p-6">
 		<div
-			class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40"
+			class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-card border border-border p-1 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40"
 		>
 			<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
 		</div>

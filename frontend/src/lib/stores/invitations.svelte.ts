@@ -3,6 +3,7 @@ import { toasts } from './toast.svelte';
 import { InvitationsService } from '$lib/api/services/InvitationsService';
 import { CommunitiesService } from '$lib/api/services/CommunitiesService';
 import { UsersService } from '$lib/api/services/UsersService';
+import { getAuthorDisplayName } from '$lib/utils/user';
 
 function createInvitationsState() {
 	let invitations = $state<Invitation[]>([]);

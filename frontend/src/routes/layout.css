@@ -15,47 +15,24 @@
 	/* Dark Mode as Default - Based on Logo Colors */
 	--background: #0f0f0f;
 	--foreground: #fafafa;
-
-	/* Primary - Dark Blue from Logo #32415f */
 	--primary: #32415f;
 	--primary-foreground: #ffffff;
-
-	/* Secondary - Gray from Logo #808080 */
 	--secondary: #1a1a1a;
 	--secondary-foreground: #fafafa;
-
-	/* Card, Popover */
 	--card: #141414;
 	--card-foreground: #fafafa;
 	--popover: #141414;
 	--popover-foreground: #fafafa;
-
-	/* Muted, Accent */
 	--muted: #1a1a1a;
 	--muted-foreground: #a1a1aa;
 	--accent: #1a1a1a;
 	--accent-foreground: #fafafa;
-
-	/* Destructive */
 	--destructive: #dc2626;
 	--destructive-foreground: #ffffff;
-
-	/* Border, Input, Ring */
 	--border: #27272a;
 	--input: #27272a;
 	--ring: #32415f;
-
-	/* Charts */
-	--chart-1: #32415f;
-	--chart-2: #4a5a7a;
-	--chart-3: #808080;
-	--chart-4: #a0a0a0;
-	--chart-5: #c0c0c0;
-
-	/* Radius */
 	--radius: 0.75rem;
-
-	/* Sidebar */
 	--sidebar: #0a0a0a;
 	--sidebar-foreground: #fafafa;
 	--sidebar-primary: #32415f;
@@ -64,15 +41,10 @@
 	--sidebar-accent-foreground: #fafafa;
 	--sidebar-border: #27272a;
 	--sidebar-ring: #32415f;
-
-	/* Custom Properties */
-	--primary-gradient: linear-gradient(135deg, #32415f 0%, #4a5a7a 100%);
-	--glow-primary: 0 0 20px rgba(50, 65, 95, 0.4);
-	--glow-primary-sm: 0 0 10px rgba(50, 65, 95, 0.3);
 }
 
-/*	 custom themes */
-.light {
+/* Specific theme overrides with higher specificity */
+:root.light {
 	--background: #ffffff;
 	--foreground: #0a0a0a;
 	--card: #ffffff;
@@ -94,22 +66,17 @@
 	--ring: #32415f;
 	--sidebar: #fafafa;
 	--sidebar-foreground: #0a0a0a;
-	--sidebar-primary: #32415f;
-	--sidebar-primary-foreground: #ffffff;
-	--sidebar-accent: #f4f4f5;
-	--sidebar-accent-foreground: #0a0a0a;
 	--sidebar-border: #e4e4e7;
-	--sidebar-ring: #32415f;
 }
 
-.midnight {
+:root.midnight {
 	--background: #000000;
 	--foreground: #a1a1aa;
 	--card: #080808;
 	--card-foreground: #ffffff;
 	--popover: #050505;
 	--popover-foreground: #ffffff;
-	--primary: #ff0000; /* Tactical Red */
+	--primary: #ff0000;
 	--primary-foreground: #ffffff;
 	--secondary: #121212;
 	--secondary-foreground: #71717a;
@@ -351,17 +318,17 @@
 }
 
 
-.cyberpunk {
+:root.cyberpunk {
 	--background: #08090a;
-	--foreground: #00ffc2; /* Carbon Mint */
+	--foreground: #00ffc2;
 	--card: rgba(16, 18, 20, 0.7);
 	--card-foreground: #00ffc2;
 	--popover: #0a0c0e;
 	--popover-foreground: #00ffc2;
-	--primary: #ff003c; /* Tech Noir Red */
+	--primary: #ff003c;
 	--primary-foreground: #ffffff;
-	--secondary: #1a4d2e; /* Acid Forest Dark */
-	--secondary-foreground: #dfff00; /* Acid Forest Light */
+	--secondary: #1a4d2e;
+	--secondary-foreground: #dfff00;
 	--muted: #111418;
 	--muted-foreground: #00ffc288;
 	--accent: #dfff00;
@@ -698,7 +665,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-	background: #3f3f46;
+	background: var(--border);
 	border-radius: 3px;
 }
 

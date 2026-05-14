@@ -19,14 +19,14 @@ export type CommentCreate = {
 
 export const CommentsService = {
 	async listComments(postId: string): Promise<CommentResponse[]> {
-		const { data } = await api.GET('/api/v1/posts/{post_id}/comments', {
+		const { data } = await api.GET('/api/v1/posts/{post_id}/comments' as any, {
 			params: { path: { post_id: postId } }
 		});
 		return requireData(data as any);
 	},
 
 	async createComment(postId: string, payload: CommentCreate): Promise<CommentResponse> {
-		const { data } = await api.POST('/api/v1/posts/{post_id}/comments', {
+		const { data } = await api.POST('/api/v1/posts/{post_id}/comments' as any, {
 			params: { path: { post_id: postId } },
 			body: payload as any
 		});
@@ -34,7 +34,7 @@ export const CommentsService = {
 	},
 
 	async deleteComment(postId: string, commentId: string): Promise<void> {
-		await api.DELETE('/api/v1/posts/{post_id}/comments/{comment_id}', {
+		await api.DELETE('/api/v1/posts/{post_id}/comments/{comment_id}' as any, {
 			params: { path: { post_id: postId, comment_id: commentId } }
 		});
 	}

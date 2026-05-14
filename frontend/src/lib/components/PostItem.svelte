@@ -170,7 +170,7 @@
 
 
 	{#if isAnnouncement}
-		<div class="mb-2 flex items-center gap-2 rounded-lg bg-indigo-500/10 px-3 py-1.5 text-xs font-bold text-indigo-400 w-fit">
+		<div class="mb-2 flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary w-fit">
 			<Megaphone class="h-3.5 w-3.5" />
 			ANNOUNCEMENT
 		</div>

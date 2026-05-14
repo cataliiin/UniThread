@@ -127,20 +127,20 @@
 </script>
 
 <div class="space-y-2">
-	<span class="block text-sm font-medium text-slate-300">{label}</span>
+	<span class="block text-sm font-medium text-muted-foreground">{label}</span>
 
 	{#if imageUrl}
-		<div class="relative {aspectClasses} w-full overflow-hidden rounded-xl border border-slate-700 bg-slate-900">
+		<div class="relative {aspectClasses} w-full overflow-hidden rounded-xl border border-border bg-card">
 			<img
 				src={imageUrl}
 				alt={label}
 				class="h-full w-full object-cover"
 			/>
-			<div class="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity hover:opacity-100">
+			<div class="absolute inset-0 flex items-center justify-center gap-2 bg-background/80 backdrop-blur-sm opacity-0 transition-opacity hover:opacity-100">
 				<button
 					type="button"
 					onclick={triggerFileInput}
-					class="rounded-lg bg-white/90 px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-white"
+					class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all duration-300 hover:brightness-110"
 				>
 					Change
 				</button>
@@ -161,13 +161,13 @@
 			ondragover={handleDragOver}
 			ondragleave={handleDragLeave}
 			aria-label="Upload {label}"
-			class="flex w-full flex-col items-center justify-center {aspectClasses} rounded-xl border-2 border-dashed transition-colors {dragOver ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-600 bg-slate-800/50 hover:border-slate-500 hover:bg-slate-800'}"
+			class="flex w-full flex-col items-center justify-center {aspectClasses} rounded-xl border-2 border-dashed transition-all duration-300 {dragOver ? 'border-primary bg-primary/10' : 'border-border bg-muted/50 hover:border-primary/40 hover:bg-muted'}"
 			disabled={isUploading}
 		>
 			{#if isUploading}
 				<div class="flex flex-col items-center gap-2">
-					<div class="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"></div>
-					<span class="text-sm text-slate-400">Uploading... {uploadProgress}%</span>
+					<div class="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+					<span class="text-sm text-muted-foreground">Uploading... {uploadProgress}%</span>
 				</div>
 			{:else}
 				<svg
@@ -180,14 +180,14 @@
 					stroke-width="2"
 					stroke-linecap="round"
 					stroke-linejoin="round"
-					class="mb-2 text-slate-400"
+					class="mb-2 text-muted-foreground/60"
 				>
 					<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
 					<polyline points="17 8 12 3 7 8" />
 					<line x1="12" x2="12" y1="3" y2="15" />
 				</svg>
-				<span class="text-sm font-medium text-slate-300">Click or drag to upload</span>
-				<span class="mt-1 text-xs text-slate-500">JPG, PNG, WebP up to 5MB</span>
+				<span class="text-sm font-medium text-muted-foreground">Click or drag to upload</span>
+				<span class="mt-1 text-xs text-muted-foreground/40">JPG, PNG, WebP up to 5MB</span>
 			{/if}
 		</button>
 	{/if}

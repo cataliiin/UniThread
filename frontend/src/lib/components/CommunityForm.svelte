@@ -5,6 +5,10 @@
 	import { communityState } from '$lib/stores/community.svelte';
 	import ImageUploader from './ImageUploader.svelte';
 	import { toasts } from '$lib/stores/toast.svelte';
+	import { Input } from './ui/input';
+	import { Textarea } from './ui/textarea';
+	import { Label } from './ui/label';
+	import { Button } from './ui/button';
 
 	interface Props {
 		community?: Community | null;
@@ -56,10 +60,7 @@
 	});
 
 	const isFormValid = $derived(
-		!nameError &&
-		!descriptionError &&
-		formData.name.length >= 3 &&
-		formData.name.length <= 100
+		!nameError && !descriptionError && formData.name.length >= 3 && formData.name.length <= 100
 	);
 
 	const iconUrl = $derived.by(() => {
@@ -154,67 +155,69 @@
 <form onsubmit={handleSubmit} class="space-y-8">
 	<!-- Basic Info Section -->
 	<div class="space-y-6">
-		<h2 class="text-lg font-semibold text-white">Basic Information</h2>
+		<h2 class="text-lg font-semibold text-foreground">Basic Information</h2>
 
 		<div class="space-y-4">
-			<div>
-				<label for="name" class="mb-2 block text-sm font-medium text-slate-300">
-					Community Name <span class="text-red-400">*</span>
-				</label>
-				<input
-					type="text"
+			<div class="space-y-2">
+				<Label for="name" class="text-muted-foreground">
+					Community Name <span class="text-destructive">*</span>
+				</Label>
+				<Input
 					id="name"
 					bind:value={formData.name}
 					onblur={handleNameBlur}
 					placeholder="e.g., Computer Science Society"
-					class="w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 text-white placeholder-slate-500 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-					maxlength="100"
+					class="py-6 {nameError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
+					maxlength={100}
 				/>
 				{#if nameError}
-					<p class="mt-1 text-sm text-red-400">{nameError}</p>
+					<p class="text-xs text-destructive">{nameError}</p>
 				{/if}
-				<p class="mt-1 text-xs text-slate-500">{formData.name.length}/100 characters</p>
+				<p class="text-[10px] font-medium text-muted-foreground/50 uppercase">{formData.name.length}/100 characters</p>
 			</div>
 
-			<div>
-				<label for="description" class="mb-2 block text-sm font-medium text-slate-300">
+			<div class="space-y-2">
+				<Label for="description" class="text-muted-foreground">
 					Description
-				</label>
-				<textarea
+				</Label>
+				<Textarea
 					id="description"
 					bind:value={formData.description}
 					onblur={handleDescriptionBlur}
 					placeholder="Describe what your community is about..."
-					rows="4"
-					class="w-full resize-none rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 text-white placeholder-slate-500 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-					maxlength="1000"
-				></textarea>
+					class="min-h-[120px] resize-none {descriptionError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
+					maxlength={1000}
+				/>
 				{#if descriptionError}
-					<p class="mt-1 text-sm text-red-400">{descriptionError}</p>
+					<p class="text-xs text-destructive">{descriptionError}</p>
 				{/if}
-				<p class="mt-1 text-xs text-slate-500">{formData.description.length}/1000 characters</p>
+				<p class="text-[10px] font-medium text-muted-foreground/50 uppercase">{formData.description.length}/1000 characters</p>
 			</div>
 		</div>
 	</div>
 
 	<!-- Community Type Section -->
 	<div class="space-y-6">
-		<h2 class="text-lg font-semibold text-white">Community Type</h2>
+		<h2 class="text-lg font-semibold text-foreground">Community Type</h2>
 
-		<div class="grid gap-4 sm:grid-cols-3">
+		<div class="grid gap-4 sm:grid-cols-1 md:grid-cols-3">
 			{#each Object.entries(communityTypeLabels) as [type, { label, description }]}
 				<button
 					type="button"
 					onclick={() => handleTypeSelect(type as CommunityType)}
-					class="flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-all {formData.type === type ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-600 bg-slate-800/50 hover:border-slate-500'}"
+					class="group relative flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-all {formData.type === type ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-lg shadow-primary/10' : 'border-border bg-muted/30 hover:border-border/80 hover:bg-muted'}"
 				>
 					<div class="flex items-center gap-2">
 						<div
-							class="h-4 w-4 rounded-full border-2 {formData.type === type ? 'border-indigo-500 bg-indigo-500' : 'border-slate-500'}"
-						></div>
-						<span class="font-medium text-white">{label}</span>
+							class="flex h-5 w-5 items-center justify-center rounded-full border-2 {formData.type === type ? 'border-primary' : 'border-muted-foreground/30'}"
+						>
+							{#if formData.type === type}
+								<div class="h-2.5 w-2.5 rounded-full bg-primary animate-in zoom-in-50 duration-300"></div>
+							{/if}
+						</div>
+						<span class="font-bold text-foreground">{label}</span>
 					</div>
-					<p class="text-sm text-slate-400">{description}</p>
+					<p class="text-xs leading-relaxed text-muted-foreground">{description}</p>
 				</button>
 			{/each}
 		</div>
@@ -222,17 +225,9 @@
 
 	<!-- Media Section -->
 	<div class="space-y-6">
-		<h2 class="text-lg font-semibold text-white">Community Media</h2>
+		<h2 class="text-lg font-semibold text-foreground">Community Media</h2>
 
-		<div class="grid gap-6 sm:grid-cols-2">
-			<ImageUploader
-				imageUrl={iconUrl}
-				onImageUpload={handleIconUpload}
-				onImageRemove={handleIconRemove}
-				aspectRatio="square"
-				label="Community Icon (Recommended: 256x256)"
-			/>
-
+		<div class="space-y-6">
 			<ImageUploader
 				imageUrl={bannerUrl}
 				onImageUpload={handleBannerUpload}
@@ -240,46 +235,62 @@
 				aspectRatio="banner"
 				label="Community Banner (Recommended: 1200x400)"
 			/>
+
+			<div class="max-w-[200px]">
+				<ImageUploader
+					imageUrl={iconUrl}
+					onImageUpload={handleIconUpload}
+					onImageRemove={handleIconRemove}
+					aspectRatio="square"
+					label="Community Icon"
+				/>
+			</div>
 		</div>
 	</div>
 
 	<!-- Settings Section -->
 	<div class="space-y-6">
-		<h2 class="text-lg font-semibold text-white">Settings</h2>
+		<h2 class="text-lg font-semibold text-foreground">Settings</h2>
 
-		<label class="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-600 bg-slate-800/50 p-4 transition-colors hover:border-slate-500">
+		<label
+			class="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-muted/30 p-4 transition-all duration-300 hover:border-primary/40 hover:bg-muted/50"
+		>
 			<input
 				type="checkbox"
 				bind:checked={formData.allow_anonymous}
-				class="h-5 w-5 rounded border-slate-500 bg-slate-700 text-indigo-500 focus:ring-indigo-500/20"
+				class="h-5 w-5 rounded border-muted-foreground/30 bg-muted text-primary focus:ring-primary/20 transition-all duration-300"
 			/>
 			<div>
-				<span class="block font-medium text-white">Allow Anonymous Posts</span>
-				<span class="text-sm text-slate-400">Members can post without revealing their identity</span>
+				<span class="block font-medium text-foreground">Allow Anonymous Posts</span>
+				<span class="text-sm text-muted-foreground"
+					>Members can post without revealing their identity</span
+				>
 			</div>
 		</label>
 	</div>
 
 	<!-- Action Buttons -->
-	<div class="flex items-center justify-end gap-4 border-t border-slate-700 pt-6">
-		<button
-			type="button"
+	<div class="flex items-center justify-end gap-4 border-t border-border pt-6">
+		<Button
+			variant="outline"
 			onclick={handleCancel}
-			class="rounded-lg px-6 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
+			class="px-8"
 		>
 			Cancel
-		</button>
-		<button
+		</Button>
+		<Button
 			type="submit"
 			disabled={!isFormValid || communityState.loading}
-			class="flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+			class="px-8 shadow-lg shadow-primary/20"
 		>
 			{#if communityState.loading}
-				<div class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+				<div
+					class="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent"
+				></div>
 				<span>{mode === 'create' ? 'Creating...' : 'Saving...'}</span>
 			{:else}
 				<span>{mode === 'create' ? 'Create Community' : 'Save Changes'}</span>
 			{/if}
-		</button>
+		</Button>
 	</div>
 </form>

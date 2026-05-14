@@ -14,23 +14,30 @@
 
 	let { data } = $props();
 
-	const p = data.post;
-	let post = $state<Post>({
-		id: p.id,
-		title: p.title,
-		authorId: p.author?.id || 'anonymous',
-		authorName: getAuthorDisplayName(p.author),
-		authorSurname: '',
-		authorUsername: p.author?.username || 'anonymous',
-		authorAvatar: p.author?.avatar_key || undefined,
-		content: p.body || p.title,
-		createdAt: p.created_at,
-		likes: p.score,
-		comments: p.comment_count,
-		liked: p.user_vote === 1,
-		university: p.community?.name || 'Global',
-		communityId: p.community?.id,
-		communityName: p.community?.name
+	function mapPost(p: any): Post {
+		return {
+			id: p.id,
+			title: p.title,
+			authorId: p.author?.id || 'anonymous',
+			authorName: getAuthorDisplayName(p.author),
+			authorSurname: '',
+			authorUsername: p.author?.username || 'anonymous',
+			authorAvatar: p.author?.avatar_key || undefined,
+			content: p.body || p.title,
+			createdAt: p.created_at,
+			likes: p.score,
+			comments: p.comment_count,
+			liked: p.user_vote === 1,
+			university: p.community?.name || 'Global',
+			communityId: p.community?.id,
+			communityName: p.community?.name
+		};
+	}
+
+	let post = $state<Post>(mapPost(data.post));
+
+	$effect(() => {
+		post = mapPost(data.post);
 	});
 
 	let comments = $state<CommentResponse[]>([]);

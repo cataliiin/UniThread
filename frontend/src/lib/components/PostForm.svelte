@@ -30,9 +30,16 @@
 	let formData = $state({
 		title: '',
 		content: '',
-		community_id: defaultCommunityId || '',
+		community_id: '',
 		is_anonymous: false,
 		is_announcement: false
+	});
+
+	// Sync formData with props
+	$effect(() => {
+		if (defaultCommunityId && !formData.community_id) {
+			formData.community_id = defaultCommunityId;
+		}
 	});
 
 	let isSubmitting = $state(false);
@@ -153,9 +160,9 @@
 						type="checkbox"
 						id="announcement"
 						bind:checked={formData.is_announcement}
-						class="h-4 w-4 rounded border-border bg-background text-indigo-600 focus:ring-indigo-600"
+						class="h-4 w-4 rounded border-border bg-background text-primary focus:ring-primary"
 					/>
-					<Label for="announcement" class="flex items-center gap-2 font-normal text-indigo-400">
+					<Label for="announcement" class="flex items-center gap-2 font-normal text-primary">
 						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 							<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>
 						</svg>
@@ -170,9 +177,9 @@
 						type="checkbox"
 						id="announcement-edit"
 						bind:checked={formData.is_announcement}
-						class="h-4 w-4 rounded border-border bg-background text-indigo-600 focus:ring-indigo-600"
+						class="h-4 w-4 rounded border-border bg-background text-primary focus:ring-primary"
 					/>
-					<Label for="announcement-edit" class="flex items-center gap-2 font-normal text-indigo-400">
+					<Label for="announcement-edit" class="flex items-center gap-2 font-normal text-primary">
 						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 							<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>
 						</svg>

@@ -122,7 +122,7 @@
 
 <div class="mb-8 flex flex-col items-center">
 	<div
-		class="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40"
+		class="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-card border border-border p-2 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40"
 	>
 		<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
 	</div>

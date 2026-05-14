@@ -51,7 +51,7 @@
 				class="flex items-center gap-3 border-b border-sidebar-border bg-sidebar p-4 lg:hidden"
 			>
 				<div
-					class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-white p-0.5 shadow-lg shadow-primary/20"
+					class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-card border border-border p-0.5 shadow-lg shadow-primary/20"
 				>
 					<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
 				</div>

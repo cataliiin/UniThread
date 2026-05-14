@@ -29,7 +29,7 @@
 </script>
 
 <div
-	class="relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-slate-600 shadow-sm {selectedSizeClass} {className}"
+	class="relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted text-muted-foreground shadow-sm {selectedSizeClass} {className}"
 >
 	<!-- Holographic Ring (Cyberpunk only) -->
 	<div class="hologram absolute inset-0 rounded-full border-2 border-primary/50 opacity-0 transition-opacity duration-300"></div>
