@@ -30,10 +30,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Register User
-         * @description Register a new user. The university is automatically inferred from the email domain.
-         */
+        /** Register User */
         post: operations["register_user_api_v1_auth_register_post"];
         delete?: never;
         options?: never;
@@ -50,11 +47,76 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Login For Access Token
-         * @description Standard OAuth2 login endpoint. Returns a JWT token and sets HTTPOnly cookie.
-         */
+        /** Login For Access Token */
         post: operations["login_for_access_token_api_v1_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/forgot-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Forgot Password */
+        post: operations["forgot_password_api_v1_auth_forgot_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset Password */
+        post: operations["reset_password_api_v1_auth_reset_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/verify-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify Email */
+        post: operations["verify_email_api_v1_auth_verify_email_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/resend-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resend Verification */
+        post: operations["resend_verification_api_v1_auth_resend_verification_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -80,7 +142,7 @@ export interface paths {
         head?: never;
         /**
          * Update User Me
-         * @description Update the current user's profile (username, avatar).
+         * @description Update the current user's profile.
          *     Only fields explicitly sent in the request body are updated.
          */
         patch: operations["update_user_me_api_v1_users_me_patch"];
@@ -545,6 +607,27 @@ export interface paths {
         patch: operations["update_member_role_api_v1_communities__community_id__members__user_id__role_patch"];
         trace?: never;
     };
+    "/api/v1/communities/{community_id}/members/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Kick Member
+         * @description Remove an approved member from a community (Admin only).
+         *     The owner cannot be removed, and admins must use the leave endpoint for themselves.
+         */
+        delete: operations["kick_member_api_v1_communities__community_id__members__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/invite/{code}": {
         parameters: {
             query?: never;
@@ -633,6 +716,163 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/marketplace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Marketplace Listings
+         * @description List marketplace listings for the current user's university.
+         */
+        get: operations["list_marketplace_listings_api_v1_marketplace_get"];
+        put?: never;
+        /**
+         * Create Marketplace Listing
+         * @description Create a marketplace listing scoped to the current user's university.
+         */
+        post: operations["create_marketplace_listing_api_v1_marketplace_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/marketplace/favorites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Favorite Marketplace Listings
+         * @description List the current user's favorited marketplace listings.
+         */
+        get: operations["list_favorite_marketplace_listings_api_v1_marketplace_favorites_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/marketplace/{listing_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Marketplace Listing
+         * @description Retrieve a single marketplace listing within the current university tenant.
+         */
+        get: operations["get_marketplace_listing_api_v1_marketplace__listing_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Marketplace Listing
+         * @description Delete a marketplace listing owned by the current user.
+         */
+        delete: operations["delete_marketplace_listing_api_v1_marketplace__listing_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Marketplace Listing
+         * @description Update a marketplace listing owned by the current user.
+         */
+        patch: operations["update_marketplace_listing_api_v1_marketplace__listing_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/marketplace/{listing_id}/favorite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Favorite Marketplace Listing
+         * @description Favorite a marketplace listing for the current user.
+         */
+        post: operations["favorite_marketplace_listing_api_v1_marketplace__listing_id__favorite_post"];
+        /**
+         * Unfavorite Marketplace Listing
+         * @description Remove a marketplace listing from the current user's favorites.
+         */
+        delete: operations["unfavorite_marketplace_listing_api_v1_marketplace__listing_id__favorite_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/messages/{recipient_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Message
+         * @description Send a direct message to another user in the same university tenant.
+         */
+        post: operations["create_message_api_v1_messages__recipient_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Recent Conversations
+         * @description Return the most recent message from each direct-message conversation.
+         */
+        get: operations["list_recent_conversations_api_v1_messages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/messages/{other_user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Message History
+         * @description Return paginated chat history with another user, newest messages first.
+         *     Any unread incoming messages in that conversation are marked as read first.
+         */
+        get: operations["get_message_history_api_v1_messages__other_user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/posts": {
         parameters: {
             query?: never;
@@ -653,6 +893,50 @@ export interface paths {
          */
         post: operations["create_post_api_v1_posts_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/posts/{post_id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Post Comments
+         * @description Get comments for a post in chronological order.
+         */
+        get: operations["list_post_comments_api_v1_posts__post_id__comments_get"];
+        put?: never;
+        /**
+         * Create Post Comment
+         * @description Create a new comment on a visible post.
+         */
+        post: operations["create_post_comment_api_v1_posts__post_id__comments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/posts/{post_id}/comments/{comment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Post Comment
+         * @description Delete a comment as its author or as a community admin.
+         */
+        delete: operations["delete_post_comment_api_v1_posts__post_id__comments__comment_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -706,6 +990,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/relationships/blocked": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Blocked Users
+         * @description List users blocked by the current user within the same university tenant.
+         */
+        get: operations["list_blocked_users_api_v1_relationships_blocked_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/relationships/{target_id}/block": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Block User
+         * @description Block a user in the current tenant.
+         */
+        post: operations["block_user_api_v1_relationships__target_id__block_post"];
+        /**
+         * Unblock User
+         * @description Remove a block relationship if it exists.
+         */
+        delete: operations["unblock_user_api_v1_relationships__target_id__block_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/relationships/{target_id}/mute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mute User
+         * @description Mute a user in the current tenant.
+         */
+        post: operations["mute_user_api_v1_relationships__target_id__mute_post"];
+        /**
+         * Unmute User
+         * @description Remove a mute relationship if it exists.
+         */
+        delete: operations["unmute_user_api_v1_relationships__target_id__mute_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/search": {
         parameters: {
             query?: never;
@@ -753,6 +1105,20 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** BlockedUserResponse */
+        BlockedUserResponse: {
+            /**
+             * Target User Id
+             * Format: uuid
+             */
+            target_user_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            user: components["schemas"]["UserPublic"];
+        };
         /** Body_login_for_access_token_api_v1_auth_login_post */
         Body_login_for_access_token_api_v1_auth_login_post: {
             /** Grant Type */
@@ -781,7 +1147,40 @@ export interface components {
          * BucketName
          * @enum {string}
          */
-        BucketName: "user-assets" | "community-assets" | "post-assets";
+        BucketName: "user-assets" | "community-assets" | "post-assets" | "marketplace-assets";
+        /** CommentCreate */
+        CommentCreate: {
+            /** Body */
+            body: string;
+        };
+        /** CommentResponse */
+        CommentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Post Id
+             * Format: uuid
+             */
+            post_id: string;
+            /** Author Id */
+            author_id: string | null;
+            /** Body */
+            body: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            author?: components["schemas"]["UserPublic"] | null;
+        };
         /** CommunityCreate */
         CommunityCreate: {
             /** Name */
@@ -1072,6 +1471,14 @@ export interface components {
             /** Banner Key */
             banner_key?: string | null;
         };
+        /** ForgotPasswordRequest */
+        ForgotPasswordRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
         /** GlobalSearchResponse */
         GlobalSearchResponse: {
             /** Users */
@@ -1117,14 +1524,174 @@ export interface components {
             requested_at: string;
         };
         /**
+         * MarketplaceCategory
+         * @enum {string}
+         */
+        MarketplaceCategory: "electronics" | "clothing" | "books" | "furniture" | "housing" | "services" | "other";
+        /** MarketplaceListingCreate */
+        MarketplaceListingCreate: {
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            category: components["schemas"]["MarketplaceCategory"];
+            /** Price */
+            price: number;
+            /** Image Key */
+            image_key?: string | null;
+            /**
+             * Is Negotiable
+             * @default false
+             */
+            is_negotiable: boolean;
+        };
+        /** MarketplaceListingResponse */
+        MarketplaceListingResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * University Id
+             * Format: uuid
+             */
+            university_id: string;
+            /**
+             * Author Id
+             * Format: uuid
+             */
+            author_id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            category: components["schemas"]["MarketplaceCategory"];
+            /** Price */
+            price: number;
+            /** Image Key */
+            image_key: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Is Negotiable */
+            is_negotiable: boolean;
+            /** Is Favorited */
+            is_favorited: boolean;
+            /**
+             * Favorite Count
+             * @default 0
+             */
+            favorite_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            author: components["schemas"]["UserPublic"];
+        };
+        /** MarketplaceListingUpdate */
+        MarketplaceListingUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            category?: components["schemas"]["MarketplaceCategory"] | null;
+            /** Price */
+            price?: number | null;
+            /** Image Key */
+            image_key?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Is Negotiable */
+            is_negotiable?: boolean | null;
+        };
+        /**
          * MemberStatus
          * @enum {string}
          */
         MemberStatus: "pending" | "approved";
+        /** MessageCreate */
+        MessageCreate: {
+            /** Content */
+            content: string;
+        };
+        /** MessageResponse */
+        MessageResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Sender Id
+             * Format: uuid
+             */
+            sender_id: string;
+            /**
+             * Recipient Id
+             * Format: uuid
+             */
+            recipient_id: string;
+            /** Content */
+            content: string;
+            /** Is Read */
+            is_read: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            sender: components["schemas"]["UserPublic"];
+            recipient: components["schemas"]["UserPublic"];
+        };
+        /** PaginatedResponse[BlockedUserResponse] */
+        PaginatedResponse_BlockedUserResponse_: {
+            /** Items */
+            items: components["schemas"]["BlockedUserResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
+        };
         /** PaginatedResponse[CommunityResponse] */
         PaginatedResponse_CommunityResponse_: {
             /** Items */
             items: components["schemas"]["CommunityResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
+        };
+        /** PaginatedResponse[MarketplaceListingResponse] */
+        PaginatedResponse_MarketplaceListingResponse_: {
+            /** Items */
+            items: components["schemas"]["MarketplaceListingResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
+        };
+        /** PaginatedResponse[MessageResponse] */
+        PaginatedResponse_MessageResponse_: {
+            /** Items */
+            items: components["schemas"]["MessageResponse"][];
             /** Total */
             total: number;
             /** Page */
@@ -1290,6 +1857,24 @@ export interface components {
             /** File Key */
             file_key: string;
         };
+        /** ResendVerificationRequest */
+        ResendVerificationRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
+        /** ResetPasswordRequest */
+        ResetPasswordRequest: {
+            /** Token */
+            token: string;
+            /**
+             * New Password
+             * @description Parola trebuie sa aiba minim 8 caractere
+             */
+            new_password: string;
+        };
         /** Token */
         Token: {
             /** Access Token */
@@ -1335,6 +1920,10 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
         };
         /**
          * UserProfileResponse
@@ -1348,6 +1937,10 @@ export interface components {
             id: string;
             /** Username */
             username: string;
+            /** First Name */
+            first_name: string | null;
+            /** Last Name */
+            last_name: string | null;
             /** Avatar Key */
             avatar_key: string | null;
             /**
@@ -1373,6 +1966,10 @@ export interface components {
             id: string;
             /** Username */
             username: string;
+            /** First Name */
+            first_name: string | null;
+            /** Last Name */
+            last_name: string | null;
             /** Avatar Key */
             avatar_key: string | null;
             /**
@@ -1393,6 +1990,10 @@ export interface components {
             id: string;
             /** Username */
             username: string;
+            /** First Name */
+            first_name: string | null;
+            /** Last Name */
+            last_name: string | null;
             /** Avatar Key */
             avatar_key: string | null;
             /**
@@ -1418,6 +2019,10 @@ export interface components {
         UserUpdateProfile: {
             /** Username */
             username?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
             /** Avatar Key */
             avatar_key?: string | null;
         };
@@ -1521,6 +2126,136 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Token"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    forgot_password_api_v1_auth_forgot_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgotPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_password_api_v1_auth_reset_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_email_api_v1_auth_verify_email_post: {
+        parameters: {
+            query: {
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resend_verification_api_v1_auth_resend_verification_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResendVerificationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -2463,6 +3198,36 @@ export interface operations {
             };
         };
     };
+    kick_member_api_v1_communities__community_id__members__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                community_id: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     preview_invite_link_api_v1_invite__code__get: {
         parameters: {
             query?: never;
@@ -2605,6 +3370,350 @@ export interface operations {
             };
         };
     };
+    list_marketplace_listings_api_v1_marketplace_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                q?: string | null;
+                category?: components["schemas"]["MarketplaceCategory"] | null;
+                min_price?: number | null;
+                max_price?: number | null;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_MarketplaceListingResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_marketplace_listing_api_v1_marketplace_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarketplaceListingCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketplaceListingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_favorite_marketplace_listings_api_v1_marketplace_favorites_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_MarketplaceListingResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_marketplace_listing_api_v1_marketplace__listing_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketplaceListingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_marketplace_listing_api_v1_marketplace__listing_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_marketplace_listing_api_v1_marketplace__listing_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarketplaceListingUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketplaceListingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    favorite_marketplace_listing_api_v1_marketplace__listing_id__favorite_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unfavorite_marketplace_listing_api_v1_marketplace__listing_id__favorite_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_message_api_v1_messages__recipient_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_recent_conversations_api_v1_messages_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"][];
+                };
+            };
+        };
+    };
+    get_message_history_api_v1_messages__other_user_id__get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                other_user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_MessageResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_global_feed_api_v1_posts_get: {
         parameters: {
             query?: {
@@ -2659,6 +3768,102 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PostResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_post_comments_api_v1_posts__post_id__comments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                post_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_post_comment_api_v1_posts__post_id__comments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                post_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_post_comment_api_v1_posts__post_id__comments__comment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                post_id: string;
+                comment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -2789,6 +3994,154 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PostFeedResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_blocked_users_api_v1_relationships_blocked_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_BlockedUserResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    block_user_api_v1_relationships__target_id__block_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unblock_user_api_v1_relationships__target_id__block_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mute_user_api_v1_relationships__target_id__mute_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unmute_user_api_v1_relationships__target_id__mute_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
