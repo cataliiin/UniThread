@@ -10,13 +10,34 @@
 	});
 
 	let searchInput = $state('');
+	let debounceTimer: ReturnType<typeof setTimeout>;
 
 	function handleSearch() {
-		searchState.search(searchInput, searchState.filter);
+		if (searchInput.trim().length >= 2 || searchInput.trim().length === 0) {
+			searchState.search(searchInput, searchState.filter);
+		}
 	}
+
+	// Debounce search effect
+	$effect(() => {
+		const query = searchInput.trim();
+		clearTimeout(debounceTimer);
+		
+		// Don't search for < 2 characters
+		if (query.length >= 2) {
+			debounceTimer = setTimeout(() => {
+				searchState.search(query, searchState.filter);
+			}, 400);
+		} else if (query.length === 0 && searchState.hasSearched) {
+			searchState.clearSearch();
+		}
+
+		return () => clearTimeout(debounceTimer);
+	});
 
 	function handleKeydown(event: KeyboardEvent) {
 		if (event.key === 'Enter') {
+			clearTimeout(debounceTimer); // Cancel pending debounce
 			handleSearch();
 		}
 	}
