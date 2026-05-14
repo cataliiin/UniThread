@@ -10,6 +10,7 @@ from app.database.models.base import Base
 
 if TYPE_CHECKING:
     from app.database.models.comment import Comment
+    from app.database.models.marketplace import MarketplaceFavorite, MarketplaceListing
     from app.database.models.university import University
     from app.database.models.community import (
         Community,
@@ -75,6 +76,18 @@ class User(Base):
     )
     posts: Mapped[list["Post"]] = relationship(
         "Post", back_populates="author", foreign_keys="Post.author_id"
+    )
+    marketplace_listings: Mapped[list["MarketplaceListing"]] = relationship(
+        "MarketplaceListing",
+        back_populates="author",
+        cascade="all, delete-orphan",
+        foreign_keys="MarketplaceListing.author_id",
+    )
+    marketplace_favorites: Mapped[list["MarketplaceFavorite"]] = relationship(
+        "MarketplaceFavorite",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="MarketplaceFavorite.user_id",
     )
     comments: Mapped[list["Comment"]] = relationship(
         "Comment", back_populates="author", foreign_keys="Comment.author_id"
