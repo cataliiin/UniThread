@@ -1,11 +1,12 @@
 import { user } from './user.svelte';
 import { toasts } from './toast.svelte';
-import { UsersService } from '$lib/api/services';
+import { StorageService, UsersService } from '$lib/api/services';
 
 class ProfileEditor {
 	avatar = $state({
 		previewUrl: null as string | null,
 		fileInput: null as HTMLInputElement | null,
+		file: null as File | null,
 		shouldRemove: false
 	});
 
@@ -27,16 +28,17 @@ class ProfileEditor {
 	});
 
 	currentAvatar = $derived(
-		this.avatar.shouldRemove ? null : this.avatar.previewUrl || user.avatarUrl
+		this.avatar.shouldRemove ? null : this.avatar.previewUrl || user.avatarSource
 	);
 	showActions = $derived(
+		this.avatar.file !== null ||
 		this.avatar.previewUrl !== null ||
 			this.avatar.shouldRemove ||
 			this.username.isEditing ||
 			this.password.isChanging
 	);
 	hasChanges = $derived(
-		this.avatar.previewUrl !== null ||
+		this.avatar.file !== null ||
 			this.avatar.shouldRemove ||
 			(this.username.isEditing && this.username.temp !== user.username) ||
 			(this.password.isChanging &&
@@ -51,13 +53,21 @@ class ProfileEditor {
 		const target = event.target as HTMLInputElement;
 		if (target.files && target.files[0]) {
 			const file = target.files[0];
+			if (this.avatar.previewUrl?.startsWith('blob:')) {
+				URL.revokeObjectURL(this.avatar.previewUrl);
+			}
 			this.avatar.previewUrl = URL.createObjectURL(file);
+			this.avatar.file = file;
 			this.avatar.shouldRemove = false;
 		}
 	}
 
 	removeAvatar() {
+		if (this.avatar.previewUrl?.startsWith('blob:')) {
+			URL.revokeObjectURL(this.avatar.previewUrl);
+		}
 		this.avatar.previewUrl = null;
+		this.avatar.file = null;
 		this.avatar.shouldRemove = true;
 		if (this.avatar.fileInput) this.avatar.fileInput.value = '';
 	}
@@ -85,7 +95,7 @@ class ProfileEditor {
 
 	async saveChanges() {
 		const updatedFields: string[] = [];
-		const hasAvatarChange = this.avatar.previewUrl !== null || this.avatar.shouldRemove;
+		const hasAvatarChange = this.avatar.file !== null || this.avatar.shouldRemove;
 		const hasUsernameChange = this.username.isEditing && this.username.temp !== user.username;
 
 		// Check if password form is active AND has any input
@@ -122,27 +132,20 @@ class ProfileEditor {
 				this.username.isEditing = false;
 			}
 			
-			// Avatar update (Frontend only until MinIO is fixed)
+			// Avatar update via storage service
 			if (hasAvatarChange) {
 				if (this.avatar.shouldRemove) {
-					user.avatarUrl = null;
-				} else if (this.avatar.previewUrl) {
-					try {
-						const response = await fetch(this.avatar.previewUrl);
-						const blob = await response.blob();
-						const base64 = await new Promise<string>((resolve) => {
-							const reader = new FileReader();
-							reader.onloadend = () => resolve(reader.result as string);
-							reader.readAsDataURL(blob);
-						});
-						user.avatarUrl = base64;
-					} catch {
-						user.avatarUrl = this.avatar.previewUrl;
-					}
+					const updated = await UsersService.updateMe({ avatar_key: null });
+					user.avatarUrl = updated.avatar_key ?? null;
+				} else if (this.avatar.file) {
+					const updated = await StorageService.uploadUserAvatar(this.avatar.file);
+					user.avatarUrl = updated.avatar_key ?? null;
 				}
 				this.avatar.previewUrl = null;
+				this.avatar.file = null;
 				this.avatar.shouldRemove = false;
-				updatedFields.push('Avatar (Local)');
+				if (this.avatar.fileInput) this.avatar.fileInput.value = '';
+				updatedFields.push('Avatar');
 			}
 
 			if (updatedFields.length > 0) {
@@ -155,7 +158,11 @@ class ProfileEditor {
 	}
 
 	discardChanges() {
+		if (this.avatar.previewUrl?.startsWith('blob:')) {
+			URL.revokeObjectURL(this.avatar.previewUrl);
+		}
 		this.avatar.previewUrl = null;
+		this.avatar.file = null;
 		this.avatar.shouldRemove = false;
 		if (this.avatar.fileInput) this.avatar.fileInput.value = '';
 		this.username.isEditing = false;

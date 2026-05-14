@@ -23,8 +23,8 @@ class Config(BaseSettings):
     COOKIE_SECURE: bool = False
 
     MINIO_ENDPOINT: str = "localhost:9000"
-    MINIO_ACCESS_KEY: str = "minioadmin"
-    MINIO_SECRET_KEY: str = "minioadmin"
+    MINIO_ACCESS_KEY: str = "secret_key"
+    MINIO_SECRET_KEY: str = "secret_key"
     MINIO_SECURE: bool = False
 
     HEALTH_CHECK_INTERVAL: int = 60

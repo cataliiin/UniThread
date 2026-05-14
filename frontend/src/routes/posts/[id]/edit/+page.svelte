@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { PostsService } from '$lib/api/services';
+	import { PostsService, StorageService } from '$lib/api/services';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { user } from '$lib/stores/user.svelte';
 	import type { Post } from '$lib/types/post';
@@ -28,7 +28,7 @@
 				authorId: p.author?.id || '',
 				authorName: p.author?.username || 'Anonymous',
 				authorUsername: p.author?.username || 'anonymous',
-				authorAvatar: p.author?.avatar_key || undefined,
+				authorAvatar: StorageService.getPublicUrl('user-assets', p.author?.avatar_key ?? null) || undefined,
 				content: p.body || p.title,
 				createdAt: p.created_at,
 				likes: p.score,

@@ -8,7 +8,7 @@
 	import { user as currentUserStore } from '$lib/stores/user.svelte';
 	import { communityState } from '$lib/stores/community.svelte';
 	import { toasts } from '$lib/stores/toast.svelte';
-	import { CommunityAdminService } from '$lib/api/services';
+	import { CommunityAdminService, StorageService } from '$lib/api/services';
 	import { api } from '$lib/api/client';
 	import type { Community } from '$lib/types/community';
 
@@ -33,6 +33,7 @@
 
 	let initials = $derived(targetUser.username.substring(0, 2).toUpperCase());
 	let memberSince = $derived(new Date(targetUser.created_at).toLocaleString('en-US', { month: 'long', year: 'numeric' }));
+	let avatarUrl = $derived.by(() => StorageService.getPublicUrl('user-assets', targetUser.avatar_key));
 
 	onMount(async () => {
 		if (!isMe && currentUser?.isAuthenticated) {
@@ -104,7 +105,7 @@
 				<!-- Avatar Section -->
 				<div class="mx-auto mb-6 flex justify-center">
 					<UserAvatar
-						src={targetUser.avatar_key}
+						src={avatarUrl}
 						{initials}
 						size="lg"
 						className="ring-4 ring-border shadow-xl"

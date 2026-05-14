@@ -6,7 +6,7 @@
 	import UserAvatar from './UserAvatar.svelte';
 	import logo from '$lib/assets/UniThread_Logo.svg';
 
-	let avatarUrl = $derived(user.avatarUrl);
+	let avatarUrl = $derived(user.avatarSource);
 	let pendingInvites = $derived(invitationsState.pendingCount);
 
 	interface NavLink {

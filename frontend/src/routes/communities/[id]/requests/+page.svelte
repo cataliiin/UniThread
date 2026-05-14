@@ -4,6 +4,7 @@
 	import { communityState } from '$lib/stores/community.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { UserCheck, UserMinus, ShieldAlert } from 'lucide-svelte';
+	import { StorageService } from '$lib/api/services';
 
 	let { data }: { data: PageData } = $props();
 	let communityId = $derived(data.communityId);
@@ -27,7 +28,7 @@
 	function getAvatarUrl(key: string | null): string {
 		if (!key) return '';
 		if (key.startsWith('local_img_')) return localStorage.getItem(key) || '';
-		return `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:9000/user-assets'}/${key}`;
+		return StorageService.getPublicUrl('user-assets', key) ?? '';
 	}
 </script>
 

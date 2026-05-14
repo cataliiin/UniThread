@@ -4,6 +4,7 @@
 	import { communityState } from '$lib/stores/community.svelte';
 	import { user } from '$lib/stores/user.svelte';
 	import type { Community } from '$lib/types/community';
+	import { StorageService } from '$lib/api/services';
 
 	let activeTab = $state<'member' | 'admin'>('member');
 	let communities = $state<Community[]>([]);
@@ -31,7 +32,7 @@
 	function getImageUrl(key: string | null): string | null {
 		if (!key) return null;
 		if (key.startsWith('local_img_')) return localStorage.getItem(key);
-		return `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:9000/community-assets'}/${key}`;
+		return StorageService.getPublicUrl('community-assets', key);
 	}
 
 	function getRoleBadge(community: Community) {

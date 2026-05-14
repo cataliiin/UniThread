@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { PostsService } from '$lib/api/services/PostsService';
+	import { StorageService } from '$lib/api/services';
 	import type { Post } from '$lib/types/post';
 	import PostItem from '$lib/components/PostItem.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
@@ -14,7 +15,7 @@
 		authorName: p.author?.username || 'Anonymous',
 		authorSurname: '',
 		authorUsername: p.author?.username || 'anonymous',
-		authorAvatar: p.author?.avatar_key || undefined,
+		authorAvatar: StorageService.getPublicUrl('user-assets', p.author?.avatar_key ?? null) || undefined,
 		content: p.body || p.title,
 		createdAt: p.created_at,
 		likes: p.score,

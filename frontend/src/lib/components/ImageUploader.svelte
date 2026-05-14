@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { communityState } from '$lib/stores/community.svelte';
 
 	interface Props {
 		imageUrl: string | null;
 		onImageUpload: (fileKey: string) => void;
 		onImageRemove: () => void;
+		uploadHandler: (file: File) => Promise<string>;
 		aspectRatio?: 'square' | 'banner';
 		label: string;
 		accept?: string;
@@ -14,6 +14,7 @@
 		imageUrl,
 		onImageUpload,
 		onImageRemove,
+		uploadHandler,
 		aspectRatio = 'square',
 		label,
 		accept = 'image/jpeg,image/png,image/webp'
@@ -55,40 +56,13 @@
 		uploadProgress = 0;
 
 		try {
-			// Try MinIO first, fallback to localStorage
-			const presignedData = await communityState.getPresignedUrl();
-
-			if (presignedData) {
-				// MinIO upload
-				uploadProgress = 50;
-				const success = await communityState.uploadFile(file, presignedData.url, presignedData.file_key);
-
-				if (success) {
-					uploadProgress = 100;
-					onImageUpload(presignedData.file_key);
-				} else {
-					throw new Error('Upload failed');
-				}
-			} else {
-				// Fallback: LocalStorage mode (for development)
-				const reader = new FileReader();
-				reader.onload = () => {
-					const base64 = reader.result as string;
-					// Store with unique key
-					const key = `local_img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-					try {
-						localStorage.setItem(key, base64);
-						uploadProgress = 100;
-						onImageUpload(key);
-					} catch (e) {
-						alert('Image too large for localStorage. Try a smaller image or use MinIO.');
-					}
-				};
-				uploadProgress = 50;
-				reader.readAsDataURL(file);
-			}
-		} catch {
-			alert('Failed to upload image. Please try again.');
+			uploadProgress = 50;
+			const fileKey = await uploadHandler(file);
+			uploadProgress = 100;
+			onImageUpload(fileKey);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Failed to upload image.';
+			alert(message);
 		} finally {
 			isUploading = false;
 			uploadProgress = 0;

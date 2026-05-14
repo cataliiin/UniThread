@@ -1,6 +1,7 @@
 import { type Post, type SortOption } from '$lib/types/post';
 import { PostsService } from '$lib/api/services/PostsService';
 import { CommunitiesService } from '$lib/api/services/CommunitiesService';
+import { StorageService } from '$lib/api/services';
 
 export function createPostsState(getCommunityId: () => string | null = () => null) {
 	let posts = $state<Post[]>([]);
@@ -30,7 +31,7 @@ export function createPostsState(getCommunityId: () => string | null = () => nul
 				authorName: p.author?.username || 'Anonymous', 
 				authorSurname: '', // The backend doesn't store surnames yet!
 				authorUsername: p.author?.username || 'anonymous',
-				authorAvatar: p.author?.avatar_key || undefined,
+				authorAvatar: StorageService.getPublicUrl('user-assets', p.author?.avatar_key ?? null) || undefined,
 				content: p.body || p.title,
 				createdAt: p.created_at,
 				likes: p.score,

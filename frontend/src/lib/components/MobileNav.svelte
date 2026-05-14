@@ -4,7 +4,7 @@
 	import { invitationsState } from '$lib/stores/invitations.svelte';
 	import UserAvatar from './UserAvatar.svelte';
 
-	let avatarUrl = $derived(user?.avatarUrl);
+	let avatarUrl = $derived(user?.avatarSource);
 	let pendingInvites = $derived(invitationsState?.pendingCount || 0);
 
 	interface MobileNavLink {

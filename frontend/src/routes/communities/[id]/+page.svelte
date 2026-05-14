@@ -5,7 +5,7 @@
 	import { communityState } from '$lib/stores/community.svelte';
 	import { user } from '$lib/stores/user.svelte';
 	import { toasts } from '$lib/stores/toast.svelte';
-	import { CommunityAdminService } from '$lib/api/services';
+	import { CommunityAdminService, StorageService } from '$lib/api/services';
 	import Feed from '$lib/components/Feed.svelte';
 	import { Link2, X, Copy, Trash2, Loader2 } from '@lucide/svelte';
 	import type { components } from '$lib/api/openapi-generated-schema';
@@ -29,7 +29,7 @@
 	function getImageUrl(key: string | null): string | null {
 		if (!key) return null;
 		if (key.startsWith('local_img_')) return localStorage.getItem(key);
-		return `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:9000/community-assets'}/${key}`;
+		return StorageService.getPublicUrl('community-assets', key);
 	}
 
 	async function handleJoin() {

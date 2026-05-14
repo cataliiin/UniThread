@@ -30,7 +30,7 @@
 				href="/profile"
 				class="group relative block transition-transform duration-300 hover:scale-105"
 			>
-				<UserAvatar src={user.avatarUrl} initials={user.avatarInitials} size="md" />
+				<UserAvatar src={user.avatarSource} initials={user.avatarInitials} size="md" />
 				<div
 					class="absolute inset-0 rounded-full bg-primary/0 ring-4 ring-transparent transition-all duration-300 group-hover:bg-primary/5 group-hover:ring-primary/20"
 				></div>

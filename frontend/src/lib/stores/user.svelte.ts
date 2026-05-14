@@ -1,4 +1,19 @@
-import { AuthService, UsersService } from '$lib/api/services';
+import { AuthService, StorageService, UsersService } from '$lib/api/services';
+
+const isAbsoluteUrl = (value: string): boolean =>
+	value.startsWith('http://') ||
+	value.startsWith('https://') ||
+	value.startsWith('data:') ||
+	value.startsWith('blob:');
+
+const resolveAvatarSource = (value: string | null): string | null => {
+	if (!value) return null;
+	if (value.startsWith('local_img_')) {
+		return typeof window !== 'undefined' ? localStorage.getItem(value) : null;
+	}
+	if (isAbsoluteUrl(value)) return value;
+	return StorageService.getPublicUrl('user-assets', value);
+};
 
 function createUserState() {
 	let id = $state('');
@@ -57,7 +72,7 @@ function createUserState() {
 		window.addEventListener('auth:expired', () => logout());
 	}
 
-	let avatarSource = $derived(avatarUrl);
+	let avatarSource = $derived.by(() => resolveAvatarSource(avatarUrl));
 
 	function updateProfileStorage() {
 		if (typeof window !== 'undefined' && isAuthenticated) {

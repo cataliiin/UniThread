@@ -10,6 +10,7 @@ import type {
 } from '$lib/types/community';
 import { toasts } from './toast.svelte';
 import { CommunitiesService } from '$lib/api/services/CommunitiesService';
+import { StorageService } from '$lib/api/services';
 import type { components } from '$lib/api/openapi-generated-schema';
 import { api } from '$lib/api/client';
 
@@ -242,7 +243,7 @@ function createCommunityState() {
 				status: 'approved',
 				is_admin: u.id === community?.owner_id,
 				joined_at: new Date().toISOString(),
-				avatar_url: u.avatar_key
+				avatar_url: StorageService.getPublicUrl('user-assets', u.avatar_key) ?? undefined
 			}));
 			
 			members = data;

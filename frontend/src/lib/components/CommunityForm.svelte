@@ -5,6 +5,7 @@
 	import { communityState } from '$lib/stores/community.svelte';
 	import ImageUploader from './ImageUploader.svelte';
 	import { toasts } from '$lib/stores/toast.svelte';
+	import { StorageService } from '$lib/api/services';
 
 	interface Props {
 		community?: Community | null;
@@ -69,7 +70,7 @@
 			return localStorage.getItem(formData.icon_key) || null;
 		}
 		// Otherwise use MinIO URL
-		return `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:9000/community-assets'}/${formData.icon_key}`;
+		return StorageService.getPublicUrl('community-assets', formData.icon_key);
 	});
 
 	const bannerUrl = $derived.by(() => {
@@ -79,7 +80,7 @@
 			return localStorage.getItem(formData.banner_key) || null;
 		}
 		// Otherwise use MinIO URL
-		return `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:9000/community-assets'}/${formData.banner_key}`;
+		return StorageService.getPublicUrl('community-assets', formData.banner_key);
 	});
 
 	function handleNameBlur() {
@@ -95,7 +96,7 @@
 	}
 
 	function handleIconUpload(fileKey: string) {
-		formData.icon_key = fileKey;
+		formData.icon_key = fileKey || null;
 	}
 
 	function handleIconRemove() {
@@ -103,7 +104,33 @@
 	}
 
 	function handleBannerUpload(fileKey: string) {
-		formData.banner_key = fileKey;
+		formData.banner_key = fileKey || null;
+	}
+
+	async function uploadIcon(file: File): Promise<string> {
+		if (mode === 'edit' && community) {
+			const updated = await StorageService.uploadCommunityIcon(community.id, file);
+			if (!updated.icon_key) {
+				throw new Error('Upload failed');
+			}
+			return updated.icon_key;
+		}
+
+		const { file_key } = await StorageService.uploadAsset('community-assets', file);
+		return file_key;
+	}
+
+	async function uploadBanner(file: File): Promise<string> {
+		if (mode === 'edit' && community) {
+			const updated = await StorageService.uploadCommunityBanner(community.id, file);
+			if (!updated.banner_key) {
+				throw new Error('Upload failed');
+			}
+			return updated.banner_key;
+		}
+
+		const { file_key } = await StorageService.uploadAsset('community-assets', file);
+		return file_key;
 	}
 
 	function handleBannerRemove() {
@@ -229,6 +256,7 @@
 				imageUrl={iconUrl}
 				onImageUpload={handleIconUpload}
 				onImageRemove={handleIconRemove}
+				uploadHandler={uploadIcon}
 				aspectRatio="square"
 				label="Community Icon (Recommended: 256x256)"
 			/>
@@ -237,6 +265,7 @@
 				imageUrl={bannerUrl}
 				onImageUpload={handleBannerUpload}
 				onImageRemove={handleBannerRemove}
+				uploadHandler={uploadBanner}
 				aspectRatio="banner"
 				label="Community Banner (Recommended: 1200x400)"
 			/>
