@@ -8,7 +8,8 @@
 	import { CommunityAdminService } from '$lib/api/services';
 	import { api } from '$lib/api/client';
 	import Feed from '$lib/components/Feed.svelte';
-	import { Link2, X, Copy, Trash2, Loader2 } from 'lucide-svelte';
+	import CreatePostModal from '$lib/components/CreatePostModal.svelte';
+	import { Link2, X, Copy, Trash2, Loader2, Plus } from 'lucide-svelte';
 	import type { components } from '$lib/api/openapi-generated-schema';
 
 	type CommunityInviteLinkResponse = components['schemas']['CommunityInviteLinkResponse'];
@@ -27,6 +28,7 @@
 	let inviteLinks = $state<CommunityInviteLinkResponse[]>([]);
 	let linksLoading = $state(false);
 	let creatingLink = $state(false);
+	let modalOpen = $state(false);
 
 	function getImageUrl(key: string | null): string | null {
 		if (!key) return null;
@@ -229,16 +231,14 @@
 							</button>
 						{/if}
 					{:else if (community.user_membership_status === 'approved' || isAdmin || isOwner)}
-						<!-- Create Post Button -->
-						<a
-							href="/posts/new?communityId={community.id}"
+						<!-- Create Post Button (Popup) -->
+						<button
+							onclick={() => (modalOpen = true)}
 							class="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:brightness-110"
 						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-								<path d="M5 12h14m-7-7v14"/>
-							</svg>
+							<Plus class="h-4 w-4 stroke-[2.5]" />
 							Create Post
-						</a>
+						</button>
 					{:else if community.user_membership_status === 'pending'}
 						<div class="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-500">
 							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -428,8 +428,14 @@
 				<div class="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
 				<p class="mt-4 text-sm text-muted-foreground">Loading community…</p>
 			</div>
-		</div>
-	{/if}
+	</div>
+{/if}
+
+<CreatePostModal 
+	communityId={community?.id} 
+	communities={communityState.myCommunities} 
+	bind:open={modalOpen} 
+/>
 </div>
 
 <!-- Invite Links Modal -->

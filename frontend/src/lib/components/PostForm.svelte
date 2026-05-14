@@ -15,9 +15,16 @@
 		communities?: any[];
 		mode: 'create' | 'edit';
 		defaultCommunityId?: string | null;
+		onSuccess?: () => void;
 	}
 
-	let { post = null, communities = [], mode, defaultCommunityId = null }: Props = $props();
+	let {
+		post = null,
+		communities = [],
+		mode,
+		defaultCommunityId = null,
+		onSuccess
+	}: Props = $props();
 
 	// Form state
 	let formData = $state({
@@ -68,6 +75,7 @@
 					is_anonymous: formData.is_anonymous
 				});
 				toast.success('Post created successfully!');
+				onSuccess?.();
 				goto(`/communities/${formData.community_id}`);
 			} else if (post) {
 				const titlePrefix = formData.is_announcement ? '📢 ANNOUNCEMENT: ' : '';
@@ -76,6 +84,7 @@
 					body: formData.content.trim()
 				});
 				toast.success('Post updated successfully!');
+				onSuccess?.();
 				goto(`/posts/${post.id}`);
 			}
 		} catch (e: any) {
