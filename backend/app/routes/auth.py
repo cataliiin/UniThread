@@ -60,7 +60,7 @@ async def register_user(
         password_hash=hashed_password,
         university_id=university.id,
         verification_token=verification_token,
-        is_verified=False,
+        is_verified=True,  # TODO: Task #48 - set to False once email verification is live
     )
     db.add(new_user)
     await db.commit()

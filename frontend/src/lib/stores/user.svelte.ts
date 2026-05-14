@@ -178,7 +178,7 @@ function createUserState() {
 			password: password,
 			first_name: nameParam,
 			last_name: surnameParam
-		} as any);
+		});
 
 		name = nameParam;
 		surname = surnameParam;
