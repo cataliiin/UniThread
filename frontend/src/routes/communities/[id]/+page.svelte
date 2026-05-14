@@ -228,6 +228,17 @@
 								{/if}
 							</button>
 						{/if}
+					{:else if (community.user_membership_status === 'approved' || isAdmin || isOwner)}
+						<!-- Create Post Button -->
+						<a
+							href="/posts/new?communityId={community.id}"
+							class="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:brightness-110"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M5 12h14m-7-7v14"/>
+							</svg>
+							Create Post
+						</a>
 					{:else if community.user_membership_status === 'pending'}
 						<div class="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-500">
 							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

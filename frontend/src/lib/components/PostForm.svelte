@@ -14,15 +14,16 @@
 		post?: Post | null;
 		communities?: any[];
 		mode: 'create' | 'edit';
+		defaultCommunityId?: string | null;
 	}
 
-	let { post = null, communities = [], mode }: Props = $props();
+	let { post = null, communities = [], mode, defaultCommunityId = null }: Props = $props();
 
 	// Form state
 	let formData = $state({
 		title: '',
 		content: '',
-		community_id: '',
+		community_id: defaultCommunityId || '',
 		is_anonymous: false,
 		is_announcement: false
 	});
@@ -38,7 +39,8 @@
 			formData.content = post.content;
 			// Since post.community is not an ID but an object (in the feed), we skip it for edit since we can't change it
 		} else if (communities.length > 0 && !formData.community_id) {
-			formData.community_id = communities[0].id; // Default to first
+			// If we have a defaultCommunityId passed, use it, otherwise default to first
+			formData.community_id = defaultCommunityId || communities[0].id;
 		}
 	});
 

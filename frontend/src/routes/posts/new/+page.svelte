@@ -5,10 +5,14 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { user } from '$lib/stores/user.svelte';
 	import { communityState } from '$lib/stores/community.svelte';
+	import { page } from '$app/stores';
 	import PostForm from '$lib/components/PostForm.svelte';
 
 	let communities = $state<any[]>([]);
 	let loading = $state(true);
+
+	// Get default community from URL if present
+	let defaultCommunityId = $derived($page.url.searchParams.get('communityId'));
 
 	onMount(async () => {
 		if (!user.isAuthenticated) {
@@ -45,7 +49,7 @@
 				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
 			</div>
 		{:else}
-			<PostForm mode="create" {communities} />
+			<PostForm mode="create" {communities} {defaultCommunityId} />
 		{/if}
 	</div>
 </div>
