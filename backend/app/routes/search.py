@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import aliased, selectinload
 
 from app.core.dependencies import CurrentUser, DbDep
 from app.core.post_access import build_post_metric_subqueries, to_post_feed_response
@@ -59,6 +59,8 @@ async def global_search(
 
     # 2. Search Communities
     if search_type is None or search_type == "communities":
+        current_user_member = aliased(CommunityMember)
+
         count_subq = (
             select(func.count(CommunityMember.user_id))
             .where(
@@ -69,23 +71,27 @@ async def global_search(
             .label("member_count")
         )
 
-        status_subq = (
-            select(CommunityMember.status)
-            .where(
-                (CommunityMember.community_id == Community.id)
-                & (CommunityMember.user_id == current_user.id)
-            )
-            .scalar_subquery()
-            .label("user_membership_status")
-        )
-
         comm_stmt = (
-            select(Community, count_subq, status_subq)
+            select(
+                Community,
+                count_subq,
+                current_user_member.status.label("user_membership_status"),
+            )
+            .outerjoin(
+                current_user_member,
+                (current_user_member.community_id == Community.id)
+                & (current_user_member.user_id == current_user.id),
+            )
             .where(
                 (Community.university_id == current_user.university_id)
                 & (
                     (Community.name.ilike(search_term, escape="\\"))
                     | (Community.description.ilike(search_term, escape="\\"))
+                )
+                & (
+                    (Community.type != CommunityType.invite)
+                    | (Community.owner_id == current_user.id)
+                    | (current_user_member.status == MemberStatus.approved)
                 )
             )
             .limit(actual_limit)
