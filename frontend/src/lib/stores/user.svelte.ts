@@ -45,8 +45,12 @@ function createUserState() {
 				username = data.username || '';
 				email = data.email || '';
 				
-				// Fallback name parsing from email (e.g. cezar.mihai.vieru@...)
-				if (email && email.includes('.') && (!name || !surname)) {
+				// Prioritize database fields
+				if (data.first_name || data.last_name) {
+					name = data.first_name || '';
+					surname = data.last_name || '';
+				} else if (email && email.includes('.') && (!name || !surname)) {
+					// Fallback name parsing from email (e.g. cezar.mihai.vieru@...)
 					const parts = email.split('@')[0].split('.');
 					if (parts.length >= 2) {
 						if (!name) name = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
@@ -78,6 +82,7 @@ function createUserState() {
 		if (typeof window !== 'undefined' && isAuthenticated) {
 			const profile = { id, name, surname, username, email, university, memberSince, avatarInitials, avatarUrl };
 			localStorage.setItem('currentUser', JSON.stringify({ ...profile, isAuthenticated: true }));
+			localStorage.setItem('currentUserId', id);
 		}
 	}
 
@@ -103,9 +108,18 @@ function createUserState() {
 			id = me.id;
 			username = me.username;
 			email = me.email;
+
+			// Prioritize database fields from backend
+			const userData = me as any;
+			// Check for both snake_case and camelCase just in case
+			const dbFirstName = userData.first_name || userData.firstName;
+			const dbLastName = userData.last_name || userData.lastName;
 			
-			// Parse name and surname from email if possible (e.g., name.surname@...)
-			if (me.email.includes('.')) {
+			if (dbFirstName || dbLastName) {
+				name = dbFirstName || '';
+				surname = dbLastName || '';
+			} else if (me.email.includes('.')) {
+				// Fallback: Parse name and surname from email if possible
 				const parts = me.email.split('@')[0].split('.');
 				if (parts.length >= 2) {
 					name = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
@@ -118,7 +132,14 @@ function createUserState() {
 			// Fallback for university name if not in schema yet
 			university = 'Transilvania University of Brașov'; 
 			memberSince = new Date(me.created_at).toLocaleString('en-US', { month: 'long', year: 'numeric' });
-			avatarInitials = me.username.substring(0, 2).toUpperCase();
+			
+			// Calculate initials from name/surname if available, else username
+			if (name && surname) {
+				avatarInitials = (name[0] + surname[surname.indexOf(' ') + 1] || surname[0]).toUpperCase();
+			} else {
+				avatarInitials = me.username.substring(0, 2).toUpperCase();
+			}
+			
 			avatarUrl = me.avatar_key;
 			isAuthenticated = true;
 
@@ -143,6 +164,7 @@ function createUserState() {
 		isAuthenticated = false;
 		if (typeof window !== 'undefined') {
 			localStorage.removeItem('currentUser');
+			localStorage.removeItem('currentUserId');
 			localStorage.removeItem('token');
 		}
 	}
@@ -153,8 +175,10 @@ function createUserState() {
 		await AuthService.register({
 			email: emailParam,
 			username: usernameParam,
-			password: password
-		});
+			password: password,
+			first_name: nameParam,
+			last_name: surnameParam
+		} as any);
 
 		name = nameParam;
 		surname = surnameParam;

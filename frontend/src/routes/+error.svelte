@@ -1,55 +1,43 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
 	import ErrorPage from '$lib/components/ErrorPage.svelte';
 
-	// Map status code -> error page configuration
-	const errorConfig: Record<number, { title: string; message: string; actions: Array<{ label: string; href?: string; onClick?: () => void; variant?: 'default' | 'secondary' | 'destructive' | 'ghost' | 'link' }> }> = {
-		404: {
-			title: 'Page Not Found',
-			message: 'Sorry, the page you are looking for does not exist or has been moved. Check the URL or go back to the homepage.',
-			actions: [
-				{ label: 'Back Home', href: '/', variant: 'default' },
-				{ label: 'Go to Login', href: '/login', variant: 'secondary' }
-			]
-		},
-		403: {
-			title: 'Access Forbidden',
-			message: 'You do not have permission to access this resource. Make sure you are logged in with the correct account.',
-			actions: [
-				{ label: 'Login', href: '/login', variant: 'default' },
-				{ label: 'Back Home', href: '/', variant: 'secondary' }
-			]
-		},
-		401: {
-			title: 'Authentication Required',
-			message: 'You need to log in to access this page. Sign in with your account to continue.',
-			actions: [
-				{ label: 'Go to Login', href: '/login', variant: 'default' }
-			]
-		},
-		500: {
-			title: 'Server Error',
-			message: 'Something went wrong on our end. We are working to fix the issue as soon as possible.',
-			actions: [
-				{ label: 'Try Again', onClick: () => window.location.reload(), variant: 'default' },
-				{ label: 'Back Home', href: '/', variant: 'secondary' }
-			]
-		}
-	};
+	let status = $derived($page.status || 500);
+	let message = $derived($page.error?.message || 'An unexpected error occurred');
 
-	let status = $derived($page.status || 404);
-	let config = $derived(errorConfig[status] || errorConfig[404]);
-	let customMessage = $derived($page.error?.message);
+	onMount(() => {
+		// Auto-recovery heartbeat
+		const interval = setInterval(async () => {
+			try {
+				const res = await fetch('http://localhost:8000/health');
+				const data = await res.json();
+				if (res.ok && data.status !== 'down') {
+					window.location.reload();
+				}
+			} catch (err) {
+				// Still offline
+			}
+		}, 5000);
+
+		return () => clearInterval(interval);
+	});
 </script>
 
 <svelte:head>
 	<title>Error {status} | UniThread</title>
 </svelte:head>
 
+<div style="background: #32415f; color: white; padding: 8px; text-align: center; font-size: 12px; font-weight: bold;">
+	UniThread Custom Error Boundary (Status: {status})
+</div>
+
 <ErrorPage
 	{status}
-	title={config.title}
-	message={customMessage || config.message}
-	actions={config.actions}
+	title={status === 503 ? 'Service Unavailable' : 'Server Error'}
+	{message}
+	actions={[
+		{ label: 'Try Again', onClick: () => window.location.reload(), variant: 'default' },
+		{ label: 'Back Home', href: '/', variant: 'secondary' }
+	]}
 />

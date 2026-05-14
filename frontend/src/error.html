@@ -4,27 +4,86 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>Error | UniThread</title>
-		<script src="https://cdn.tailwindcss.com"></script>
+		<style>
+			:root {
+				--background: #0f0f0f;
+				--foreground: #fafafa;
+				--primary: #32415f;
+				--muted: #a1a1aa;
+				--accent: #1a1a1a;
+			}
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+				background-color: var(--background);
+				color: var(--foreground);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				min-height: 100vh;
+				margin: 0;
+				padding: 20px;
+				text-align: center;
+				transition: background-color 0.3s;
+			}
+			.container { max-width: 450px; margin: auto; }
+			.status { font-size: 5.5rem; font-weight: 800; color: var(--primary); margin-bottom: 0.5rem; letter-spacing: -0.05em; }
+			.title { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.1em; }
+			.message { color: var(--muted); line-height: 1.6; margin-bottom: 2.5rem; font-size: 1.1rem; }
+			.actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+			.btn { 
+				padding: 14px 28px; 
+				border-radius: 10px; 
+				font-weight: 600; 
+				text-decoration: none; 
+				cursor: pointer;
+				transition: all 0.2s;
+				border: none;
+				font-size: 0.95rem;
+			}
+			.btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
+			.btn-primary:hover { transform: translateY(-2px); opacity: 0.9; }
+			.btn-secondary { background: var(--accent); color: var(--foreground); }
+			.btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+			/* Theme specific overrides for the fallback page */
+			.theme-midnight { --background: #000000; --primary: #ff0000; --muted: #52525b; --accent: #121212; }
+			.theme-wasteland { --background: #0d0d0d; --primary: #8b3d1f; --muted: #525252; --accent: #242424; }
+			.theme-amethyst { --background: #0f0814; --primary: #c084fc; --muted: #a78bfa; --accent: #1a0f26; }
+			.theme-cyberpunk { --background: #08090a; --primary: #ff003c; --muted: #00ffc288; --accent: #111418; }
+			.theme-cyberpop { --background: #120115; --primary: #ff007f; --muted: #ff007f88; --accent: #6a0dad; }
+			.theme-sakura { --background: #fff5f7; --foreground: #1a1a1a; --primary: #ffb7c5; --muted: #6b7280; --accent: #ffb7c522; }
+			.theme-nordic { --background: #f0f4f8; --foreground: #1e293b; --primary: #a5d7e8; --muted: #94a3b8; --accent: #e2e8f0; }
+			.theme-coffee { --background: #261A15; --primary: #c68642; --muted: #a69c94; --accent: #4A3429; }
+			.theme-light { --background: #ffffff; --foreground: #0a0a0a; --primary: #32415f; --muted: #737373; --accent: #f4f4f5; }
+		</style>
+		<script>
+			try {
+				const theme = localStorage.getItem('theme') || 'dark';
+				document.body.classList.add('theme-' + theme);
+			} catch (e) {}
+
+			// Auto-recovery: Check health every 5 seconds and reload if server is back
+			setInterval(async () => {
+				try {
+					const res = await fetch('http://localhost:8000/health');
+					const data = await res.json();
+					if (res.ok && data.status !== 'down') {
+						location.reload();
+					}
+				} catch (e) {
+					// Still offline
+				}
+			}, 5000);
+		</script>
 	</head>
-	<body class="flex min-h-screen items-center justify-center bg-slate-50 p-5 font-sans text-slate-800">
-		<div class="max-w-md text-center">
-			<div class="mx-auto mb-8 h-44 w-44">
-				<svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-full w-full">
-					<circle cx="100" cy="100" r="80" fill="#FEE2E2" />
-					<circle cx="70" cy="90" r="15" fill="#EF4444" opacity="0.8" />
-					<circle cx="130" cy="90" r="15" fill="#EF4444" opacity="0.8" />
-					<path d="M60 120 Q100 100 140 120" stroke="#DC2626" stroke-width="4" stroke-linecap="round" fill="none" />
-					<path d="M50 70 L60 80 M150 70 L140 80" stroke="#7C3AED" stroke-width="3" stroke-linecap="round" />
-					<circle cx="55" cy="65" r="4" fill="#7C3AED" />
-					<circle cx="145" cy="65" r="4" fill="#7C3AED" />
-				</svg>
-			</div>
-			<div class="mb-2 text-7xl font-bold text-indigo-600 max-sm:text-6xl">500</div>
-			<h1 class="mb-4 text-2xl font-bold text-slate-900 max-sm:text-xl">Server Error</h1>
-			<p class="mb-8 leading-relaxed text-slate-600">Something went wrong on our end. We are working to fix the issue as soon as possible.</p>
-			<div class="flex flex-wrap justify-center gap-3">
-				<a href="/" class="rounded-lg bg-indigo-600 px-6 py-3 font-medium text-white transition-all duration-200 hover:bg-indigo-700">Back Home</a>
-				<button onclick="location.reload()" class="rounded-lg border-2 border-slate-300 px-6 py-3 font-medium text-slate-700 transition-all duration-200 hover:border-slate-400 hover:bg-slate-50">Try Again</button>
+	<body>
+		<div class="container">
+			<div class="status">%sveltekit.status%</div>
+			<h1 class="title">Service Notification</h1>
+			<p class="message">%sveltekit.error.message%</p>
+			<div class="actions">
+				<button class="btn btn-primary" onclick="location.reload()">Try Again</button>
+				<a href="/" class="btn btn-secondary">Back Home</a>
 			</div>
 		</div>
 	</body>

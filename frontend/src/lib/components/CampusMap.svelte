@@ -43,7 +43,7 @@
 			colors.academic = '#3f3f46';
 			colors.administrative = '#ff0000';
 			colors.campus = '#18181b';
-		} else if (theme === 'wasteland') {
+		} else if (theme === 'outpost') {
 			colors.academic = '#a54a26'; // Rust
 			colors.administrative = '#f5c71a'; // Industrial Yellow
 			colors.campus = '#333333'; // Gunmetal

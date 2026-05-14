@@ -35,7 +35,7 @@ const middleware: Middleware = {
             // Notify the user store to reset its in-memory state without a circular import
             window.dispatchEvent(new Event('auth:expired'));
             goto('/login');
-            throw new Error('__AUTH_REDIRECT__');
+            return; // Don't throw to avoid toast error on automatic redirect
         }
 
         let message = `${response.status} ${response.statusText}`;
@@ -66,7 +66,7 @@ const middleware: Middleware = {
 
 export const api = createClient<paths>({
     baseUrl,
-    credentials: 'include', // moved here — the only correct place
+    credentials: 'include',
 });
 
 api.use(middleware);

@@ -3,6 +3,10 @@
 	import { user } from '$lib/stores/user.svelte';
 	import { goto } from '$app/navigation';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { PostsService } from '$lib/api/services';
+	import { communityState } from '$lib/stores/community.svelte';
+	import { Trash2, Megaphone } from 'lucide-svelte';
+	import ConfirmDialog from './ConfirmDialog.svelte';
 	let {
 		post,
 		isFullView = false,
@@ -14,6 +18,8 @@
 		showCommunity?: boolean;
 		onToggleLike?: (id: string | number) => void;
 	} = $props();
+
+	let confirmDeleteOpen = $state(false);
 
 	function formatTimeAgo(dateString: string): string {
 		const date = new Date(dateString);
@@ -46,6 +52,39 @@
 		}
 		goto(`/posts/${post.id}/edit`);
 	}
+
+	function handleDeleteClick(e: Event) {
+		e.preventDefault();
+		e.stopPropagation();
+		confirmDeleteOpen = true;
+	}
+
+	async function confirmDeletePost() {
+		try {
+			await PostsService.deletePost(post.id.toString());
+			toast.success('Post deleted successfully');
+			// In a real app, we'd trigger a refresh or remove from store
+			// For now, let's just refresh the page or goto community
+			if (isFullView) {
+				goto(`/communities/${post.communityId || ''}`);
+			} else {
+				window.location.reload();
+			}
+		} catch (error: any) {
+			toast.error(error.message || 'Failed to delete post');
+		}
+	}
+
+	const isAnnouncement = $derived(post.title.startsWith('📢 ANNOUNCEMENT: '));
+	const displayTitle = $derived(isAnnouncement ? post.title.replace('📢 ANNOUNCEMENT: ', '') : post.title);
+	
+	// Can delete if: is author OR (is admin/owner of the community and we are in that community context)
+	const canDelete = $derived(
+		(user?.isAuthenticated && user?.id === post.authorId) || 
+		(communityState.currentCommunity?.id === post.communityId && communityState.isAdmin)
+	);
+	
+	const canEdit = $derived(user?.isAuthenticated && user?.id === post.authorId);
 </script>
 
 <article
@@ -110,7 +149,9 @@
 					</button>
 				{/if}
 				
-				<span class="text-sm text-muted-foreground">@{post.authorUsername}</span>
+				{#if post.authorId !== 'anonymous'}
+					<span class="text-sm text-muted-foreground">@{post.authorUsername}</span>
+				{/if}
 
 				{#if showCommunity && post.communityName}
 					<span class="text-sm text-muted-foreground/50">·</span>
@@ -128,7 +169,14 @@
 	</div>
 
 
-	<h1 class="mb-2 font-semibold text-foreground">{post.title}</h1>
+	{#if isAnnouncement}
+		<div class="mb-2 flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary w-fit">
+			<Megaphone class="h-3.5 w-3.5" />
+			ANNOUNCEMENT
+		</div>
+	{/if}
+
+	<h1 class="mb-2 font-semibold text-foreground {isAnnouncement ? 'text-xl' : ''}">{displayTitle}</h1>
 
 	<!-- Content -->
 	<p
@@ -181,7 +229,7 @@
 			>
 			<span>{post.comments}</span>
 		</div>
-		{#if user?.isAuthenticated && user?.id === post.authorId}
+		{#if canEdit}
 			<button
 				class="flex items-center gap-1.5 text-sm text-muted-foreground transition-all duration-300 hover:text-primary"
 				onclick={handleEditClick}
@@ -202,5 +250,24 @@
 				<span>Edit</span>
 			</button>
 		{/if}
+
+		{#if canDelete}
+			<button
+				class="flex items-center gap-1.5 text-sm text-muted-foreground transition-all duration-300 hover:text-destructive"
+				onclick={handleDeleteClick}
+			>
+				<Trash2 class="h-4.5 w-4.5" />
+				<span>Delete</span>
+			</button>
+		{/if}
 	</div>
 {/snippet}
+
+<ConfirmDialog
+	bind:open={confirmDeleteOpen}
+	title="Delete Post"
+	description="Are you sure you want to delete this post? This action cannot be undone."
+	confirmText="Delete"
+	variant="destructive"
+	onConfirm={confirmDeletePost}
+/>

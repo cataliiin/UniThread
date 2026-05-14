@@ -106,11 +106,11 @@
 		} catch (error: any) {
 			let errorMessage = error.message || 'An error occurred during registration.';
 			
-			// Handle 409 Conflict (email already exists) with a more suggestive message
-			if (errorMessage.includes('409') || errorMessage.toLowerCase().includes('conflict') || 
-				errorMessage.toLowerCase().includes('already exists') || 
-				errorMessage.toLowerCase().includes('email')) {
-				errorMessage = 'This email is already registered. Try logging in instead, or use a different email address.';
+			// Handle specific status codes if available
+			if (errorMessage.includes('409')) {
+				errorMessage = 'This email or username is already registered. Try logging in instead.';
+			} else if (errorMessage.includes('404')) {
+				errorMessage = 'Your university email domain is not registered in our system yet.';
 			}
 			
 			toasts.show(errorMessage, 'error');
@@ -122,7 +122,7 @@
 
 <div class="mb-8 flex flex-col items-center">
 	<div
-		class="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40"
+		class="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-card border border-border p-2 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40"
 	>
 		<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
 	</div>

@@ -11,6 +11,7 @@
 	import { CommunityAdminService, StorageService } from '$lib/api/services';
 	import { api } from '$lib/api/client';
 	import type { Community } from '$lib/types/community';
+	import { getAuthorDisplayName } from '$lib/utils/user';
 
 	let { data }: { data: PageData } = $props();
 
@@ -23,15 +24,16 @@
 	let selectedCommunity = $state<string | null>(null);
 	
 	let displayName = $derived.by(() => {
-		if (targetUser.username.includes('.')) {
-			return targetUser.username.split('.')
-				.map(part => part.charAt(0).toUpperCase() + part.slice(1))
-				.join(' ');
-		}
-		return "@" + targetUser.username;
+		return getAuthorDisplayName(targetUser);
 	});
 
-	let initials = $derived(targetUser.username.substring(0, 2).toUpperCase());
+	let initials = $derived.by(() => {
+		const u = targetUser as any;
+		if (u.first_name && u.last_name) {
+			return (u.first_name[0] + u.last_name[0]).toUpperCase();
+		}
+		return targetUser.username.substring(0, 2).toUpperCase();
+	});
 	let memberSince = $derived(new Date(targetUser.created_at).toLocaleString('en-US', { month: 'long', year: 'numeric' }));
 	let avatarUrl = $derived.by(() => StorageService.getPublicUrl('user-assets', targetUser.avatar_key));
 
@@ -116,9 +118,7 @@
 				<h1 class="m-0 px-2 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
 					{displayName}
 				</h1>
-				{#if displayName !== "@" + targetUser.username && displayName !== targetUser.username}
-					<p class="mt-1 text-sm font-medium text-muted-foreground sm:text-base">@{targetUser.username}</p>
-				{/if}
+				<p class="mt-1 text-sm font-medium text-muted-foreground sm:text-base">@{targetUser.username}</p>
 
 				<!-- Profile Actions -->
 				{#if !isMe}

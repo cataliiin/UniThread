@@ -65,8 +65,8 @@
 		// Initial check
 		checkNotifications();
 
-		// Poll every 5 seconds
-		pollInterval = setInterval(checkNotifications, 5000);
+		// Poll every 60 seconds (Idle Heartbeat)
+		pollInterval = setInterval(checkNotifications, 60000);
 	});
 
 	onDestroy(() => {

@@ -136,6 +136,9 @@
 		ondragleave={handleDragLeave}
 		ondrop={handleDrop}
 		onclick={triggerFileInput}
+		onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && triggerFileInput()}
+		role="button"
+		tabindex="0"
 	>
 		<input 
 			type="file" 
@@ -156,7 +159,13 @@
 		{#each libraryState.folders as folder (folder.id)}
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div class="file-card folder-card" onclick={() => libraryState.enterFolder(folder.id)}>
+			<div 
+				class="file-card folder-card" 
+				onclick={() => libraryState.enterFolder(folder.id)}
+				onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && libraryState.enterFolder(folder.id)}
+				role="button"
+				tabindex="0"
+			>
 				<div class="file-preview">
 					<div class="generic-preview">
 						<Folder size={64} class="folder-icon" />
@@ -243,7 +252,7 @@
 					placeholder="Folder name"
 					class="modal-input"
 					onkeydown={(e) => e.key === 'Enter' && confirmFolderCreate()}
-					autoFocus
+					autofocus
 				/>
 			</div>
 			<div class="modal-footer">

@@ -14,7 +14,7 @@
 				<a
 					href="/"
 					aria-label="Go back"
-					class="flex h-10 w-10 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+					class="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -30,13 +30,13 @@
 						<path d="m15 18-6-6 6-6" />
 					</svg>
 				</a>
-				<h1 class="text-2xl font-bold text-white">Invitations</h1>
+				<h1 class="text-2xl font-bold text-foreground">Invitations</h1>
 			</div>
 
 			<!-- Pending count badge -->
 			{#if invitationsState.pendingCount > 0}
 				<span
-					class="rounded-full bg-indigo-500/20 px-3 py-1 text-sm font-medium text-indigo-400"
+					class="rounded-full bg-primary/20 px-3 py-1 text-sm font-medium text-primary"
 				>
 					{invitationsState.pendingCount} pending
 				</span>
@@ -44,7 +44,7 @@
 		</header>
 
 	<!-- Invitations List -->
-	<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 shadow-xl backdrop-blur-sm">
+	<div class="rounded-2xl border border-border bg-card/50 p-6 shadow-xl backdrop-blur-sm">
 		<InvitationsList />
 	</div>
 </div>

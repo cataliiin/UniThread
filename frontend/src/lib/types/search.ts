@@ -10,7 +10,8 @@ export interface UserResult {
 	name: string;
 	username: string;
 	avatarInitials: string;
-	avatarUrl?: string;
+	avatar?: string;
+	avatarUrl?: string; // Keep for compatibility if needed
 	memberSince: string;
 	followers: number;
 }
@@ -24,6 +25,7 @@ export interface CommunityResult {
 	isJoined: boolean;
 	isPending?: boolean;
 	type?: string;
+	icon?: string;
 	university: string;
 }
 
@@ -32,6 +34,7 @@ export interface PostResult {
 	authorId: string | number;
 	authorName: string;
 	authorUsername: string;
+	authorAvatar?: string;
 	content: string;
 	createdAt: string;
 	likes: number;

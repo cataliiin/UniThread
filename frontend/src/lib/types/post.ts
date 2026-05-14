@@ -18,6 +18,8 @@ export interface Post {
 
 export type SortOption = 'new' | 'top';
 
+export type FeedType = 'global' | 'personalized';
+
 export interface PostsState {
 	posts: Post[];
 	sort: SortOption;

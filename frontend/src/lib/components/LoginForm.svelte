@@ -5,11 +5,12 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { Loader2, AlertCircle } from '@lucide/svelte';
+	import { Loader2, AlertCircle, Eye, EyeOff } from '@lucide/svelte';
 	import logo from '$lib/assets/UniThread_Logo.svg';
 
 	let email = $state('');
 	let password = $state('');
+	let showPassword = $state(false);
 	let isSubmitting = $state(false);
 	let touched = $state({ email: false, password: false });
 
@@ -62,7 +63,7 @@
 
 <div class="mb-8 flex flex-col items-center">
 	<div
-		class="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40"
+		class="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-card border border-border p-2 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40"
 	>
 		<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
 	</div>
@@ -93,14 +94,27 @@
 	<!-- Password -->
 	<div class="space-y-2">
 		<Label for="login-password" class="text-muted-foreground">Password</Label>
-		<Input
-			type="password"
-			id="login-password"
-			bind:value={password}
-			onblur={() => (touched.password = true)}
-			class="transition-all duration-300 {passwordError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
-			placeholder="••••••••"
-		/>
+		<div class="relative">
+			<Input
+				type={showPassword ? 'text' : 'password'}
+				id="login-password"
+				bind:value={password}
+				onblur={() => (touched.password = true)}
+				class="pr-10 transition-all duration-300 {passwordError ? 'border-destructive focus-visible:ring-destructive/20' : ''}"
+				placeholder="Enter your password"
+			/>
+			<button
+				type="button"
+				onclick={() => (showPassword = !showPassword)}
+				class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors duration-300 hover:text-foreground"
+			>
+				{#if showPassword}
+					<EyeOff class="h-5 w-5" />
+				{:else}
+					<Eye class="h-5 w-5" />
+				{/if}
+			</button>
+		</div>
 		{#if passwordError}
 			<p class="flex items-center gap-1 text-xs text-destructive">
 				<AlertCircle class="h-3.5 w-3.5 shrink-0" />

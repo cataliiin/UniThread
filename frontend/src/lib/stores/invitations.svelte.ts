@@ -3,6 +3,7 @@ import { toasts } from './toast.svelte';
 import { InvitationsService } from '$lib/api/services/InvitationsService';
 import { CommunitiesService } from '$lib/api/services/CommunitiesService';
 import { UsersService } from '$lib/api/services/UsersService';
+import { getAuthorDisplayName } from '$lib/utils/user';
 
 function createInvitationsState() {
 	let invitations = $state<Invitation[]>([]);
@@ -28,12 +29,17 @@ function createInvitationsState() {
 							UsersService.getUserProfile(invite.invited_by).catch(() => null)
 						]);
 
+						const inviterName = getAuthorDisplayName(inviter);
+						const inviterDisplay = inviter && inviterName !== inviter.username 
+							? `${inviterName} @${inviter.username}`
+							: inviterName;
+
 						return {
 							id: invite.id,
 							community_id: invite.community_id,
 							community_name: community?.name || `Community (${invite.community_id.substring(0, 4)})`,
 							invited_by: invite.invited_by,
-							inviter_name: inviter ? `${inviter.username}` : `User ${invite.invited_by.substring(0, 4)}`,
+							inviter_name: inviterDisplay,
 							status: invite.status as 'pending' | 'accepted' | 'declined',
 							created_at: invite.created_at
 						};
