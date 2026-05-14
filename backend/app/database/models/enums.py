@@ -17,3 +17,13 @@ class InvitationStatus(str, enum.Enum):
     pending = "pending"  # invitation sent, user has not responded
     accepted = "accepted"  # user accepted → inserted as approved member
     declined = "declined"  # user declined
+
+
+class MarketplaceCategory(str, enum.Enum):
+    electronics = "electronics"
+    clothing = "clothing"
+    books = "books"
+    furniture = "furniture"
+    housing = "housing"
+    services = "services"
+    other = "other"

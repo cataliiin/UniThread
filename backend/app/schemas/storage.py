@@ -6,6 +6,7 @@ class BucketName(str, Enum):
     user_assets = "user-assets"
     community_assets = "community-assets"
     post_assets = "post-assets"
+    marketplace_assets = "marketplace-assets"
 
 
 class PresignedUrlRequest(BaseModel):

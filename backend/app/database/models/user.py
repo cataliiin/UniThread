@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -10,6 +10,8 @@ from app.database.models.base import Base
 
 if TYPE_CHECKING:
     from app.database.models.comment import Comment
+    from app.database.models.marketplace import MarketplaceFavorite, MarketplaceListing
+    from app.database.models.messaging import Message, UserRelationship
     from app.database.models.university import University
     from app.database.models.community import (
         Community,
@@ -50,6 +52,18 @@ class User(Base):
         server_default=func.now(),
         nullable=False,
     )
+    is_verified: Mapped[bool] = mapped_column(
+        Boolean, server_default=text("false"), default=False, nullable=False
+    )
+    verification_token: Mapped[str | None] = mapped_column(
+        String(100), unique=True, nullable=True
+    )
+    reset_token: Mapped[str | None] = mapped_column(
+        String(100), unique=True, nullable=True
+    )
+    reset_token_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # --- relationships ---
     university: Mapped["University"] = relationship(
@@ -63,6 +77,42 @@ class User(Base):
     )
     posts: Mapped[list["Post"]] = relationship(
         "Post", back_populates="author", foreign_keys="Post.author_id"
+    )
+    marketplace_listings: Mapped[list["MarketplaceListing"]] = relationship(
+        "MarketplaceListing",
+        back_populates="author",
+        cascade="all, delete-orphan",
+        foreign_keys="MarketplaceListing.author_id",
+    )
+    marketplace_favorites: Mapped[list["MarketplaceFavorite"]] = relationship(
+        "MarketplaceFavorite",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="MarketplaceFavorite.user_id",
+    )
+    sent_messages: Mapped[list["Message"]] = relationship(
+        "Message",
+        back_populates="sender",
+        cascade="all, delete-orphan",
+        foreign_keys="Message.sender_id",
+    )
+    received_messages: Mapped[list["Message"]] = relationship(
+        "Message",
+        back_populates="recipient",
+        cascade="all, delete-orphan",
+        foreign_keys="Message.recipient_id",
+    )
+    outgoing_relationships: Mapped[list["UserRelationship"]] = relationship(
+        "UserRelationship",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="UserRelationship.user_id",
+    )
+    incoming_relationships: Mapped[list["UserRelationship"]] = relationship(
+        "UserRelationship",
+        back_populates="target_user",
+        cascade="all, delete-orphan",
+        foreign_keys="UserRelationship.target_user_id",
     )
     comments: Mapped[list["Comment"]] = relationship(
         "Comment", back_populates="author", foreign_keys="Comment.author_id"

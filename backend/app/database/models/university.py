@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.models.base import Base
 
 if TYPE_CHECKING:
+    from app.database.models.marketplace import MarketplaceListing
     from app.database.models.user import User
     from app.database.models.community import Community
 
@@ -30,6 +31,9 @@ class University(Base):
     users: Mapped[list["User"]] = relationship("User", back_populates="university")
     communities: Mapped[list["Community"]] = relationship(
         "Community", back_populates="university"
+    )
+    marketplace_listings: Mapped[list["MarketplaceListing"]] = relationship(
+        "MarketplaceListing", back_populates="university", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:

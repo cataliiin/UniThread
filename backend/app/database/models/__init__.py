@@ -1,5 +1,10 @@
 from app.database.models.base import Base
-from app.database.models.enums import CommunityType, InvitationStatus, MemberStatus
+from app.database.models.enums import (
+    CommunityType,
+    InvitationStatus,
+    MarketplaceCategory,
+    MemberStatus,
+)
 from app.database.models.university import University
 from app.database.models.user import User
 from app.database.models.community import (
@@ -11,6 +16,8 @@ from app.database.models.community import (
     CommunityMember,
 )
 from app.database.models.post import Post
+from app.database.models.marketplace import MarketplaceFavorite, MarketplaceListing
+from app.database.models.messaging import Message, UserRelationship
 from app.database.models.comment import Comment
 from app.database.models.vote import Vote
 
@@ -19,6 +26,7 @@ __all__ = [
     "CommunityType",
     "MemberStatus",
     "InvitationStatus",
+    "MarketplaceCategory",
     "University",
     "User",
     "Community",
@@ -28,6 +36,10 @@ __all__ = [
     "CommunityJoinQuestion",
     "CommunityJoinAnswer",
     "Post",
+    "MarketplaceListing",
+    "MarketplaceFavorite",
+    "Message",
+    "UserRelationship",
     "Comment",
     "Vote",
 ]
