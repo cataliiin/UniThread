@@ -181,13 +181,12 @@
 				<div class="mb-2 min-w-0 flex-1">
 					<div class="flex flex-wrap items-center gap-2">
 						<h1 class="text-2xl font-bold text-foreground">{community.name}</h1>
-						<span class="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground capitalize">
-							{community.type}
-						</span>
 						{#if isOwner}
 							<span class="rounded-full bg-indigo-500/20 px-3 py-1 text-xs font-semibold text-indigo-400">Owner</span>
 						{:else if isAdmin}
 							<span class="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-400">Admin</span>
+						{:else if userRole === 'member'}
+							<span class="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-400">Member</span>
 						{/if}
 					</div>
 					<p class="mt-1 text-sm text-muted-foreground">{community.member_count} members</p>
