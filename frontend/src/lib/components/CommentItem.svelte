@@ -32,7 +32,7 @@
 	// We could also check if user is community admin here if we pass community context
 </script>
 
-<div class="group flex gap-3 py-4 border-b border-border/40 last:border-0">
+<div class="group flex gap-3 px-3 py-4 border-b border-border/40 last:border-0 transition-all duration-300 {isAuthor ? 'bg-primary/5 rounded-xl border-none my-1 shadow-sm' : ''}">
 	<!-- Avatar -->
 	<button 
 		class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/5 font-semibold text-primary/70 transition-all duration-300 hover:bg-primary/10"

@@ -86,12 +86,15 @@
 	);
 	
 	const canEdit = $derived(user?.isAuthenticated && user?.id === post.author?.id);
+	const isAuthor = $derived(user?.isAuthenticated && user?.id === post.author?.id);
 </script>
 
 <article
-	class="group rounded-2xl border border-border bg-card p-5 shadow-sm transition-all duration-300 {isFullView
+	class="group rounded-2xl border p-5 shadow-sm transition-all duration-300 {isFullView
 		? ''
-		: 'hover:border-primary/30 hover:shadow-[0_0_20px_rgba(50,65,95,0.1)]'}"
+		: 'hover:shadow-[0_0_20px_rgba(50,65,95,0.1)]'} {isAuthor 
+			? 'bg-primary/5 border-primary/20 shadow-primary/5' 
+			: 'bg-card border-border hover:border-primary/30'}"
 >
 	{#if isFullView}
 		<div class="block">
