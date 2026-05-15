@@ -100,7 +100,7 @@
 
 <div class="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4 sm:p-6">
 	<Card.Root
-		class="relative flex w-full max-w-[440px] flex-col overflow-hidden rounded-2xl border-border bg-card/95 shadow-[0_0_40px_rgba(50,65,95,0.15)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_0_50px_rgba(50,65,95,0.25)]"
+		class="relative flex w-full max-w-[440px] sm:max-w-2xl flex-col overflow-hidden rounded-2xl border-border bg-card/95 shadow-[0_0_40px_rgba(50,65,95,0.15)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_0_50px_rgba(50,65,95,0.25)]"
 	>
 		<div class="custom-scrollbar overflow-y-auto pt-8 pb-6 px-6">
 			<div class="mb-6 text-center sm:mb-8">

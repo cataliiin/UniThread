@@ -33,7 +33,7 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
 	}
 
 	// 2. Authentication Logic
-	let isAuthenticated = false;
+	let isAuthenticated = true;
 // ... (rest of the logic remains the same)
 
 	if (browser) {

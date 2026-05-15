@@ -17,7 +17,7 @@
 
 <div class="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4 sm:p-6">
 	<Card.Root
-		class="relative flex max-h-[90vh] w-full max-w-[440px] flex-col overflow-hidden rounded-2xl border-border bg-card/95 shadow-[0_0_40px_rgba(50,65,95,0.15)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_0_50px_rgba(50,65,95,0.25)]"
+		class="relative flex max-h-[90vh] w-full max-w-[440px] sm:max-w-2xl flex-col overflow-hidden rounded-2xl border-border bg-card/95 shadow-[0_0_40px_rgba(50,65,95,0.15)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_0_50px_rgba(50,65,95,0.25)]"
 	>
 		<div class="custom-scrollbar overflow-y-auto pt-4 pr-2">
 			<div class="mb-6 text-center sm:mb-8">
@@ -149,7 +149,7 @@
 						<span class="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">Appearance</span>
 					</div>
 					
-					<div class="grid grid-cols-5 gap-4 sm:gap-6">
+					<div class="grid grid-cols-5 gap-4 sm:grid-cols-10 sm:gap-6">
 						{#each [
 							{ id: 'dark', label: 'Dark', color: 'bg-[#0f0f0f]' },
 							{ id: 'light', label: 'Light', color: 'bg-white border' },
