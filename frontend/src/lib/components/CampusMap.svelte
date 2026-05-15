@@ -12,6 +12,7 @@
 	import MapMarker from './map/MapMarker.svelte';
 
 	import { themeState } from '$lib/stores/theme.svelte';
+	import { ExternalService } from '$lib/api/services';
 
 	let mapContainer: HTMLDivElement;
 	let map: any = $state(null);
@@ -275,12 +276,10 @@
 			return;
 		}
 
-		const start = [userLocation.lng, userLocation.lat];
-		const end = [selectedBuilding.lng, selectedBuilding.lat];
-		const url = `https://router.project-osrm.org/route/v1/walking/${start[0]},${start[1]};${end[0]},${end[1]}?overview=full&geometries=geojson`;
+		const start = [userLocation.lng, userLocation.lat] as [number, number];
+		const end = [selectedBuilding.lng, selectedBuilding.lat] as [number, number];
 
-		fetch(url)
-			.then((res) => res.json())
+		ExternalService.getWalkingRoute(start, end)
 			.then((data) => {
 				if (data.routes && data.routes.length > 0) {
 					if (routeLayer) map.removeLayer(routeLayer);

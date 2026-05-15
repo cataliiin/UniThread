@@ -286,4 +286,22 @@ export const CommunityAdminService = {
 		);
 		return requireData(data);
 	},
+
+	async kickMember(
+		communityIdOrParams: string | { communityId: string; userId: string },
+		userId?: string
+	): Promise<void> {
+		const communityId =
+			typeof communityIdOrParams === 'string'
+				? communityIdOrParams
+				: communityIdOrParams.communityId;
+		const resolvedUserId =
+			typeof communityIdOrParams === 'string' ? userId : communityIdOrParams.userId;
+		if (!resolvedUserId) {
+			throw new Error('userId is required');
+		}
+		await api.DELETE('/api/v1/communities/{community_id}/members/{user_id}', {
+			params: { path: { community_id: communityId, user_id: resolvedUserId } }
+		});
+	}
 };

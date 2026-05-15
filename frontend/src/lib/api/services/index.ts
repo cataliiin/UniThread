@@ -10,3 +10,4 @@ export { StorageService } from './StorageService';
 export { UniversitiesService } from './UniversitiesService';
 export { UsersService } from './UsersService';
 export { CommentsService } from './CommentsService';
+export { ExternalService } from './ExternalService';

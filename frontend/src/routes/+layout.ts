@@ -1,26 +1,17 @@
 import { redirect, error } from '@sveltejs/kit';
 import { browser } from '$app/environment';
 import type { LayoutLoad } from './$types';
+import { HealthService } from '$lib/api/services';
 
 export const ssr = false;
 
-export const load: LayoutLoad = async ({ url, fetch }) => {
+export const load: LayoutLoad = async ({ url }) => {
 	// Ensure this re-runs on every navigation
 	url.pathname;
 
 	// 1. Health Check
 	try {
-		// We use a short timeout for the health check to avoid blocking the page load too long
-		// The fetch provided by SvelteKit is optimized for both server and client side
-		const healthRes = await fetch('http://localhost:8000/health');
-
-		if (!healthRes.ok) {
-			throw error(503, {
-				message: 'The server is responding with an error. Please try again later.'
-			});
-		}
-
-		const healthData = await healthRes.json();
+		const healthData = await HealthService.getHealth();
 		
 		if (healthData.status === 'down') {
 			throw error(503, {

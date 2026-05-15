@@ -163,6 +163,43 @@ async def list_communities(
     )
 
 
+@router.get("/me", response_model=list[CommunityResponse])
+async def list_my_communities(current_user: CurrentUser, db: DbDep):
+    """
+    List communities where the current user is an approved member.
+    """
+    count_subq = (
+        select(func.count(CommunityMember.user_id))
+        .where(
+            (CommunityMember.community_id == Community.id)
+            & (CommunityMember.status == MemberStatus.approved)
+        )
+        .scalar_subquery()
+        .label("member_count")
+    )
+
+    stmt = (
+        select(Community, count_subq)
+        .join(CommunityMember, CommunityMember.community_id == Community.id)
+        .where(
+            (CommunityMember.user_id == current_user.id)
+            & (CommunityMember.status == MemberStatus.approved)
+        )
+        .order_by(Community.name.asc())
+    )
+
+    rows = (await db.execute(stmt)).all()
+
+    items = []
+    for comm, member_count in rows:
+        c_resp = CommunityResponse.model_validate(comm)
+        c_resp.member_count = member_count or 0
+        c_resp.user_membership_status = MemberStatus.approved
+        items.append(c_resp)
+
+    return items
+
+
 @router.get("/{community_id}", response_model=CommunityResponse)
 async def get_community(community_id: UUID, current_user: CurrentUser, db: DbDep):
     """

@@ -9,6 +9,7 @@
 	import { themeState } from '$lib/stores/theme.svelte';
 	import NotificationListener from '$lib/components/NotificationListener.svelte';
 	import logo from '$lib/assets/UniThread_Logo.svg';
+	import { HealthService } from '$lib/api/services';
 
 	let { children } = $props();
 
@@ -21,10 +22,9 @@
 		// Check health every 60 seconds in the background (Idle Heartbeat)
 		const interval = setInterval(async () => {
 			try {
-				const res = await fetch('http://localhost:8000/health');
-				const data = await res.json();
+				const data = await HealthService.getHealth();
 
-				if (!res.ok || data.status === 'down') {
+				if (data.status === 'down') {
 					invalidateAll();
 				}
 			} catch (err) {

@@ -12,14 +12,11 @@ import { toasts } from './toast.svelte';
 import { CommunitiesService, CommunityAdminService } from '$lib/api/services';
 import { StorageService } from '$lib/api/services';
 import type { components } from '$lib/api/openapi-generated-schema';
-import { api } from '$lib/api/client';
 import { user } from './user.svelte';
 import type { CommunityRole } from '$lib/types/community';
 
 type CommunityType = components['schemas']['CommunityType'];
 type BucketName = components['schemas']['BucketName'];
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 function createCommunityState() {
 	let currentCommunity = $state<Community | null>(null);
@@ -47,12 +44,6 @@ function createCommunityState() {
 	const isAdmin = $derived(userRole === 'owner' || userRole === 'admin');
 	const isOwner = $derived(userRole === 'owner');
 	const isMember = $derived(userRole !== null);
-
-	async function getAuthHeaders(): Promise<Record<string, string>> {
-		if (typeof window === 'undefined') return {};
-		const token = localStorage.getItem('token');
-		return token ? { Authorization: `Bearer ${token}` } : {};
-	}
 
 	async function createCommunity(data: CommunityCreateRequest): Promise<Community | null> {
 		loading = true;
@@ -133,11 +124,7 @@ function createCommunityState() {
 
 	async function getPresignedUrl(): Promise<PresignedUrlResponse | null> {
 		try {
-			const { data } = await api.POST('/api/v1/storage/presigned-url', {
-				body: { bucket_name: 'community-assets' as BucketName }
-			});
-			if (!data) return null;
-			return data;
+			return await StorageService.getPresignedUrl('community-assets' as BucketName);
 		} catch {
 			return null;
 		}
@@ -145,18 +132,7 @@ function createCommunityState() {
 
 	async function uploadFile(file: File, presignedUrl: string, fileKey: string): Promise<boolean> {
 		try {
-			const response = await fetch(presignedUrl, {
-				method: 'PUT',
-				body: file,
-				headers: {
-					'Content-Type': file.type
-				}
-			});
-
-			if (!response.ok) {
-				throw new Error('Upload failed');
-			}
-
+			await StorageService.uploadToPresignedUrl(presignedUrl, file);
 			return true;
 		} catch (error) {
 			toasts.show('Failed to upload image', 'error');
@@ -167,33 +143,12 @@ function createCommunityState() {
 	async function fetchMyCommunities(): Promise<Community[]> {
 		loading = true;
 		try {
-			// Try the dedicated endpoint first
-			const response = await fetch(`${API_BASE}/communities/me`, {
-				headers: await getAuthHeaders()
-			});
-			
-			if (response.ok) {
-				const data: Community[] = await response.json();
-				myCommunities = data;
-				return data;
-			}
-			
-			// If not available, fallback to listing all and filtering
-			const allCommRes = await CommunitiesService.list(1, 100);
-			const filtered = allCommRes.items
-				.filter(c => c.user_membership_status === 'approved' || c.owner_id === localStorage.getItem('currentUserId'))
-				.map(c => c as Community);
-			
-			myCommunities = filtered;
-			return filtered;
+			const data = await CommunitiesService.listMyCommunities();
+			myCommunities = data as Community[];
+			return myCommunities;
 		} catch (error) {
 			console.error("Failed to fetch my communities:", error);
-			// Final fallback to mock data
-			if (typeof window !== 'undefined') {
-				const all: Community[] = JSON.parse(localStorage.getItem('mock_communities') || '[]');
-				myCommunities = all;
-				return all;
-			}
+			myCommunities = [];
 			return [];
 		} finally {
 			loading = false;
@@ -204,19 +159,10 @@ function createCommunityState() {
 		membersLoading = true;
 		try {
 			// 1. Fetch all approved members
-			const { data: res, error: apiError } = await api.GET('/api/v1/communities/{community_id}/members', {
-				params: {
-					path: { community_id: communityId },
-					query: { page: 1, size: 100 }
-				}
-			});
-
-			if (apiError) throw new Error('Failed to fetch members');
+			const res = await CommunitiesService.listMembers(communityId, 1, 100);
 			
 			// 2. Fetch admins to cross-reference (since UserPublic in members list lacks is_admin)
-			const { data: adminsRes } = await api.GET('/api/v1/communities/{community_id}/admins', {
-				params: { path: { community_id: communityId } }
-			});
+			const adminsRes = await CommunitiesService.listAdmins(communityId);
 			
 			const adminIds = new Set((adminsRes || []).map(a => a.id));
 			const items = (res?.items || []) as CommunityMember[];
@@ -319,27 +265,14 @@ function createCommunityState() {
 
 	async function removeMember(communityId: string, userId: string): Promise<boolean> {
 		try {
-			const response = await fetch(
-				`${API_BASE}/communities/${communityId}/members/${userId}`,
-				{
-					method: 'DELETE',
-					headers: await getAuthHeaders()
-				}
-			);
-			if (!response.ok) throw new Error('Failed to remove member');
+			await CommunityAdminService.kickMember(communityId, userId);
 			toasts.show('Member removed', 'success');
+			
+			// Refresh members list
+			await fetchMembers(communityId);
 			return true;
-		} catch {
-			// Mock: update localStorage
-			if (typeof window !== 'undefined') {
-				const key = `mock_members_${communityId}`;
-				const stored: CommunityMember[] = JSON.parse(localStorage.getItem(key) || '[]');
-				const updated = stored.filter((m) => m.user_id !== userId);
-				localStorage.setItem(key, JSON.stringify(updated));
-				members = updated;
-				toasts.show('Member removed (local mode)', 'success');
-				return true;
-			}
+		} catch (error: any) {
+			toasts.show(error.message || 'Failed to remove member', 'error');
 			return false;
 		}
 	}
@@ -347,10 +280,7 @@ function createCommunityState() {
 	async function fetchJoinRequests(communityId: string) {
 		requestsLoading = true;
 		try {
-			const { data: res } = await api.GET('/api/v1/communities/{community_id}/requests', {
-				params: { path: { community_id: communityId } }
-			});
-			
+			const res = await CommunityAdminService.listJoinRequests(communityId);
 			joinRequests = res || [];
 			return joinRequests;
 		} catch (error) {
@@ -364,9 +294,7 @@ function createCommunityState() {
 
 	async function approveJoinRequest(communityId: string, userId: string) {
 		try {
-			await api.POST('/api/v1/communities/{community_id}/requests/{user_id}/approve', {
-				params: { path: { community_id: communityId, user_id: userId } }
-			});
+			await CommunityAdminService.approveJoinRequest(communityId, userId);
 			
 			toasts.show('Member approved!', 'success');
 			// Refresh requests and member count
@@ -383,9 +311,7 @@ function createCommunityState() {
 
 	async function rejectJoinRequest(communityId: string, userId: string) {
 		try {
-			await api.POST('/api/v1/communities/{community_id}/requests/{user_id}/reject', {
-				params: { path: { community_id: communityId, user_id: userId } }
-			});
+			await CommunityAdminService.rejectJoinRequest(communityId, userId);
 			
 			toasts.show('Request rejected', 'success');
 			await fetchJoinRequests(communityId);

@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import ErrorPage from '$lib/components/ErrorPage.svelte';
+	import { HealthService } from '$lib/api/services';
 
 	let status = $derived($page.status || 500);
 	let message = $derived($page.error?.message || 'An unexpected error occurred');
@@ -10,9 +11,8 @@
 		// Auto-recovery heartbeat
 		const interval = setInterval(async () => {
 			try {
-				const res = await fetch('http://localhost:8000/health');
-				const data = await res.json();
-				if (res.ok && data.status === 'ok') {
+				const data = await HealthService.getHealth();
+				if (data.status === 'ok') {
 					window.location.reload();
 				}
 			} catch (err) {

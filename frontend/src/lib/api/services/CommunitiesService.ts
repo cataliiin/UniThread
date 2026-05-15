@@ -23,6 +23,11 @@ export const CommunitiesService = {
 		return requireData(data);
 	},
 
+	async listMyCommunities(): Promise<CommunityResponse[]> {
+		const { data } = await api.GET('/api/v1/communities/me');
+		return requireData(data);
+	},
+
 	async create(payload: CommunityCreate): Promise<CommunityResponse> {
 		const { data } = await api.POST('/api/v1/communities', { body: payload });
 		return requireData(data);
