@@ -3,7 +3,7 @@
 	import { user } from '$lib/stores/user.svelte';
 	import { goto } from '$app/navigation';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { PostsService } from '$lib/api/services';
+	import { PostsService, StorageService } from '$lib/api/services';
 	import { communityState } from '$lib/stores/community.svelte';
 	import { Trash2, Megaphone } from 'lucide-svelte';
 	import { getAuthorDisplayName } from '$lib/utils/user';
@@ -190,6 +190,17 @@
 	>
 		{post.body}
 	</p>
+
+	{#if post.image_key}
+		<div class="mb-4 overflow-hidden rounded-xl border border-border bg-muted/20">
+			<img
+				src={StorageService.getPublicUrl('post-assets', post.image_key)}
+				alt={post.title}
+				class="max-h-[500px] w-full object-contain"
+				loading="lazy"
+			/>
+		</div>
+	{/if}
 
 	<!-- Actions -->
 	<div class="flex items-center gap-4 border-t border-border/50 pt-3">

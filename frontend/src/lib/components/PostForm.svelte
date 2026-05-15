@@ -5,10 +5,11 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { Label } from '$lib/components/ui/label';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { PostsService } from '$lib/api/services';
+	import { PostsService, StorageService } from '$lib/api/services';
 	import { communityState } from '$lib/stores/community.svelte';
 	import { user } from '$lib/stores/user.svelte';
 	import type { Post } from '$lib/types/post';
+	import ImageUploader from '$lib/components/ImageUploader.svelte';
 
 	interface Props {
 		post?: Post | null;
@@ -32,7 +33,8 @@
 		body: '',
 		community_id: '',
 		is_anonymous: false,
-		is_announcement: false
+		is_announcement: false,
+		image_key: null as string | null
 	});
 
 	// Sync formData with props
@@ -51,6 +53,7 @@
 			formData.title = isAnn ? post.title.replace('📢 ANNOUNCEMENT: ', '') : post.title;
 			formData.is_announcement = isAnn;
 			formData.body = post.body || '';
+			formData.image_key = post.image_key || null;
 			// Since post.community is not an ID but an object (in the feed), we skip it for edit since we can't change it
 		} else if (communities.length > 0 && !formData.community_id) {
 			// If we have a defaultCommunityId passed, use it, otherwise default to first
@@ -79,7 +82,8 @@
 					title: titlePrefix + formData.title.trim(),
 					body: formData.body.trim(),
 					community_id: formData.community_id,
-					is_anonymous: formData.is_anonymous
+					is_anonymous: formData.is_anonymous,
+					image_key: formData.image_key
 				});
 				toast.success('Post created successfully!');
 				onSuccess?.();
@@ -88,7 +92,8 @@
 				const titlePrefix = formData.is_announcement ? '📢 ANNOUNCEMENT: ' : '';
 				const result = await PostsService.updatePost(post.id.toString(), {
 					title: titlePrefix + formData.title.trim(),
-					body: formData.body.trim()
+					body: formData.body.trim(),
+					image_key: formData.image_key
 				});
 				toast.success('Post updated successfully!');
 				onSuccess?.();
@@ -137,6 +142,17 @@
 			rows={12}
 			class="min-h-[300px]"
 			required
+		/>
+	</div>
+
+	<div class="space-y-2">
+		<ImageUploader
+			label="Post Image (Optional)"
+			imageUrl={StorageService.getPublicUrl('post-assets', formData.image_key)}
+			onImageUpload={(key) => (formData.image_key = key)}
+			onImageRemove={() => (formData.image_key = null)}
+			uploadHandler={(file) => StorageService.uploadAsset('post-assets', file).then(res => res.file_key)}
+			aspectRatio="banner"
 		/>
 	</div>
 
