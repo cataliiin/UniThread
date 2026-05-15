@@ -721,4 +721,8 @@
 	html {
 		@apply font-sans;
 	}
+
+	img:not(.no-view) {
+		cursor: zoom-in;
+	}
 }

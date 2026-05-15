@@ -8,6 +8,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { themeState } from '$lib/stores/theme.svelte';
 	import NotificationListener from '$lib/components/NotificationListener.svelte';
+	import PhotoViewer from '$lib/components/PhotoViewer.svelte';
 	import logo from '$lib/assets/UniThread_Logo.svg';
 	import { HealthService } from '$lib/api/services';
 
@@ -71,6 +72,7 @@
 	</div>
 	<ToastContainer />
 	<NotificationListener />
+	<PhotoViewer />
 </div>
 
 <svelte:head>
