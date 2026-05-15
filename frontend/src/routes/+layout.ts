@@ -9,6 +9,7 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
 	// 1. Health Check
 	try {
 		// We use a short timeout for the health check to avoid blocking the page load too long
+		// The fetch provided by SvelteKit is optimized for both server and client side
 		const healthRes = await fetch('http://localhost:8000/health');
 
 		if (!healthRes.ok) {
@@ -18,12 +19,22 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
 		}
 
 		const healthData = await healthRes.json();
+		
 		if (healthData.status === 'down') {
 			throw error(503, {
-				message: 'The system is currently down for maintenance. We will be back soon!'
+				message: 'The database is currently unreachable. The system is down for maintenance.'
 			});
 		}
-	} catch (err) {
+		
+		if (healthData.status === 'degraded') {
+			throw error(503, {
+				message: 'The storage service (MinIO) is currently offline. Some features may be unavailable.'
+			});
+		}
+	} catch (err: any) {
+		// If it's already a SvelteKit error, rethrow it
+		if (err.status && err.body) throw err;
+
 		// If fetch fails completely (backend offline)
 		console.error('DEBUG: Health check failed, throwing 503 error', err);
 		throw error(503, {

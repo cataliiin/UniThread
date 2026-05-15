@@ -12,7 +12,7 @@
 			try {
 				const res = await fetch('http://localhost:8000/health');
 				const data = await res.json();
-				if (res.ok && data.status !== 'down') {
+				if (res.ok && data.status === 'ok') {
 					window.location.reload();
 				}
 			} catch (err) {
