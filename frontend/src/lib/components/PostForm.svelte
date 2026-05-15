@@ -103,7 +103,7 @@
 </script>
 
 <form onsubmit={handleSubmit} class="space-y-6">
-	{#if mode === 'create'}
+	{#if mode === 'create' && !defaultCommunityId}
 		<div class="space-y-2">
 			<Label for="community">Community</Label>
 			<select
@@ -141,7 +141,7 @@
 
 	<div class="flex flex-col gap-4">
 		{#if mode === 'create'}
-			{@const selectedCommunity = communities.find((c) => c.id === formData.community_id)}
+			{@const selectedCommunity = communities.find((c) => c.id === formData.community_id) || (communityState.currentCommunity?.id === formData.community_id ? communityState.currentCommunity : null)}
 			{#if selectedCommunity?.allow_anonymous}
 				<div class="flex items-center space-x-2">
 					<input
@@ -191,10 +191,10 @@
 	</div>
 
 	<div class="flex justify-end space-x-4 border-t pt-4">
-		<Button variant="outline" type="button" onclick={() => history.back()}>Cancel</Button>
+		<Button variant="outline" type="button" onclick={() => onSuccess ? onSuccess() : history.back()}>Cancel</Button>
 		<Button
 			type="submit"
-			disabled={isSubmitting || (mode === 'create' && communities.length === 0)}
+			disabled={isSubmitting || (mode === 'create' && communities.length === 0 && !defaultCommunityId)}
 		>
 			{isSubmitting
 				? mode === 'create'

@@ -108,8 +108,9 @@
 
 	onMount(async () => {
 		if (community) {
-			await communityState.fetchCommunity(community.id);
-			await communityState.fetchMembers(community.id);
+			communityState.fetchCommunity(community.id);
+			communityState.fetchMembers(community.id);
+			communityState.fetchMyCommunities(); // Populate myCommunities for the modal
 			if (communityState.isAdmin) {
 				communityState.fetchJoinRequests(community.id);
 			}
