@@ -17,29 +17,13 @@
 
 	function mapPost(p: any): Post {
 		return {
-			id: p.id,
-			title: p.title,
-			authorId: p.author?.id || 'anonymous',
-			authorName: getAuthorDisplayName(p.author),
-			authorSurname: '',
-			authorUsername: p.author?.username || 'anonymous',
-			authorAvatar: StorageService.getPublicUrl('user-assets', p.author?.avatar_key ?? null) || undefined,
-			content: p.body || p.title,
-			createdAt: p.created_at,
-			likes: p.score,
-			comments: p.comment_count,
+			...p,
 			liked: p.user_vote === 1,
-			university: p.community?.name || 'Global',
-			communityId: p.community?.id,
-			communityName: p.community?.name
-		};
+			university: p.community?.name || 'Global'
+		} as Post;
 	}
 
 	let post = $state<Post>(mapPost(data.post));
-
-	$effect(() => {
-		post = mapPost(data.post);
-	});
 
 	let comments = $state<CommentResponse[]>([]);
 	let commentsLoading = $state(true);
@@ -58,7 +42,7 @@
 		commentsLoading = true;
 		try {
 			comments = await CommentsService.listComments(post.id.toString());
-			post.comments = comments.length;
+			post.comment_count = comments.length;
 		} catch (e) {
 			console.error('Failed to load comments:', e);
 			toast.error('Could not load comments.');
@@ -80,7 +64,7 @@
 				body: newCommentBody.trim()
 			});
 			comments = [...comments, newComment];
-			post.comments = comments.length;
+			post.comment_count = comments.length;
 			newCommentBody = '';
 			toast.success('Comment added!');
 		} catch (e: any) {
@@ -102,7 +86,7 @@
 		try {
 			await CommentsService.deleteComment(post.id.toString(), commentToDelete);
 			comments = comments.filter((c) => c.id !== commentToDelete);
-			post.comments = comments.length;
+			post.comment_count = comments.length;
 			toast.success('Comment deleted.');
 		} catch (e) {
 			console.error('Failed to delete comment:', e);
@@ -116,16 +100,18 @@
 		const newValue = post.liked ? 0 : 1;
 
 		// Optimistic update
-		post.liked = !post.liked;
-		post.likes = post.liked ? post.likes + 1 : post.likes - 1;
+		const isCurrentlyLiked = post.liked;
+		post.liked = !isCurrentlyLiked;
+		post.score = isCurrentlyLiked ? post.score - 1 : post.score + 1;
 
 		try {
 			await PostsService.votePost(id.toString(), newValue);
 		} catch (e) {
 			console.error('Failed to vote:', e);
 			// Revert on failure
-			post.liked = !post.liked;
-			post.likes = post.liked ? post.likes + 1 : post.likes - 1;
+			const isCurrentlyLikedNow = post.liked;
+			post.liked = !isCurrentlyLikedNow;
+			post.score = isCurrentlyLikedNow ? post.score - 1 : post.score + 1;
 			toast.error('Failed to vote on post.');
 		}
 	}
@@ -164,7 +150,7 @@
 				<h3 class="text-lg font-bold text-card-foreground flex items-center gap-2">
 					Comments
 					<span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-						{post.comments}
+						{post.comment_count}
 					</span>
 				</h3>
 			</div>

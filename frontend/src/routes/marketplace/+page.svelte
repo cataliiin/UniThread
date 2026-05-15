@@ -54,8 +54,8 @@
 		try {
 			await marketplace.createListing(data);
 			toast.success('Listing created successfully!');
-		} catch (e: any) {
-			toast.error(e.message || 'Failed to create listing');
+		} catch (e) {
+			toast.error((e as Error).message || 'Failed to create listing');
 		}
 	}
 
@@ -214,7 +214,7 @@
 				>
 					<option value="">All</option>
 					{#each allCategories as cat}
-						<option value={cat === 'mentoring' ? 'housing' : cat}>
+						<option value={cat}>
 							{categoryIcons[cat]}
 							{categoryLabels[cat]}
 						</option>

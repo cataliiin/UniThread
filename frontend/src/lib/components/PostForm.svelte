@@ -29,7 +29,7 @@
 	// Form state
 	let formData = $state({
 		title: '',
-		content: '',
+		body: '',
 		community_id: '',
 		is_anonymous: false,
 		is_announcement: false
@@ -50,7 +50,7 @@
 			const isAnn = post.title.startsWith('📢 ANNOUNCEMENT: ');
 			formData.title = isAnn ? post.title.replace('📢 ANNOUNCEMENT: ', '') : post.title;
 			formData.is_announcement = isAnn;
-			formData.content = post.content;
+			formData.body = post.body || '';
 			// Since post.community is not an ID but an object (in the feed), we skip it for edit since we can't change it
 		} else if (communities.length > 0 && !formData.community_id) {
 			// If we have a defaultCommunityId passed, use it, otherwise default to first
@@ -63,7 +63,7 @@
 
 		if (
 			!formData.title.trim() ||
-			!formData.content.trim() ||
+			!formData.body.trim() ||
 			(mode === 'create' && !formData.community_id)
 		) {
 			toast.error('Title, content, and community are required.');
@@ -77,7 +77,7 @@
 				const titlePrefix = formData.is_announcement ? '📢 ANNOUNCEMENT: ' : '';
 				const result = await PostsService.createPost({
 					title: titlePrefix + formData.title.trim(),
-					body: formData.content.trim(),
+					body: formData.body.trim(),
 					community_id: formData.community_id,
 					is_anonymous: formData.is_anonymous
 				});
@@ -88,7 +88,7 @@
 				const titlePrefix = formData.is_announcement ? '📢 ANNOUNCEMENT: ' : '';
 				const result = await PostsService.updatePost(post.id.toString(), {
 					title: titlePrefix + formData.title.trim(),
-					body: formData.content.trim()
+					body: formData.body.trim()
 				});
 				toast.success('Post updated successfully!');
 				onSuccess?.();
@@ -129,11 +129,11 @@
 	</div>
 
 	<div class="space-y-2">
-		<Label for="content">Content</Label>
+		<Label for="body">Content</Label>
 		<Textarea
-			id="content"
+			id="body"
 			placeholder="What are your thoughts?"
-			bind:value={formData.content}
+			bind:value={formData.body}
 			rows={8}
 			required
 		/>

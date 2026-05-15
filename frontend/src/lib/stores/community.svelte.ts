@@ -25,7 +25,7 @@ function createCommunityState() {
 	let currentCommunity = $state<Community | null>(null);
 	let myCommunities = $state<Community[]>([]);
 	let members = $state<CommunityMember[]>([]);
-	let joinRequests = $state<any[]>([]); // Using any for now, matches JoinRequestResponse
+	let joinRequests = $state<components['schemas']['JoinRequestResponse'][]>([]);
 	let loading = $state(false);
 	let membersLoading = $state(false);
 	let requestsLoading = $state(false);
@@ -66,20 +66,7 @@ function createCommunityState() {
 				banner_key: data.banner_key
 			});
 
-			const community: Community = {
-				id: communityData.id,
-				name: communityData.name,
-				description: communityData.description ?? null,
-				type: communityData.type,
-				allow_anonymous: communityData.allow_anonymous,
-				icon_key: communityData.icon_key ?? null,
-				banner_key: communityData.banner_key ?? null,
-				university_id: communityData.university_id,
-				owner_id: communityData.owner_id,
-				created_at: communityData.created_at,
-				member_count: communityData.member_count,
-				user_membership_status: communityData.user_membership_status as any
-			};
+			const community: Community = communityData;
 
 			currentCommunity = community;
 			toasts.show('Community created successfully!', 'success');
@@ -107,13 +94,7 @@ function createCommunityState() {
 				banner_key: data.banner_key
 			});
 
-			const community: Community = {
-				...communityData,
-				description: communityData.description ?? null,
-				icon_key: communityData.icon_key ?? null,
-				banner_key: communityData.banner_key ?? null,
-				user_membership_status: communityData.user_membership_status as any
-			};
+			const community: Community = communityData;
 
 			currentCommunity = community;
 			toasts.show('Community updated successfully!', 'success');
@@ -130,13 +111,7 @@ function createCommunityState() {
 		loading = true;
 		try {
 			const communityData = await CommunitiesService.get(communityId);
-			const community: Community = {
-				...communityData,
-				description: communityData.description ?? null,
-				icon_key: communityData.icon_key ?? null,
-				banner_key: communityData.banner_key ?? null,
-				user_membership_status: communityData.user_membership_status as any
-			};
+			const community: Community = communityData;
 			currentCommunity = community;
 			return community;
 		} catch (error) {
@@ -207,13 +182,7 @@ function createCommunityState() {
 			const allCommRes = await CommunitiesService.list(1, 100);
 			const filtered = allCommRes.items
 				.filter(c => c.user_membership_status === 'approved' || c.owner_id === localStorage.getItem('currentUserId'))
-				.map(c => ({
-					...c,
-					description: c.description ?? null,
-					icon_key: c.icon_key ?? null,
-					banner_key: c.banner_key ?? null,
-					user_membership_status: c.user_membership_status as any
-				}));
+				.map(c => c as Community);
 			
 			myCommunities = filtered;
 			return filtered;
@@ -250,17 +219,18 @@ function createCommunityState() {
 			});
 			
 			const adminIds = new Set((adminsRes || []).map(a => a.id));
-			const items = res?.items || [];
+			const items = (res?.items || []) as CommunityMember[];
 			
 			const community = currentCommunity || await fetchCommunity(communityId);
 
-			const data: CommunityMember[] = items.map((u: any) => {
+			const data: CommunityMember[] = items.map((u) => {
 				let displayName = u.username;
 				if (u.first_name || u.last_name) {
 					displayName = [u.first_name, u.last_name].filter(Boolean).join(' ');
 				}
 
 				return {
+					...u,
 					user_id: u.id,
 					username: u.username,
 					name: displayName,
@@ -289,7 +259,7 @@ function createCommunityState() {
 		try {
 			const communityData = await CommunitiesService.join(communityId);
 			if (currentCommunity && currentCommunity.id === communityId) {
-				currentCommunity.user_membership_status = communityData.status as any;
+				currentCommunity.user_membership_status = communityData.status;
 				currentCommunity.member_count++;
 			}
 			toasts.show(
@@ -377,11 +347,9 @@ function createCommunityState() {
 	async function fetchJoinRequests(communityId: string) {
 		requestsLoading = true;
 		try {
-			const { data: res, error: apiError } = await api.GET('/api/v1/communities/{community_id}/requests', {
+			const { data: res } = await api.GET('/api/v1/communities/{community_id}/requests', {
 				params: { path: { community_id: communityId } }
 			});
-
-			if (apiError) throw new Error((apiError as any).detail || 'Failed to fetch requests');
 			
 			joinRequests = res || [];
 			return joinRequests;
@@ -396,11 +364,9 @@ function createCommunityState() {
 
 	async function approveJoinRequest(communityId: string, userId: string) {
 		try {
-			const { error: apiError } = await api.POST('/api/v1/communities/{community_id}/requests/{user_id}/approve', {
+			await api.POST('/api/v1/communities/{community_id}/requests/{user_id}/approve', {
 				params: { path: { community_id: communityId, user_id: userId } }
 			});
-
-			if (apiError) throw new Error((apiError as any).detail || 'Failed to approve request');
 			
 			toasts.show('Member approved!', 'success');
 			// Refresh requests and member count
@@ -417,11 +383,9 @@ function createCommunityState() {
 
 	async function rejectJoinRequest(communityId: string, userId: string) {
 		try {
-			const { error: apiError } = await api.POST('/api/v1/communities/{community_id}/requests/{user_id}/reject', {
+			await api.POST('/api/v1/communities/{community_id}/requests/{user_id}/reject', {
 				params: { path: { community_id: communityId, user_id: userId } }
 			});
-
-			if (apiError) throw new Error((apiError as any).detail || 'Failed to reject request');
 			
 			toasts.show('Request rejected', 'success');
 			await fetchJoinRequests(communityId);

@@ -1,4 +1,4 @@
-import { type Post, type SortOption, type FeedType } from '$lib/types/post';
+import { type Post, type SortOption, type FeedType, type ApiPost } from '$lib/types/post';
 import { PostsService } from '$lib/api/services/PostsService';
 import { CommunitiesService } from '$lib/api/services/CommunitiesService';
 
@@ -22,8 +22,8 @@ export function createPostsState(getCommunityId: () => string | null = () => nul
 		try {
 			const res = await CommunitiesService.list(1, 100);
 			const ids = res.items
-				.filter((c: any) => c.user_membership_status === 'approved')
-				.map((c: any) => c.id);
+				.filter((c) => c.user_membership_status === 'approved')
+				.map((c) => c.id);
 			myCommunityIds = new Set(ids);
 			communitiesFetched = true;
 		} catch (e) {
@@ -31,23 +31,11 @@ export function createPostsState(getCommunityId: () => string | null = () => nul
 		}
 	}
 
-	function mapPost(p: any): Post {
+	function mapPost(p: ApiPost): Post {
 		return {
-			id: p.id,
-			title: p.title,
-			authorId: p.author?.id || 'anonymous',
-			authorName: getAuthorDisplayName(p.author),
-			authorSurname: '',
-			authorUsername: p.author?.username || 'anonymous',
-			authorAvatar: p.author?.avatar_key || undefined,
-			content: p.body || p.title,
-			createdAt: p.created_at,
-			likes: p.score,
-			comments: p.comment_count,
+			...p,
 			liked: p.user_vote === 1,
-			university: p.community?.name || 'Global',
-			communityId: p.community?.id,
-			communityName: p.community?.name
+			university: p.community?.name || 'Global'
 		};
 	}
 
@@ -70,7 +58,7 @@ export function createPostsState(getCommunityId: () => string | null = () => nul
 			if (!communityId && feedType === 'personalized') {
 				await ensureMyCommunities();
 				mappedPosts = mappedPosts.filter(
-					(p) => p.communityId && myCommunityIds.has(p.communityId)
+					(p) => p.community?.id && myCommunityIds.has(p.community.id)
 				);
 			}
 
@@ -113,10 +101,11 @@ export function createPostsState(getCommunityId: () => string | null = () => nul
 
 		posts = posts.map((p) => {
 			if (p.id === postId) {
+				const isCurrentlyLiked = p.liked;
 				return {
 					...p,
-					liked: !p.liked,
-					likes: p.liked ? p.likes - 1 : p.likes + 1
+					liked: !isCurrentlyLiked,
+					score: isCurrentlyLiked ? p.score - 1 : p.score + 1
 				};
 			}
 			return p;
@@ -129,10 +118,11 @@ export function createPostsState(getCommunityId: () => string | null = () => nul
 			// Revert optimistic update
 			posts = posts.map((p) => {
 				if (p.id === postId) {
+					const isCurrentlyLiked = p.liked;
 					return {
 						...p,
-						liked: !p.liked,
-						likes: p.liked ? p.likes - 1 : p.likes + 1
+						liked: !isCurrentlyLiked,
+						score: isCurrentlyLiked ? p.score - 1 : p.score + 1
 					};
 				}
 				return p;

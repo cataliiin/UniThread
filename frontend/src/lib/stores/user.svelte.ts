@@ -1,4 +1,7 @@
 import { AuthService, StorageService, UsersService } from '$lib/api/services';
+import type { components } from '$lib/api/openapi-generated-schema';
+
+type UserResponse = components['schemas']['UserResponse'];
 
 const isAbsoluteUrl = (value: string): boolean =>
 	value.startsWith('http://') ||
@@ -16,15 +19,7 @@ const resolveAvatarSource = (value: string | null): string | null => {
 };
 
 function createUserState() {
-	let id = $state('');
-	let name = $state('');
-	let surname = $state('');
-	let username = $state('');
-	let email = $state('');
-	let university = $state('');
-	let memberSince = $state('');
-	let avatarInitials = $state('');
-	let avatarUrl = $state<string | null>(null);
+	let userData = $state<UserResponse | null>(null);
 	let isAuthenticated = $state(false);
 
 	// Initialize from localStorage
@@ -33,40 +28,8 @@ function createUserState() {
 		if (saved) {
 			try {
 				const data = JSON.parse(saved);
-				// Migration: if id is an email, it's legacy/invalid, clear it
-				if (data.id && data.id.includes('@')) {
-					localStorage.removeItem('currentUser');
-					localStorage.removeItem('token');
-					if (typeof window !== 'undefined') window.location.reload();
-				} else {				
-				id = data.id || '';
-				name = data.name || '';
-				surname = data.surname || '';
-				username = data.username || '';
-				email = data.email || '';
-				
-				// Prioritize database fields
-				if (data.first_name || data.last_name) {
-					name = data.first_name || '';
-					surname = data.last_name || '';
-				} else if (email && email.includes('.') && (!name || !surname)) {
-					// Fallback name parsing from email (e.g. cezar.mihai.vieru@...)
-					const parts = email.split('@')[0].split('.');
-					if (parts.length >= 2) {
-						if (!name) name = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-						if (!surname) {
-							surname = parts.slice(1)
-								.map(p => p.charAt(0).toUpperCase() + p.slice(1))
-								.join(' ');
-						}
-					}
-				}
-				university = data.university || '';
-				memberSince = data.memberSince || '';
-				avatarInitials = data.avatarInitials || '';
-				avatarUrl = data.avatarUrl || null;
-				isAuthenticated = data.isAuthenticated || false;
-				}
+				userData = data as UserResponse;
+				isAuthenticated = true;
 			} catch (e) {
 				console.error('Failed to parse user data from localStorage');
 			}
@@ -76,13 +39,12 @@ function createUserState() {
 		window.addEventListener('auth:expired', () => logout());
 	}
 
-	let avatarSource = $derived.by(() => resolveAvatarSource(avatarUrl));
+	let avatarSource = $derived.by(() => resolveAvatarSource(userData?.avatar_key || null));
 
 	function updateProfileStorage() {
-		if (typeof window !== 'undefined' && isAuthenticated) {
-			const profile = { id, name, surname, username, email, university, memberSince, avatarInitials, avatarUrl };
-			localStorage.setItem('currentUser', JSON.stringify({ ...profile, isAuthenticated: true }));
-			localStorage.setItem('currentUserId', id);
+		if (typeof window !== 'undefined' && isAuthenticated && userData) {
+			localStorage.setItem('currentUser', JSON.stringify(userData));
+			localStorage.setItem('currentUserId', userData.id);
 		}
 	}
 
@@ -105,62 +67,19 @@ function createUserState() {
 				localStorage.setItem('token', tokenData.access_token);
 			}
 			const me = await UsersService.getMe();
-			id = me.id;
-			username = me.username;
-			email = me.email;
-
-			// Prioritize database fields from backend
-			const userData = me as any;
-			// Check for both snake_case and camelCase just in case
-			const dbFirstName = userData.first_name || userData.firstName;
-			const dbLastName = userData.last_name || userData.lastName;
-			
-			if (dbFirstName || dbLastName) {
-				name = dbFirstName || '';
-				surname = dbLastName || '';
-			} else if (me.email.includes('.')) {
-				// Fallback: Parse name and surname from email if possible
-				const parts = me.email.split('@')[0].split('.');
-				if (parts.length >= 2) {
-					name = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-					surname = parts.slice(1)
-						.map(p => p.charAt(0).toUpperCase() + p.slice(1))
-						.join(' ');
-				}
-			}
-			
-			// Fallback for university name if not in schema yet
-			university = 'Transilvania University of Brașov'; 
-			memberSince = new Date(me.created_at).toLocaleString('en-US', { month: 'long', year: 'numeric' });
-			
-			// Calculate initials from name/surname if available, else username
-			if (name && surname) {
-				avatarInitials = (name[0] + surname[surname.indexOf(' ') + 1] || surname[0]).toUpperCase();
-			} else {
-				avatarInitials = me.username.substring(0, 2).toUpperCase();
-			}
-			
-			avatarUrl = me.avatar_key;
+			userData = me;
 			isAuthenticated = true;
 
 			updateProfileStorage();
 
 			return { success: true };
-		} catch (error: any) {
-			return { success: false, error: error.message || 'Login failed.' };
+		} catch (error) {
+			return { success: false, error: (error as Error).message || 'Login failed.' };
 		}
 	}
 
 	function logout() {
-		id = '';
-		name = '';
-		surname = '';
-		username = '';
-		email = '';
-		university = '';
-		memberSince = '';
-		avatarInitials = '';
-		avatarUrl = null;
+		userData = null;
 		isAuthenticated = false;
 		if (typeof window !== 'undefined') {
 			localStorage.removeItem('currentUser');
@@ -180,10 +99,6 @@ function createUserState() {
 			last_name: surnameParam
 		});
 
-		name = nameParam;
-		surname = surnameParam;
-		university = 'Transilvania University of Brașov';
-
 		const loginResult = await login(emailParam, password);
 		if (!loginResult.success) {
 			throw new Error(loginResult.error);
@@ -191,22 +106,36 @@ function createUserState() {
 	}
 
 	return {
-		get id() { return id; },
-		get name() { return name; },
-		get surname() { return surname; },
-		get username() { return username; },
+		get id() { return userData?.id || ''; },
+		get name() { return userData?.first_name || ''; },
+		get surname() { return userData?.last_name || ''; },
+		get username() { return userData?.username || ''; },
 		set username(val: string) {
-			username = val;
-			updateProfileStorage();
+			if (userData) {
+				userData.username = val;
+				updateProfileStorage();
+			}
 		},
-		get email() { return email; },
-		get university() { return university; },
-		get memberSince() { return memberSince; },
-		get avatarInitials() { return avatarInitials; },
-		get avatarUrl() { return avatarUrl; },
+		get email() { return userData?.email || ''; },
+		get university() { return 'Transilvania University of Brașov'; },
+		get memberSince() { 
+			return userData 
+				? new Date(userData.created_at).toLocaleString('en-US', { month: 'long', year: 'numeric' })
+				: ''; 
+		},
+		get avatarInitials() { 
+			if (!userData) return '';
+			const first = userData.first_name || '';
+			const last = userData.last_name || '';
+			if (first && last) return (first[0] + last[0]).toUpperCase();
+			return userData.username.substring(0, 2).toUpperCase();
+		},
+		get avatarUrl() { return userData?.avatar_key || null; },
 		set avatarUrl(val: string | null) {
-			avatarUrl = val;
-			updateProfileStorage();
+			if (userData) {
+				userData.avatar_key = val;
+				updateProfileStorage();
+			}
 		},
 		get avatarSource() { return avatarSource; },
 		get isAuthenticated() { return isAuthenticated; },

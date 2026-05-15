@@ -46,35 +46,17 @@ function createSearchState() {
 			const results = await SearchService.globalSearch(apiQuery, typeParam, 10);
 
 			if (searchFilter === 'all' || searchFilter === 'users') {
-				users = results.users.map(u => {
-					const displayName = getAuthorDisplayName(u);
-					return {
-						id: u.id,
-						name: displayName,
-						username: u.username,
-						avatar: u.avatar_key || undefined,
-						avatarInitials: displayName.substring(0, 2).toUpperCase(),
-						memberSince: new Date(u.created_at).getFullYear().toString(),
-						followers: 0,
-						university: 'University' // Or derive from university_id
-					};
-				});
+				users = results.users.map(u => ({
+					...u
+				}));
 			} else {
 				users = [];
 			}
 
 			if (searchFilter === 'all' || searchFilter === 'communities') {
 				communities = results.communities.map(c => ({
-					id: c.id,
-					name: c.name,
-					description: c.description || '',
-					members: c.member_count,
-					isJoined: c.user_membership_status === 'approved',
-					isPending: c.user_membership_status === 'pending',
-					type: c.type,
-					icon: c.icon_key || undefined,
-					posts: 0,
-					university: 'University'
+					...c,
+					is_joined: c.user_membership_status === 'approved'
 				}));
 			} else {
 				communities = [];
@@ -82,17 +64,9 @@ function createSearchState() {
 
 			if (searchFilter === 'all' || searchFilter === 'posts') {
 				posts = results.posts.map((p: PostFeedResponse) => ({
-					id: p.id,
-					title: p.title,
-					content: p.body || p.title,
-					authorId: p.author?.id || 'anonymous',
-					authorName: getAuthorDisplayName(p.author),
-					authorUsername: p.author?.username || 'anonymous',
-					createdAt: p.created_at,
-					likes: p.score,
-					comments: p.comment_count,
-					communityName: p.community?.name || 'Global',
-					university: 'University'
+					...p,
+					liked: p.user_vote === 1,
+					university: p.community?.name || 'Global'
 				}));
 			}
 		} catch (e) {
@@ -113,16 +87,8 @@ function createSearchState() {
 			if (filter === 'all' || filter === 'communities') {
 				const commRes = await CommunitiesService.list(1, filter === 'all' ? 3 : 6);
 				communities = commRes.items.map(c => ({
-					id: c.id,
-					name: c.name,
-					description: c.description || '',
-					members: c.member_count,
-					isJoined: c.user_membership_status === 'approved',
-					isPending: c.user_membership_status === 'pending',
-					type: c.type,
-					icon: c.icon_key || undefined,
-					posts: 0,
-					university: 'University'
+					...c,
+					is_joined: c.user_membership_status === 'approved'
 				}));
 			} else {
 				communities = [];
@@ -131,17 +97,9 @@ function createSearchState() {
 			if (filter === 'all' || filter === 'posts') {
 				const postRes = await PostsService.getGlobalFeed(1, 5, 'top');
 				posts = postRes.items.map((p: PostFeedResponse) => ({
-					id: p.id,
-					title: p.title,
-					content: p.body || p.title,
-					authorId: p.author?.id || 'anonymous',
-					authorName: getAuthorDisplayName(p.author),
-					authorUsername: p.author?.username || 'anonymous',
-					createdAt: p.created_at,
-					likes: p.score,
-					comments: p.comment_count,
-					communityName: p.community?.name || 'Global',
-					university: 'University'
+					...p,
+					liked: p.user_vote === 1,
+					university: p.community?.name || 'Global'
 				}));
 			} else {
 				posts = [];
@@ -174,25 +132,23 @@ function createSearchState() {
 		if (!community) return;
 
 		try {
-			if (community.isJoined) {
+			if (community.is_joined) {
 				await CommunitiesService.leave(idStr);
-				community.isJoined = false;
-				community.isPending = false;
-				community.members--;
+				community.is_joined = false;
+				community.member_count--;
 				toasts.show('Left community', 'success');
 			} else {
 				const res = await CommunitiesService.join(idStr);
-				community.isJoined = res.status === 'approved';
-				community.isPending = res.status === 'pending';
+				community.is_joined = res.status === 'approved';
 				if (res.status === 'approved') {
-					community.members++;
+					community.member_count++;
 					toasts.show('Joined community', 'success');
 				} else {
 					toasts.show('Join request sent', 'success');
 				}
 			}
-		} catch (error: any) {
-			toasts.show(error.message || 'Action failed', 'error');
+		} catch (error) {
+			toasts.show((error as Error).message || 'Action failed', 'error');
 		}
 	}
 

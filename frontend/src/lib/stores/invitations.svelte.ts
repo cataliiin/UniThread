@@ -35,24 +35,22 @@ function createInvitationsState() {
 							: inviterName;
 
 						return {
-							id: invite.id,
-							community_id: invite.community_id,
+							...invite,
 							community_name: community?.name || `Community (${invite.community_id.substring(0, 4)})`,
 							invited_by: invite.invited_by,
 							inviter_name: inviterDisplay,
-							status: invite.status as 'pending' | 'accepted' | 'declined',
+							status: invite.status,
 							created_at: invite.created_at
-						};
+						} as Invitation;
 					} catch (err) {
 						return {
-							id: invite.id,
-							community_id: invite.community_id,
+							...invite,
 							community_name: `Community (${invite.community_id.substring(0, 4)})`,
 							invited_by: invite.invited_by,
 							inviter_name: `User ${invite.invited_by.substring(0, 4)}`,
-							status: invite.status as 'pending' | 'accepted' | 'declined',
+							status: invite.status,
 							created_at: invite.created_at
-						};
+						} as Invitation;
 					}
 				})
 			);

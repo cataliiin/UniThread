@@ -39,7 +39,7 @@
 
 		{#if community}
 			<div class="rounded-2xl border border-border bg-card/50 p-6 shadow-xl backdrop-blur-sm">
-				<CommunityForm community={community as any} mode="edit" />
+				<CommunityForm community={community} mode="edit" />
 			</div>
 		{:else}
 			<div class="flex flex-col items-center justify-center py-12">

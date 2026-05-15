@@ -1,11 +1,9 @@
-export type MarketplaceCategory =
-	| 'electronics'
-	| 'clothing'
-	| 'books'
-	| 'furniture'
-	| 'mentoring'
-	| 'services'
-	| 'other';
+import type { components } from '$lib/api/openapi-generated-schema';
+
+export type MarketplaceCategory = components['schemas']['MarketplaceCategory'];
+export type ApiListing = components['schemas']['MarketplaceListingResponse'];
+export type MarketplaceListingCreate = components['schemas']['MarketplaceListingCreate'];
+export type MarketplaceListingUpdate = components['schemas']['MarketplaceListingUpdate'];
 
 /** Human-friendly labels for each backend category value */
 export const categoryLabels: Record<MarketplaceCategory, string> = {
@@ -13,7 +11,7 @@ export const categoryLabels: Record<MarketplaceCategory, string> = {
 	clothing: 'Clothing',
 	books: 'Books',
 	furniture: 'Furniture',
-	mentoring: 'Mentoring',
+	housing: 'Housing',
 	services: 'Services',
 	other: 'Other'
 };
@@ -24,7 +22,7 @@ export const categoryIcons: Record<MarketplaceCategory, string> = {
 	clothing: '👕',
 	books: '📚',
 	furniture: '🪑',
-	mentoring: '🎓',
+	housing: '🏠',
 	services: '🔧',
 	other: '📦'
 };
@@ -34,7 +32,7 @@ export const allCategories: MarketplaceCategory[] = [
 	'clothing',
 	'books',
 	'furniture',
-	'mentoring',
+	'housing',
 	'services',
 	'other'
 ];
@@ -48,45 +46,9 @@ export const sortLabels: Record<MarketplaceSortOption, string> = {
 	price_desc: 'Price ↓'
 };
 
-export interface MarketplaceAuthor {
-	id: string;
-	username: string;
-	avatar_key: string | null;
-}
-
-export interface MarketplaceListing {
-	id: string;
-	university_id: string;
-	author_id: string;
-	title: string;
-	description: string;
-	category: MarketplaceCategory;
-	price: number;
-	image_key: string | null;
-	is_active: boolean;
-	is_negotiable: boolean;
-	is_favorited: boolean;
-	favorite_count: number;
-	created_at: string;
-	updated_at: string;
-	author: MarketplaceAuthor;
-}
-
-export interface MarketplaceListingCreate {
-	title: string;
-	description: string;
-	category: MarketplaceCategory;
-	price: number;
-	is_negotiable: boolean;
-}
-
-export interface MarketplaceListingUpdate {
-	title?: string;
-	description?: string;
-	category?: MarketplaceCategory;
-	price?: number;
-	is_active?: boolean;
-	is_negotiable?: boolean;
+/** UI-extended listing type */
+export interface MarketplaceListing extends ApiListing {
+	// Any UI-only fields can go here
 }
 
 export interface MarketplaceFilters {
@@ -104,3 +66,4 @@ export interface PaginatedMarketplaceResponse {
 	size: number;
 	pages: number;
 }
+

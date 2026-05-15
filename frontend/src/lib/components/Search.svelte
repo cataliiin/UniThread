@@ -2,6 +2,8 @@
 	import { searchState } from '$lib/stores/search.svelte';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { getAuthorDisplayName } from '$lib/utils/user';
+	import { StorageService } from '$lib/api/services';
 
 	onMount(() => {
 		if (!searchState.hasSearched && !searchInput) {
@@ -79,11 +81,8 @@
 		);
 	}
 
-	function getImageUrl(key: string | undefined, bucket: 'user-assets' | 'community-assets'): string | null {
-		if (!key) return null;
-		if (key.startsWith('local_img_')) return localStorage.getItem(key);
-		const baseUrl = import.meta.env.VITE_STORAGE_URL || 'http://localhost:9000';
-		return `${baseUrl}/${bucket}/${key}`;
+	function getImageUrl(key: string | null | undefined, bucket: 'user-assets' | 'community-assets'): string | null {
+		return StorageService.getPublicUrl(bucket, key ?? null);
 	}
 
 	// Check if results are empty after search
@@ -245,14 +244,14 @@
 								<div
 									class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
 								>
-									{#if user.avatar}
-										<img src={getImageUrl(user.avatar, 'user-assets')} alt={user.name} class="h-full w-full object-cover" />
+									{#if user.avatar_key}
+										<img src={getImageUrl(user.avatar_key, 'user-assets')} alt={getAuthorDisplayName(user)} class="h-full w-full object-cover" />
 									{:else}
-										{user.avatarInitials}
+										{getAuthorDisplayName(user).substring(0, 2).toUpperCase()}
 									{/if}
 								</div>
 								<div class="flex-1">
-									<div class="font-semibold text-card-foreground">{user.name}</div>
+									<div class="font-semibold text-card-foreground">{getAuthorDisplayName(user)}</div>
 									<div class="text-sm text-muted-foreground">@{user.username}</div>
 								</div>
 
@@ -287,8 +286,8 @@
 							>
 								<div class="mb-4 flex items-center gap-4">
 									<div class="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-border bg-sidebar/50">
-										{#if community.icon}
-											<img src={getImageUrl(community.icon, 'community-assets')} alt={community.name} class="h-full w-full object-cover" />
+										{#if community.icon_key}
+											<img src={getImageUrl(community.icon_key, 'community-assets')} alt={community.name} class="h-full w-full object-cover" />
 										{:else}
 											<div class="flex h-full w-full items-center justify-center bg-primary/10 text-lg font-bold text-primary">
 												{community.name.charAt(0).toUpperCase()}
@@ -302,23 +301,19 @@
 								</div>
 								<div class="mt-auto flex w-full items-center justify-between">
 									<div class="flex gap-4 text-sm text-muted-foreground">
-										<span>{community.members} members</span>
-										<span>{community.posts} posts</span>
+										<span>{community.member_count} members</span>
 									</div>
 									<button
 										class="rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-300
-										{community.isJoined
+										{community.is_joined
 											? 'border border-border bg-card text-foreground hover:bg-secondary'
-											: community.isPending
-												? 'border border-amber-500/30 bg-amber-500/10 text-amber-500 cursor-not-allowed'
-												: 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 hover:shadow-primary/40'}"
+											: 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 hover:shadow-primary/40'}"
 										onclick={(e) => {
 											e.stopPropagation();
-											if (!community.isPending) searchState.toggleJoinCommunity(community.id);
+											searchState.toggleJoinCommunity(community.id);
 										}}
-										disabled={community.isPending}
 									>
-										{community.isJoined ? 'Joined' : community.isPending ? 'Pending' : (community.type === 'request' ? 'Request' : 'Join')}
+										{community.is_joined ? 'Joined' : (community.type === 'request' ? 'Request' : 'Join')}
 									</button>
 								</div>
 							</div>
@@ -337,42 +332,41 @@
 					<div class="space-y-3">
 						{#each searchState.posts as post (post.id)}
 							<article class="group rounded-xl border border-border bg-card p-4 transition-all duration-300 hover:border-primary/30">
-								{#if post.authorId === 'anonymous'}
+								{#if !post.author}
 									<div class="flex items-center gap-3">
 										<div
 											class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary transition-all duration-300"
 										>
-											{post.authorName.charAt(0)}
+											A
 										</div>
 										<div>
-											<span class="font-medium text-card-foreground">{post.authorName}</span>
-											<span class="text-sm text-muted-foreground"> @{post.authorUsername}</span>
+											<span class="font-medium text-card-foreground">Anonymous</span>
 										</div>
 									</div>
 								{:else}
 									<button 
 										class="flex items-center gap-3 hover:opacity-80 transition-opacity"
-										onclick={(e) => { e.stopPropagation(); goto(`/profile/${post.authorId}`); }}
+										onclick={(e) => { e.stopPropagation(); goto(`/profile/${post.author?.id}`); }}
 									>
 										<div
 											class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
 										>
-											{#if post.authorAvatar}
-												<img src={getImageUrl(post.authorAvatar, 'user-assets')} alt={post.authorName} class="h-full w-full object-cover" />
+											{#if post.author.avatar_key}
+												<img src={getImageUrl(post.author.avatar_key, 'user-assets')} alt={getAuthorDisplayName(post.author)} class="h-full w-full object-cover" />
 											{:else}
-												{post.authorName.charAt(0)}
+												{getAuthorDisplayName(post.author).charAt(0)}
 											{/if}
 										</div>
 										<div>
-											<span class="font-medium text-card-foreground">{post.authorName}</span>
-											<span class="text-sm text-muted-foreground"> @{post.authorUsername}</span>
+											<span class="font-medium text-card-foreground">{getAuthorDisplayName(post.author)}</span>
+											<span class="text-sm text-muted-foreground"> @{post.author.username}</span>
 										</div>
 									</button>
 								{/if}
-								<p class="text-card-foreground/90 leading-relaxed">{post.content}</p>
+								<p class="text-card-foreground/90 leading-relaxed">{post.body}</p>
 								<div class="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
-									<span>{post.likes} likes</span>
-									<span>{post.comments} comments</span>
+									<span>{post.score} likes</span>
+									<span>{post.comment_count} comments</span>
 								</div>
 							</article>
 						{/each}

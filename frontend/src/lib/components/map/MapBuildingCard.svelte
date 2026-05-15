@@ -18,18 +18,10 @@
 			campus: '#047857'
 		};
 
-		if (theme === 'cyberpunk') {
-			c.academic = '#00ffc2';
-			c.administrative = '#ff003c';
-			c.campus = '#dfff00';
-		} else if (theme === 'midnight') {
+		if (theme === 'outpost') {
 			c.academic = '#3f3f46';
 			c.administrative = '#ff0000';
 			c.campus = '#18181b';
-		} else if (theme === 'wasteland') {
-			c.academic = '#a54a26';
-			c.administrative = '#f5c71a';
-			c.campus = '#333333';
 		} else if (theme === 'amethyst' || theme === 'cyberpop') {
 			c.academic = '#c084fc';
 			c.administrative = '#ff007f';
@@ -39,6 +31,9 @@
 		} else if (theme === 'sakura') {
 			c.academic = '#ffb7c5';
 			c.administrative = '#dcae96';
+		} else if (theme === 'nordic') {
+			c.academic = '#5e81ac';
+			c.administrative = '#bf616a';
 		}
 
 		return c;

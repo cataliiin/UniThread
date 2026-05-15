@@ -239,7 +239,7 @@
 									</button>
 								{/if}
 								<span class="shrink-0 text-[10px] font-medium text-muted-foreground/40 tabular-nums">
-									{formatDate(member.joined_at)}
+									{member.joined_at ? formatDate(member.joined_at) : 'N/A'}
 								</span>
 							</div>
 						</div>
@@ -306,7 +306,7 @@
 									</button>
 								{/if}
 								<span class="shrink-0 text-[10px] font-medium text-muted-foreground/30 tabular-nums">
-									{formatDate(member.joined_at)}
+									{member.joined_at ? formatDate(member.joined_at) : 'N/A'}
 								</span>
 							</div>
 						</div>

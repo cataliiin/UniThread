@@ -209,7 +209,7 @@
 									{/if}
 								</div>
 								{#if member.username}
-									<p class="text-xs text-muted-foreground">@{member.username} · Joined {formatDate(member.joined_at)}</p>
+									<p class="text-xs text-muted-foreground">@{member.username} · Joined {member.joined_at ? formatDate(member.joined_at) : 'N/A'}</p>
 								{/if}
 							</div>
 

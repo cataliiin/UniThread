@@ -11,7 +11,7 @@ export const load: PageLoad = async ({ params }) => {
 	try {
 		const communityData = await CommunitiesService.get(communityId);
 		
-		const isOwner = communityData.owner_id === user.email || communityData.owner_id === (user as any).id;
+		const isOwner = communityData.owner_id === user.email || communityData.owner_id === user.id;
 		const isAdmin = isOwner || communityData.user_membership_status === 'approved';
 
 		if (!isAdmin) {

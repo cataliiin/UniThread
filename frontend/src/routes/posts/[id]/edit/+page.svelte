@@ -18,23 +18,14 @@
 			
 			// Map API response to our Post type
 			post = {
-				id: p.id,
-				title: p.title,
-				authorId: p.author?.id || '',
-				authorName: p.author?.username || 'Anonymous',
-				authorUsername: p.author?.username || 'anonymous',
-				authorAvatar: StorageService.getPublicUrl('user-assets', p.author?.avatar_key ?? null) || undefined,
-				content: p.body || p.title,
-				createdAt: p.created_at,
-				likes: p.score,
-				comments: p.comment_count,
+				...p,
 				liked: p.user_vote === 1,
 				university: p.community?.name || 'Global'
-			};
+			} as Post;
 
-			if (post.authorId !== user.id) {
+			if (post && post.author?.id !== user.id) {
 				toast.error('You are not authorized to edit this post.');
-				goto(`/posts/${post.id}`);
+				goto(`/posts/${post?.id}`);
 			}
 		} catch (e: any) {
 			toast.error(e.message || 'Could not load post.');

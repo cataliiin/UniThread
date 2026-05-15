@@ -54,7 +54,7 @@ function createLibraryState() {
 		toasts.show('Folder created', 'success');
 	}
 
-	function enterFolder(id: string) {
+	function enterFolder(id: string | null) {
 		currentFolderId = id;
 	}
 

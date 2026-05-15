@@ -51,16 +51,10 @@
 
 		const priceInCents = Math.round(parseFloat(formData.priceDisplay) * 100);
 
-		// Map frontend 'mentoring' category to backend 'housing' value
-		const backendCategory =
-			formData.category === ('mentoring' as MarketplaceCategory)
-				? ('housing' as MarketplaceCategory)
-				: formData.category;
-
 		onSubmit({
 			title: formData.title.trim(),
 			description: formData.description.trim(),
-			category: backendCategory,
+			category: formData.category,
 			price: priceInCents,
 			is_negotiable: formData.is_negotiable
 		});

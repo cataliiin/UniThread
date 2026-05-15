@@ -28,7 +28,7 @@
 	});
 
 	let initials = $derived.by(() => {
-		const u = targetUser as any;
+		const u = targetUser;
 		if (u.first_name && u.last_name) {
 			return (u.first_name[0] + u.last_name[0]).toUpperCase();
 		}

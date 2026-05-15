@@ -35,8 +35,8 @@
 			formData.description = community.description || '';
 			formData.type = community.type;
 			formData.allow_anonymous = community.allow_anonymous;
-			formData.icon_key = community.icon_key;
-			formData.banner_key = community.banner_key;
+			formData.icon_key = community.icon_key || null;
+			formData.banner_key = community.banner_key || null;
 		}
 	});
 

@@ -152,8 +152,8 @@ class ProfileEditor {
 				toasts.show(`${updatedFields.join(', ')} updated successfully!`, 'success');
 				// Removing invalid saveToStorage call, as state binds reactively
 			}
-		} catch (e: any) {
-			toasts.show(e.message || 'Failed to update profile', 'error');
+		} catch (e) {
+			toasts.show((e as Error).message || 'Failed to update profile', 'error');
 		}
 	}
 

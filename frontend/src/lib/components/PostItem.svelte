@@ -6,6 +6,7 @@
 	import { PostsService } from '$lib/api/services';
 	import { communityState } from '$lib/stores/community.svelte';
 	import { Trash2, Megaphone } from 'lucide-svelte';
+	import { getAuthorDisplayName } from '$lib/utils/user';
 	import ConfirmDialog from './ConfirmDialog.svelte';
 	let {
 		post,
@@ -46,7 +47,7 @@
 	function handleEditClick(e: Event) {
 		e.preventDefault();
 		e.stopPropagation();
-		if (user?.id !== post.authorId) {
+		if (user?.id !== post.author?.id) {
 			toast.error('You are not authorized to edit this post.');
 			return;
 		}
@@ -66,7 +67,7 @@
 			// In a real app, we'd trigger a refresh or remove from store
 			// For now, let's just refresh the page or goto community
 			if (isFullView) {
-				goto(`/communities/${post.communityId || ''}`);
+				goto(`/communities/${post.community?.id || ''}`);
 			} else {
 				window.location.reload();
 			}
@@ -80,11 +81,11 @@
 	
 	// Can delete if: is author OR (is admin/owner of the community and we are in that community context)
 	const canDelete = $derived(
-		(user?.isAuthenticated && user?.id === post.authorId) || 
-		(communityState.currentCommunity?.id === post.communityId && communityState.isAdmin)
+		(user?.isAuthenticated && user?.id === post.author?.id) || 
+		(communityState.currentCommunity?.id === post.community?.id && communityState.isAdmin)
 	);
 	
-	const canEdit = $derived(user?.isAuthenticated && user?.id === post.authorId);
+	const canEdit = $derived(user?.isAuthenticated && user?.id === post.author?.id);
 </script>
 
 <article
@@ -120,51 +121,51 @@
 })}
 	<div class="mb-3 flex items-center gap-3">
 		<!-- Avatar -->
-		{#if post.authorId === 'anonymous'}
+		{#if !post.author}
 			<div
 				class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
 			>
-				{post.authorName.charAt(0)}
+				A
 			</div>
 		{:else}
 			<button 
 				class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary transition-all duration-300 hover:bg-primary/20"
-				onclick={(e) => { e.stopPropagation(); goto(`/profile/${post.authorId}`); }}
+				onclick={(e) => { e.stopPropagation(); goto(`/profile/${post.author?.id}`); }}
 			>
-				{post.authorName.charAt(0)}
+				{getAuthorDisplayName(post.author).charAt(0)}
 			</button>
 		{/if}
 
 		<!-- Author Info & Community -->
 		<div class="flex-1 min-w-0">
 			<div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-				{#if post.authorId === 'anonymous'}
-					<span class="font-semibold text-card-foreground">{post.authorName}</span>
+				{#if !post.author}
+					<span class="font-semibold text-card-foreground">Anonymous</span>
 				{:else}
 					<button 
 						class="font-semibold text-card-foreground hover:text-primary transition-colors"
-						onclick={(e) => { e.stopPropagation(); goto(`/profile/${post.authorId}`); }}
+						onclick={(e) => { e.stopPropagation(); goto(`/profile/${post.author?.id}`); }}
 					>
-						{post.authorName}
+						{getAuthorDisplayName(post.author)}
 					</button>
 				{/if}
 				
-				{#if post.authorId !== 'anonymous'}
-					<span class="text-sm text-muted-foreground">@{post.authorUsername}</span>
+				{#if post.author}
+					<span class="text-sm text-muted-foreground">@{post.author.username}</span>
 				{/if}
 
-				{#if showCommunity && post.communityName}
+				{#if showCommunity && post.community}
 					<span class="text-sm text-muted-foreground/50">·</span>
 					<span class="text-sm text-muted-foreground">in</span>
 					<a
-						href={`/communities/${post.communityId}`}
+						href={`/communities/${post.community.id}`}
 						onclick={(e) => e.stopPropagation()}
 						class="text-sm font-medium text-primary transition-colors hover:text-primary/70 hover:underline"
-						>{post.communityName}</a
+						>{post.community.name}</a
 					>
 				{/if}
 			</div>
-			<span class="text-xs text-muted-foreground/60">{formatTimeAgo(post.createdAt)}</span>
+			<span class="text-xs text-muted-foreground/60">{formatTimeAgo(post.created_at)}</span>
 		</div>
 	</div>
 
@@ -184,7 +185,7 @@
 			? 'text-lg whitespace-pre-wrap'
 			: 'line-clamp-3'}"
 	>
-		{post.content}
+		{post.body}
 	</p>
 
 	<!-- Actions -->
@@ -209,7 +210,7 @@
 					d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
 				/></svg
 			>
-			<span>{post.likes}</span>
+			<span>{post.score}</span>
 		</button>
 
 		<div
@@ -227,7 +228,7 @@
 				stroke-linejoin="round"
 				><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg
 			>
-			<span>{post.comments}</span>
+			<span>{post.comment_count}</span>
 		</div>
 		{#if canEdit}
 			<button

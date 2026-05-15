@@ -1,21 +1,13 @@
-export type CommunityType = 'public' | 'request' | 'invite';
+import type { components } from '$lib/api/openapi-generated-schema';
+
+export type CommunityType = components['schemas']['CommunityType'];
 export type CommunityRole = 'owner' | 'admin' | 'member';
 
+// Base API types
+export type ApiCommunity = components['schemas']['CommunityResponse'];
 
-export interface Community {
-	id: string;
-	name: string;
-	description: string | null;
-	type: CommunityType;
-	allow_anonymous: boolean;
-	icon_key: string | null;
-	banner_key: string | null;
-	university_id: string;
-	owner_id: string;
-	created_at: string;
-	member_count: number;
-	user_membership_status: 'pending' | 'approved' | null;
-}
+// The Community interface used in the UI is identical to the API response
+export type Community = ApiCommunity;
 
 export interface CommunityFormData {
 	name: string;
@@ -26,44 +18,29 @@ export interface CommunityFormData {
 	banner_key: string | null;
 }
 
-export interface CommunityCreateRequest {
-	name: string;
-	description?: string;
-	type: CommunityType;
-	allow_anonymous?: boolean;
-	icon_key?: string;
-	banner_key?: string;
-}
+export type CommunityCreateRequest = components['schemas']['CommunityCreate'];
+export type CommunityUpdateRequest = components['schemas']['CommunityUpdate'];
 
-export interface CommunityUpdateRequest {
-	name?: string;
-	description?: string;
-	type?: CommunityType;
-	allow_anonymous?: boolean;
-	icon_key?: string;
-	banner_key?: string;
-}
+export type PresignedUrlRequest = components['schemas']['PresignedUrlRequest'];
+export type PresignedUrlResponse = components['schemas']['PresignedUrlResponse'];
 
-export interface PresignedUrlRequest {
-	bucket_name: 'community_assets';
-}
+export type ApiUserPublic = components['schemas']['UserPublic'];
 
-export interface PresignedUrlResponse {
-	url: string;
-	file_key: string;
-}
+// CommunityMember response from the API
+export type ApiCommunityMember = components['schemas']['CommunityMemberResponse'];
 
-export interface CommunityMember {
-	user_id: string;
+// CommunityMember extends the API response with UI-specific fields for display
+export type CommunityMember = ApiUserPublic & {
+	// Optional display fields often joined in the UI or enriched via store
+	id: string; // From ApiUserPublic
+	user_id: string; // For backward compatibility
 	community_id: string;
-	status: 'pending' | 'approved';
 	is_admin: boolean;
-	joined_at: string;
-	// Optional display fields (populated by backend or mock)
 	username?: string;
 	name?: string;
-	avatar_url?: string;
-}
+	avatar_url?: string | null;
+	joined_at?: string;
+};
 
 export const communityTypeLabels: Record<CommunityType, { label: string; description: string }> = {
 	public: {

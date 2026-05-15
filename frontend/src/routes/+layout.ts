@@ -2,6 +2,8 @@ import { redirect, error } from '@sveltejs/kit';
 import { browser } from '$app/environment';
 import type { LayoutLoad } from './$types';
 
+export const ssr = false;
+
 export const load: LayoutLoad = async ({ url, fetch }) => {
 	// Ensure this re-runs on every navigation
 	url.pathname;
@@ -47,15 +49,8 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
 	let isAuthenticated = false;
 
 	if (browser) {
-		try {
-			const saved = localStorage.getItem('currentUser');
-			if (saved) {
-				const data = JSON.parse(saved);
-				isAuthenticated = data.isAuthenticated === true;
-			}
-		} catch {
-			isAuthenticated = false;
-		}
+		const saved = localStorage.getItem('currentUser');
+		isAuthenticated = !!saved;
 
 		// Allow both login and register without being authenticated
 		const isAuthPage = url.pathname === '/login' || url.pathname === '/register';

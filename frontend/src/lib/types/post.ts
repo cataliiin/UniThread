@@ -1,20 +1,14 @@
-export interface Post {
-	id: string | number;
-	title: string;
-	authorId: string | number;
-	authorName: string;
-	authorSurname?: string;
-	authorUsername: string;
-	authorAvatar?: string;
-	content: string;
-	createdAt: string;
-	likes: number;
-	comments: number;
+import type { components } from '$lib/api/openapi-generated-schema';
+
+export type ApiPost = components['schemas']['PostFeedResponse'];
+
+export type Post = ApiPost & {
+	// UI-specific derived fields
 	liked: boolean;
 	university: string;
-	communityId?: string;
-	communityName?: string;
-}
+	// Any other UI-specific flags
+	is_loading?: boolean;
+};
 
 export type SortOption = 'new' | 'top';
 
@@ -70,8 +64,26 @@ function generateMockPosts(university: string, count: number, startId: number): 
 		const hoursAgo = Math.floor(Math.random() * 24);
 
 		return {
-			id: startId + i,
+			id: (startId + i).toString(),
 			title: 'Mock Post Title',
+			community_id: 'mock_community_id',
+			author_id: (authorIndex + 1).toString(),
+			created_at: new Date(Date.now() - (daysAgo * 24 + hoursAgo) * 60 * 60 * 1000).toISOString(),
+			updated_at: null,
+			is_anonymous: false,
+			score: Math.floor(Math.random() * 50),
+			comment_count: Math.floor(Math.random() * 15),
+			community: {
+				id: 'mock_community_id',
+				name: university,
+				type: 'public',
+				allow_anonymous: false,
+				owner_id: 'mock_owner_id',
+				university_id: 'mock_university_id',
+				created_at: new Date().toISOString(),
+				member_count: 100,
+				icon_key: null
+			},
 			authorId: authorIndex + 1,
 			authorName: names[authorIndex],
 			authorUsername: usernames[authorIndex],
@@ -81,7 +93,7 @@ function generateMockPosts(university: string, count: number, startId: number): 
 			comments: Math.floor(Math.random() * 15),
 			liked: Math.random() > 0.7,
 			university
-		};
+		} as Post;
 	});
 }
 

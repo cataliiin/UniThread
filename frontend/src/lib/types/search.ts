@@ -1,3 +1,7 @@
+import type { components } from '$lib/api/openapi-generated-schema';
+import type { Post } from './post';
+import type { Community } from './community';
+
 export type SearchFilter = 'all' | 'users' | 'communities' | 'posts';
 
 export interface SearchResult {
@@ -5,42 +9,17 @@ export interface SearchResult {
 	type: 'user' | 'community' | 'post';
 }
 
-export interface UserResult {
-	id: string | number;
-	name: string;
-	username: string;
-	avatarInitials: string;
-	avatar?: string;
-	avatarUrl?: string; // Keep for compatibility if needed
-	memberSince: string;
-	followers: number;
-}
+export type UserResult = components['schemas']['UserProfileResponse'] & {
+	// Add only essential UI flags if any
+	is_following?: boolean;
+};
 
-export interface CommunityResult {
-	id: string | number;
-	name: string;
-	description: string;
-	members: number;
-	posts: number;
-	isJoined: boolean;
-	isPending?: boolean;
-	type?: string;
-	icon?: string;
-	university: string;
-}
+export type CommunityResult = components['schemas']['CommunityResponse'] & {
+	// Add only essential UI flags
+	is_joined?: boolean;
+};
 
-export interface PostResult {
-	id: string | number;
-	authorId: string | number;
-	authorName: string;
-	authorUsername: string;
-	authorAvatar?: string;
-	content: string;
-	createdAt: string;
-	likes: number;
-	comments: number;
-	university: string;
-}
+export type PostResult = Post;
 
 // Mock data generators
 function generateMockUsers(query: string, university: string, count: number): UserResult[] {
@@ -72,17 +51,27 @@ function generateMockUsers(query: string, university: string, count: number): Us
 			usernames[names.indexOf(name)].toLowerCase().includes(query.toLowerCase())
 	);
 
-	return filtered.slice(0, count).map((name, i) => ({
-		id: i + 1,
-		name,
-		username: usernames[names.indexOf(name)],
-		avatarInitials: name
-			.split(' ')
-			.map((n) => n[0])
-			.join(''),
-		memberSince: 'Jan 2024',
-		followers: Math.floor(Math.random() * 500) + 50
-	}));
+	return filtered.slice(0, count).map((name, i) => {
+		const username = usernames[names.indexOf(name)];
+		return {
+			id: (i + 1).toString(),
+			username,
+			first_name: name.split(' ')[0],
+			last_name: name.split(' ').slice(1).join(' ') || null,
+			avatar_key: null,
+			university_id: 'uni1',
+			created_at: new Date().toISOString(),
+			role: 'student',
+			communities: [],
+			name,
+			avatarInitials: name
+				.split(' ')
+				.map((n) => n[0])
+				.join(''),
+			memberSince: 'Jan 2024',
+			followers: Math.floor(Math.random() * 500) + 50
+		} as UserResult;
+	});
 }
 
 function generateMockCommunities(
@@ -111,18 +100,27 @@ function generateMockCommunities(
 	const results = filtered.slice(0, count).map((c, i) => {
 		const members = Math.floor(Math.random() * 500) + 100;
 		return {
-			id: i + 1,
+			id: (i + 1).toString(),
 			name: c.name,
 			description: c.description,
+			type: 'public',
+			allow_anonymous: false,
+			icon_key: null,
+			banner_key: null,
+			university_id: 'uni1',
+			owner_id: 'user1',
+			created_at: new Date().toISOString(),
+			member_count: members,
+			user_membership_status: null,
 			members,
 			posts: Math.floor(Math.random() * 50) + 10,
 			isJoined: Math.random() > 0.7,
 			university
-		};
+		} as CommunityResult;
 	});
 
 	if (query === '') {
-		results.sort((a, b) => b.members - a.members);
+		results.sort((a, b) => (b.member_count || 0) - (a.member_count || 0));
 	}
 
 	return results;
@@ -150,16 +148,37 @@ function generateMockPosts(query: string, university: string, count: number): Po
 	const usernames = ['alexp', 'maria_ionescu', 'johnsmith', 'emma_w'];
 
 	return filtered.slice(0, count).map((content, i) => ({
-		id: i + 1,
+		id: (i + 1).toString(),
+		community_id: 'comm1',
+		author_id: (i % names.length + 1).toString(),
+		created_at: new Date().toISOString(),
+		updated_at: null,
+		is_anonymous: false,
+		score: Math.floor(Math.random() * 50),
+		comment_count: Math.floor(Math.random() * 15),
+		community: {
+			id: 'comm1',
+			name: university,
+			type: 'public',
+			allow_anonymous: false,
+			owner_id: 'user1',
+			university_id: 'uni1',
+			created_at: new Date().toISOString(),
+			member_count: 100,
+			icon_key: null
+		},
+		title: 'Mock Post Title',
+		content,
+		body: content,
 		authorId: (i % names.length) + 1,
 		authorName: names[i % names.length],
 		authorUsername: usernames[i % usernames.length],
-		content,
 		createdAt: new Date(Date.now() - i * 3600000).toISOString(),
 		likes: Math.floor(Math.random() * 50),
 		comments: Math.floor(Math.random() * 15),
+		liked: false,
 		university
-	}));
+	} as PostResult));
 }
 
 export const mockSearch = {

@@ -150,7 +150,7 @@
 					</div>
 					
 					<div class="grid grid-cols-5 gap-4 sm:grid-cols-10 sm:gap-6">
-						{#each [
+						{#each ([
 							{ id: 'dark', label: 'Dark', color: 'bg-[#0f0f0f]' },
 							{ id: 'light', label: 'Light', color: 'bg-white border' },
 							{ id: 'midnight', label: 'Midnight', color: 'bg-black border-[#ff000033] border' },
@@ -161,9 +161,9 @@
 							{ id: 'sakura', label: 'Tokyo Cloud', color: 'bg-[#ffffff] border-[#ffb7c5] border' },
 							{ id: 'nordic', label: 'Nordic', color: 'bg-[#1e293b] border-[#a5d7e8] border' },
 							{ id: 'coffee', label: 'Espresso', color: 'bg-[#1a0f0a] border-[#c68642] border' }
-						] as theme}
+						] as const) as theme}
 							<button
-								onclick={() => themeState.setTheme(theme.id as any)}
+								onclick={() => themeState.setTheme(theme.id)}
 								class="group flex flex-col items-center gap-1.5"
 								title={theme.label}
 							>

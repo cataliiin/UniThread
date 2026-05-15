@@ -1,26 +1,17 @@
-export type InvitationStatus = 'pending' | 'accepted' | 'declined';
+import type { components } from '$lib/api/openapi-generated-schema';
 
-export interface Invitation {
-	id: string;
-	community_id: string;
+export type InvitationStatus = components['schemas']['InvitationStatus'];
+
+export type ApiInvitation = components['schemas']['CommunityInvitationResponse'];
+
+export type Invitation = ApiInvitation & {
+	// UI-specific enriched fields
 	community_name?: string;
 	community_icon?: string | null;
 	community_description?: string;
-	invited_by: string;
 	inviter_name?: string;
 	inviter_avatar?: string | null;
-	status: InvitationStatus;
-	created_at: string;
-}
-
-export interface InvitationResponse {
-	id: string;
-	community_id: string;
-	invited_by: string;
-	invited_user: string;
-	status: InvitationStatus;
-	created_at: string;
-}
+};
 
 // Mock data generator for development
 export function generateMockInvitations(): Invitation[] {
@@ -54,10 +45,11 @@ export function generateMockInvitations(): Invitation[] {
 			community_icon: community.icon,
 			community_description: community.description,
 			invited_by: `user_${i}`,
+			invited_user: `me_${i}`,
 			inviter_name: inviter.name,
 			inviter_avatar: inviter.avatar,
 			status: 'pending',
 			created_at: new Date(Date.now() - (daysAgo * 24 + hoursAgo) * 60 * 60 * 1000).toISOString()
-		};
+		} as Invitation;
 	});
 }
