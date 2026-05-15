@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, aliased
 
 from app.core.post_access import build_post_metric_subqueries, to_post_feed_response
 from app.core.dependencies import (
@@ -168,11 +168,12 @@ async def list_my_communities(current_user: CurrentUser, db: DbDep):
     """
     List communities where the current user is an approved member.
     """
+    CM_Count = aliased(CommunityMember)
     count_subq = (
-        select(func.count(CommunityMember.user_id))
+        select(func.count(CM_Count.user_id))
         .where(
-            (CommunityMember.community_id == Community.id)
-            & (CommunityMember.status == MemberStatus.approved)
+            (CM_Count.community_id == Community.id)
+            & (CM_Count.status == MemberStatus.approved)
         )
         .scalar_subquery()
         .label("member_count")
@@ -330,9 +331,7 @@ async def get_community_posts(
 
     items = []
     for post, score, user_vote, comment_count in rows:
-        items.append(
-            to_post_feed_response(post, score, user_vote, comment_count)
-        )
+        items.append(to_post_feed_response(post, score, user_vote, comment_count))
 
     pages = (total + actual_size - 1) // actual_size if total else 0
     return PaginatedResponse(
@@ -379,8 +378,7 @@ async def list_community_members(
     total = await db.scalar(select(func.count()).select_from(base_query.subquery()))
 
     rows = await db.scalars(
-        base_query
-        .order_by(CommunityMember.joined_at.desc(), User.id.asc())
+        base_query.order_by(CommunityMember.joined_at.desc(), User.id.asc())
         .offset(offset)
         .limit(actual_size)
     )
@@ -452,7 +450,9 @@ async def join_community(
         questions_by_id = {question.id: question for question in all_questions}
 
         invalid_question_ids = [
-            question_id for question_id in provided_answers if question_id not in questions_by_id
+            question_id
+            for question_id in provided_answers
+            if question_id not in questions_by_id
         ]
         if invalid_question_ids:
             raise NotFoundException("Join question not found.")
