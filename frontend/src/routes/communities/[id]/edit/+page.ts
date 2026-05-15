@@ -8,10 +8,6 @@ export const ssr = false;
 export const load: PageLoad = async ({ params }) => {
 	const communityId = params.id;
 
-	if (!user.isAuthenticated) {
-		throw redirect(307, '/login');
-	}
-
 	try {
 		const communityData = await CommunitiesService.get(communityId);
 		

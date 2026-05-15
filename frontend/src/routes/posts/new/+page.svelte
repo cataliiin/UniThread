@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { api } from '$lib/api/client';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { user } from '$lib/stores/user.svelte';
 	import { communityState } from '$lib/stores/community.svelte';
@@ -15,16 +13,12 @@
 	let defaultCommunityId = $derived($page.url.searchParams.get('communityId'));
 
 	onMount(async () => {
-		if (!user.isAuthenticated) {
-			toast.error('Please log in to create a post.');
-			goto('/login');
-			return;
-		}
-
 		try {
 			const myComms = await communityState.fetchMyCommunities();
 			// Only allow posting in approved communities
-			communities = myComms.filter(c => c.user_membership_status === 'approved' || c.owner_id === user.id);
+			communities = myComms.filter(
+				(c) => c.user_membership_status === 'approved' || c.owner_id === user.id
+			);
 		} catch (e: any) {
 			toast.error(e.message || 'Could not load communities.');
 		} finally {
@@ -43,10 +37,10 @@
 		<p class="mt-2 text-muted-foreground">Share something with your community.</p>
 	</div>
 
-	<div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
+	<div class="rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
 		{#if loading}
 			<div class="flex justify-center py-8">
-				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+				<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
 			</div>
 		{:else}
 			<PostForm mode="create" {communities} {defaultCommunityId} />

@@ -3,18 +3,25 @@
 	import { goto } from '$app/navigation';
 	import { user } from '$lib/stores/user.svelte';
 	import { libraryState } from '$lib/stores/library.svelte';
-	import { UploadCloud, File, FileText, Image as ImageIcon, Trash2, Download, Folder, ChevronRight, FolderPlus, ArrowLeft } from 'lucide-svelte';
-	
+	import {
+		UploadCloud,
+		File,
+		FileText,
+		Image as ImageIcon,
+		Trash2,
+		Download,
+		Folder,
+		ChevronRight,
+		FolderPlus,
+		ArrowLeft
+	} from 'lucide-svelte';
+
 	let fileInput: HTMLInputElement;
 	let isDragging = $state(false);
 	let showFolderModal = $state(false);
 	let newFolderName = $state('');
 
 	onMount(() => {
-		if (!user.isAuthenticated) {
-			goto('/login');
-			return;
-		}
 		libraryState.loadFiles();
 	});
 
@@ -112,10 +119,14 @@
 	</header>
 
 	<div class="navigation-bar">
-		<button class="back-btn" onclick={() => libraryState.goBack()} disabled={!libraryState.currentFolderId}>
+		<button
+			class="back-btn"
+			onclick={() => libraryState.goBack()}
+			disabled={!libraryState.currentFolderId}
+		>
 			<ArrowLeft size={18} />
 		</button>
-		
+
 		<div class="breadcrumbs">
 			<button class="breadcrumb-item" onclick={() => libraryState.enterFolder(null as any)}>
 				Library
@@ -130,7 +141,7 @@
 	</div>
 
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div 
+	<div
 		class="upload-zone {isDragging ? 'dragging' : ''} {libraryState.loading ? 'loading' : ''}"
 		ondragover={handleDragOver}
 		ondragleave={handleDragLeave}
@@ -140,14 +151,14 @@
 		role="button"
 		tabindex="0"
 	>
-		<input 
-			type="file" 
-			bind:this={fileInput} 
-			onchange={handleFileSelect} 
+		<input
+			type="file"
+			bind:this={fileInput}
+			onchange={handleFileSelect}
 			multiple
 			class="hidden-input"
 		/>
-		
+
 		<div class="upload-content">
 			<UploadCloud size={32} class="upload-icon" />
 			<h3>{libraryState.loading ? 'Uploading...' : 'Drag & Drop Files Here'}</h3>
@@ -159,10 +170,11 @@
 		{#each libraryState.folders as folder (folder.id)}
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div 
-				class="file-card folder-card" 
+			<div
+				class="file-card folder-card"
 				onclick={() => libraryState.enterFolder(folder.id)}
-				onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && libraryState.enterFolder(folder.id)}
+				onkeydown={(e) =>
+					(e.key === 'Enter' || e.key === ' ') && libraryState.enterFolder(folder.id)}
 				role="button"
 				tabindex="0"
 			>
@@ -170,11 +182,14 @@
 					<div class="generic-preview">
 						<Folder size={64} class="folder-icon" />
 					</div>
-					
+
 					<div class="file-actions">
-						<button 
-							class="action-btn delete-btn" 
-							onclick={(e) => { e.stopPropagation(); libraryState.deleteFolder(folder.id); }}
+						<button
+							class="action-btn delete-btn"
+							onclick={(e) => {
+								e.stopPropagation();
+								libraryState.deleteFolder(folder.id);
+							}}
 							title="Delete Folder"
 						>
 							<Trash2 size={18} />
@@ -201,18 +216,24 @@
 							<Icon size={64} class="file-type-icon" />
 						</div>
 					{/if}
-					
+
 					<div class="file-actions">
-						<button 
-							class="action-btn download-btn" 
-							onclick={(e) => { e.stopPropagation(); downloadFile(file.dataUrl, file.name); }}
+						<button
+							class="action-btn download-btn"
+							onclick={(e) => {
+								e.stopPropagation();
+								downloadFile(file.dataUrl, file.name);
+							}}
 							title="Download"
 						>
 							<Download size={18} />
 						</button>
-						<button 
-							class="action-btn delete-btn" 
-							onclick={(e) => { e.stopPropagation(); libraryState.deleteFile(file.id); }}
+						<button
+							class="action-btn delete-btn"
+							onclick={(e) => {
+								e.stopPropagation();
+								libraryState.deleteFile(file.id);
+							}}
 							title="Delete"
 						>
 							<Trash2 size={18} />
@@ -246,9 +267,9 @@
 				<h3>Create New Folder</h3>
 			</div>
 			<div class="modal-body">
-				<input 
-					type="text" 
-					bind:value={newFolderName} 
+				<input
+					type="text"
+					bind:value={newFolderName}
 					placeholder="Folder name"
 					class="modal-input"
 					onkeydown={(e) => e.key === 'Enter' && confirmFolderCreate()}
@@ -266,7 +287,11 @@
 <style>
 	:global(body) {
 		margin: 0;
-		font-family: 'Inter', system-ui, -apple-system, sans-serif;
+		font-family:
+			'Inter',
+			system-ui,
+			-apple-system,
+			sans-serif;
 	}
 
 	.library-container {
@@ -404,7 +429,7 @@
 		margin-bottom: 2rem;
 		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 	}
-/* ... existing styles ... */
+	/* ... existing styles ... */
 	.folder-card {
 		cursor: pointer;
 	}
@@ -419,7 +444,8 @@
 		transition: transform 0.3s ease;
 	}
 
-	.upload-zone:hover, .upload-zone.dragging {
+	.upload-zone:hover,
+	.upload-zone.dragging {
 		border-color: var(--primary);
 		background-color: var(--accent);
 		transform: translateY(-2px);
@@ -433,8 +459,13 @@
 	}
 
 	@keyframes pulse {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.5; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.5;
+		}
 	}
 
 	.hidden-input {
@@ -625,8 +656,14 @@
 	}
 
 	@keyframes modal-pop {
-		0% { transform: scale(0.9); opacity: 0; }
-		100% { transform: scale(1); opacity: 1; }
+		0% {
+			transform: scale(0.9);
+			opacity: 0;
+		}
+		100% {
+			transform: scale(1);
+			opacity: 1;
+		}
 	}
 
 	.modal-header {

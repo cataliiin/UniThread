@@ -12,11 +12,6 @@
 	let loading = $state(true);
 
 	onMount(async () => {
-		if (!user.isAuthenticated) {
-			toast.error('Please log in to edit your post.');
-			goto('/login');
-			return;
-		}
 
 		try {
 			const p = await PostsService.getPost(data.postId);
