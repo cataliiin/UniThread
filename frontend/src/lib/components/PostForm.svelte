@@ -134,7 +134,8 @@
 			id="body"
 			placeholder="What are your thoughts?"
 			bind:value={formData.body}
-			rows={8}
+			rows={12}
+			class="min-h-[300px]"
 			required
 		/>
 	</div>
