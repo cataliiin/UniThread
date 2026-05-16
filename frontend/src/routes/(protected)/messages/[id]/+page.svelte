@@ -15,7 +15,7 @@
 	type MessageResponse = components['schemas']['MessageResponse'];
 	type UserProfileResponse = components['schemas']['UserProfileResponse'];
 
-	const otherUserId = $derived($page.params.id);
+	const otherUserId = $derived($page.params.id || '');
 
 	let messages = $state<MessageResponse[]>([]);
 	let targetUser = $state<UserProfileResponse | null>(null);

@@ -52,12 +52,14 @@
 	const regularMembers = $derived(filteredMembers.filter((m) => !m.is_admin));
 
 	onMount(async () => {
-		const community = await communityState.fetchCommunity(communityId);
+		const [community, membersData] = await Promise.all([
+			communityState.fetchCommunity(communityId),
+			communityState.fetchMembers(communityId)
+		]);
 		if (community) {
 			communityName = community.name;
 		}
-
-		members = await communityState.fetchMembers(communityId);
+		members = membersData;
 		loading = false;
 	});
 

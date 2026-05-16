@@ -20,10 +20,8 @@ export function createPostsState(getCommunityId: () => string | null = () => nul
 	async function ensureMyCommunities() {
 		if (communitiesFetched) return;
 		try {
-			const res = await CommunitiesService.list(1, 100);
-			const ids = res.items
-				.filter((c) => c.user_membership_status === 'approved')
-				.map((c) => c.id);
+			const res = await CommunitiesService.listMyCommunities();
+			const ids = res.map((c) => c.id);
 			myCommunityIds = new Set(ids);
 			communitiesFetched = true;
 		} catch (e) {

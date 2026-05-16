@@ -12,9 +12,9 @@
 	let searchQuery = $state('');
 	let containerEl = $state<HTMLElement | null>(null);
 
-	let selectedCommunity = $derived(communities.find(c => c.id === selectedId));
+	let selectedCommunity = $derived(communities.find((c: any) => c.id === selectedId));
 	let filteredCommunities = $derived(
-		communities.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+		communities.filter((c: any) => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
 	);
 
 	function handleSelect(id: string) {

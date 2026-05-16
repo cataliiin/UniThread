@@ -27,6 +27,9 @@ function createCommunityState() {
 	let membersLoading = $state(false);
 	let requestsLoading = $state(false);
 
+	let lastFetchedMyCommunities = 0;
+	const communityCache = new Map<string, { data: Community; timestamp: number }>();
+
 	const userRole = $derived.by((): CommunityRole | null => {
 		if (!currentCommunity || !user.id) return null;
 		if (currentCommunity.owner_id === user.id) return 'owner';
@@ -60,6 +63,7 @@ function createCommunityState() {
 			const community: Community = communityData;
 
 			currentCommunity = community;
+			lastFetchedMyCommunities = 0; // force myCommunities re-fetch
 			toasts.show('Community created successfully!', 'success');
 			return community;
 		} catch (error: any) {
@@ -88,6 +92,8 @@ function createCommunityState() {
 			const community: Community = communityData;
 
 			currentCommunity = community;
+			communityCache.set(communityId, { data: community, timestamp: Date.now() });
+			lastFetchedMyCommunities = 0; // force myCommunities re-fetch
 			toasts.show('Community updated successfully!', 'success');
 			return community;
 		} catch (error: any) {
@@ -98,12 +104,19 @@ function createCommunityState() {
 		}
 	}
 
-	async function fetchCommunity(communityId: string): Promise<Community | null> {
+	async function fetchCommunity(communityId: string, force = false): Promise<Community | null> {
+		const cached = communityCache.get(communityId);
+		if (!force && cached && Date.now() - cached.timestamp < 15000) {
+			currentCommunity = cached.data;
+			return currentCommunity;
+		}
+
 		loading = true;
 		try {
 			const communityData = await CommunitiesService.get(communityId);
 			const community: Community = communityData;
 			currentCommunity = community;
+			communityCache.set(communityId, { data: community, timestamp: Date.now() });
 			return community;
 		} catch (error) {
 			currentCommunity = null;
@@ -140,11 +153,16 @@ function createCommunityState() {
 		}
 	}
 
-	async function fetchMyCommunities(): Promise<Community[]> {
+	async function fetchMyCommunities(force = false): Promise<Community[]> {
+		if (!force && myCommunities.length > 0 && Date.now() - lastFetchedMyCommunities < 10000) {
+			return myCommunities;
+		}
+
 		loading = true;
 		try {
 			const data = await CommunitiesService.listMyCommunities();
 			myCommunities = data as Community[];
+			lastFetchedMyCommunities = Date.now();
 			return myCommunities;
 		} catch (error) {
 			console.error("Failed to fetch my communities:", error);
@@ -158,11 +176,11 @@ function createCommunityState() {
 	async function fetchMembers(communityId: string): Promise<CommunityMember[]> {
 		membersLoading = true;
 		try {
-			// 1. Fetch all approved members
-			const res = await CommunitiesService.listMembers(communityId, 1, 100);
-			
-			// 2. Fetch admins to cross-reference (since UserPublic in members list lacks is_admin)
-			const adminsRes = await CommunitiesService.listAdmins(communityId);
+			// Fetch both approved members and admins in parallel
+			const [res, adminsRes] = await Promise.all([
+				CommunitiesService.listMembers(communityId, 1, 100),
+				CommunitiesService.listAdmins(communityId)
+			]);
 			
 			const adminIds = new Set((adminsRes || []).map(a => a.id));
 			const items = (res?.items || []) as CommunityMember[];
@@ -208,6 +226,8 @@ function createCommunityState() {
 				currentCommunity.user_membership_status = communityData.status;
 				currentCommunity.member_count++;
 			}
+			communityCache.delete(communityId); // invalidate cache
+			lastFetchedMyCommunities = 0; // force myCommunities re-fetch
 			toasts.show(
 				communityData.status === 'approved' 
 					? 'Joined community successfully!' 
@@ -231,6 +251,8 @@ function createCommunityState() {
 				currentCommunity.user_membership_status = null;
 				currentCommunity.member_count--;
 			}
+			communityCache.delete(communityId); // invalidate cache
+			lastFetchedMyCommunities = 0; // force myCommunities re-fetch
 			toasts.show('Left community successfully', 'success');
 			return true;
 		} catch (error: any) {
@@ -327,6 +349,8 @@ function createCommunityState() {
 		myCommunities = [];
 		members = [];
 		joinRequests = [];
+		lastFetchedMyCommunities = 0;
+		communityCache.clear();
 	}
 
 	return {

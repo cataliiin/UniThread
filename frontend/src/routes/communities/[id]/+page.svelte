@@ -114,11 +114,16 @@
 
 	onMount(async () => {
 		if (community) {
-			communityState.fetchCommunity(community.id);
-			communityState.fetchMembers(community.id);
-			communityState.fetchMyCommunities(); // Populate myCommunities for the modal
+			// Fetch community details, members list, and myCommunities in parallel
+			await Promise.all([
+				communityState.fetchCommunity(community.id),
+				communityState.fetchMembers(community.id),
+				communityState.fetchMyCommunities()
+			]);
+			
+			// After members are loaded, communityState.isAdmin correctly reflects admin rights
 			if (communityState.isAdmin) {
-				communityState.fetchJoinRequests(community.id);
+				await communityState.fetchJoinRequests(community.id);
 			}
 		}
 	});

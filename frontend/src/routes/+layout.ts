@@ -6,6 +6,7 @@ import { HealthService } from '$lib/api/services';
 export const ssr = false;
 
 // Cache variables to prevent heavy, blocking health check HTTP calls on every client-side page navigation
+let isInitialLoad = true;
 let lastHealthCheckTime = 0;
 let cachedHealthData: any = null;
 const CACHE_DURATION_MS = 15000; // 15 seconds throttle
@@ -14,12 +15,12 @@ export const load: LayoutLoad = async ({ url }) => {
 	// Ensure this re-runs on every navigation
 	url.pathname;
 
-	// 1. Health Check (Throttled/Cached to prevent blocking client navigation)
-	const now = Date.now();
-	if (!cachedHealthData || now - lastHealthCheckTime > CACHE_DURATION_MS) {
+	// 1. Health Check (Only blocks the initial SPA load. Subsequent navigations are non-blocking)
+	if (isInitialLoad) {
 		try {
 			cachedHealthData = await HealthService.getHealth();
-			lastHealthCheckTime = now;
+			lastHealthCheckTime = Date.now();
+			isInitialLoad = false;
 		} catch (err: any) {
 			// If it's already a SvelteKit error, rethrow it
 			if (err.status && err.body) throw err;
@@ -30,6 +31,19 @@ export const load: LayoutLoad = async ({ url }) => {
 				message:
 					'Could not connect to the server. Make sure the backend is running and reachable.'
 			});
+		}
+	} else {
+		// Non-blocking background health check on navigation
+		const now = Date.now();
+		if (now - lastHealthCheckTime > CACHE_DURATION_MS) {
+			HealthService.getHealth()
+				.then((data) => {
+					cachedHealthData = data;
+					lastHealthCheckTime = Date.now();
+				})
+				.catch((err) => {
+					console.error('Background health check failed:', err);
+				});
 		}
 	}
 

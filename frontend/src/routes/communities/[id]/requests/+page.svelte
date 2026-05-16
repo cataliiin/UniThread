@@ -14,7 +14,12 @@
 	let loading = $state(true);
 
 	onMount(async () => {
-		await communityState.fetchCommunity(communityId);
+		// Fetch both community and members list in parallel to correctly resolve isAdmin role checks
+		await Promise.all([
+			communityState.fetchCommunity(communityId),
+			communityState.fetchMembers(communityId)
+		]);
+
 		if (communityState.isAdmin) {
 			await communityState.fetchJoinRequests(communityId);
 		}
