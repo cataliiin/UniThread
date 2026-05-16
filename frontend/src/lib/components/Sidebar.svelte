@@ -20,8 +20,8 @@
 	let navLinks = $derived([
 		{
 			href: '/dashboard',
-			label: 'Home',
-			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`
+			label: 'Feed',
+			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>`
 		},
 		{
 			href: '/posts/new',
@@ -37,11 +37,6 @@
 			href: '/map',
 			label: 'Campus Map',
 			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`
-		},
-		{
-			href: '/library',
-			label: 'My Library',
-			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>`
 		},
 		{
 			href: '/marketplace',
@@ -129,14 +124,14 @@
 	</div>
 
 	<!-- Footer -->
-	<div class="mt-auto border-t border-sidebar-border p-4">
+	<div class="mt-auto border-t border-border/50 p-4">
 		<div
-			class="flex items-center justify-between rounded-2xl border border-sidebar-border bg-sidebar-accent p-3 transition-all duration-300 hover:border-primary/30"
+			class="flex items-center justify-between rounded-2xl border border-border/60 bg-card p-3 transition-all duration-300 hover:border-primary/30"
 		>
-			<a href="/profile" class="flex items-center gap-3">
+			<a href="/profile" class="flex items-center gap-3 min-w-0 flex-1">
 				<UserAvatar src={avatarUrl} initials={user.avatarInitials} size="sm" />
 				<div class="flex min-w-0 flex-col">
-					<span class="truncate text-sm font-semibold text-sidebar-accent-foreground"
+					<span class="truncate text-sm font-semibold text-foreground"
 						>{user.name}</span
 					>
 					<span class="truncate text-xs text-muted-foreground">@{user.username}</span>

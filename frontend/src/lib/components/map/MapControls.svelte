@@ -7,7 +7,7 @@
 
 <div class="flex gap-2">
 	<button
-		class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-sidebar-border bg-sidebar-accent px-3 py-2 text-xs font-semibold text-muted-foreground transition-all duration-200 hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-400"
+		class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground transition-all duration-200 hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-400"
 		onclick={onlocate}
 	>
 		<svg
@@ -27,7 +27,7 @@
 		My Location
 	</button>
 	<button
-		class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-sidebar-border bg-sidebar-accent px-3 py-2 text-xs font-semibold text-muted-foreground transition-all duration-200 hover:border-primary/50 hover:bg-primary/10 hover:text-foreground"
+		class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground transition-all duration-200 hover:border-primary/50 hover:bg-primary/10 hover:text-foreground"
 		onclick={onreset}
 	>
 		<svg

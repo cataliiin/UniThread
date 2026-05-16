@@ -50,7 +50,7 @@
 			<h2 class="text-sm font-bold tracking-tight text-foreground">UNITBV Buildings</h2>
 		{/if}
 		<button
-			class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-accent text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+			class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-all hover:bg-secondary hover:text-foreground"
 			onclick={() => (sidebarOpen = !sidebarOpen)}
 			title="Toggle sidebar"
 		>
@@ -78,7 +78,7 @@
 		<div class="flex flex-1 flex-col gap-4 overflow-hidden p-3">
 			<!-- Search Box -->
 			<div
-				class="flex items-center gap-3 rounded-xl border border-sidebar-border bg-sidebar-accent px-3 py-2.5 transition-all focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20"
+				class="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 transition-all focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20"
 			>
 				<svg
 					class="shrink-0 text-muted-foreground"
@@ -96,7 +96,7 @@
 					<line x1="21" x2="16.65" y1="21" y2="16.65"></line>
 				</svg>
 				<input
-					class="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
+					class="w-full border-none bg-transparent p-0 text-sm text-foreground outline-none focus:ring-0 placeholder:text-muted-foreground/50"
 					type="text"
 					placeholder="Search building, faculty..."
 					bind:value={searchQuery}
