@@ -358,6 +358,18 @@
 </div>
 
 <style>
+	/* Fix Leaflet tile gaps due to sub-pixel rounding on external scaled monitors */
+	:global(.leaflet-tile) {
+		outline: 1px solid transparent;
+		backface-visibility: hidden;
+		-webkit-backface-visibility: hidden;
+	}
+
+	/* Match Leaflet container background to current theme so any micro-gaps are invisible */
+	:global(.leaflet-container) {
+		background-color: var(--background) !important;
+	}
+
 	/* Leaflet Global Overrides */
 	:global(.custom-marker) {
 		background: transparent !important;
