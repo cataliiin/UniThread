@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
 	import UserAvatar from '$lib/components/UserAvatar.svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -49,13 +50,8 @@
 			});
 		}
 	});
-
-	function handleFollow() {
-		toasts.show(`Following ${targetUser.username} (feature coming soon)`, 'success');
-	}
-
 	function handleMessage() {
-		toasts.show(`Messaging ${targetUser.username} (feature coming soon)`, 'success');
+		goto('/messages/' + targetUser.id);
 	}
 
 	async function handleInvite() {
@@ -131,23 +127,23 @@
 								<UserPlus class="mr-2 h-4 w-4" />
 								Invite
 							</Button>
+							<Button 
+								variant="outline" 
+								onclick={handleMessage}
+								class="flex-1 border-border font-bold hover:bg-secondary"
+							>
+								<MessageSquare class="mr-2 h-4 w-4" />
+								Message
+							</Button>
 						{:else}
 							<Button 
-								onclick={handleFollow}
+								onclick={handleMessage}
 								class="flex-1 bg-primary font-bold shadow-lg shadow-primary/20 hover:bg-primary/90"
 							>
-								<UserPlus class="mr-2 h-4 w-4" />
-								Follow
+								<MessageSquare class="mr-2 h-4 w-4" />
+								Message
 							</Button>
 						{/if}
-						<Button 
-							variant="outline" 
-							onclick={handleMessage}
-							class="flex-1 border-border font-bold hover:bg-secondary"
-						>
-							<MessageSquare class="mr-2 h-4 w-4" />
-							Message
-						</Button>
 					</div>
 				{:else}
 					<div class="mt-6">

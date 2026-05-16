@@ -226,7 +226,7 @@
 				<div class="pt-4">
 					<Button 
 						class="w-full gap-2 h-14 text-lg font-semibold rounded-2xl shadow-lg shadow-primary/20"
-						onclick={() => alert('Messaging is not implemented yet')}
+						onclick={() => goto('/messages/' + listing.author.id)}
 					>
 						<MessageSquare size={22} />
 						Message Seller

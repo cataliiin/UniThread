@@ -19,7 +19,10 @@ export const MessagesService = {
 				query: { page, size }
 			}
 		});
-		return requireData(data);
+		if (!data) {
+			return { items: [], total: 0, page, size, pages: 0 };
+		}
+		return data;
 	},
 
 	async createMessage(recipientId: string, payload: MessageCreate): Promise<MessageResponse> {
