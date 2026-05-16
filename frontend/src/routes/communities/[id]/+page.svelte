@@ -23,7 +23,9 @@
 
 	let menuOpen = $state(false);
 	let leaveConfirm = $state(false);
+	let deleteConfirm = $state(false);
 	let leavingLoading = $state(false);
+	let deletingLoading = $state(false);
 	let showInviteLinksModal = $state(false);
 	let inviteLinks = $state<CommunityInviteLinkResponse[]>([]);
 	let linksLoading = $state(false);
@@ -58,6 +60,7 @@
 	function closeMenu() {
 		menuOpen = false;
 		leaveConfirm = false;
+		deleteConfirm = false;
 	}
 
 	async function loadInviteLinks() {
@@ -121,8 +124,8 @@
 	});
 
 	async function handleDeleteCommunity() {
-		if (!community || !confirm('Are you sure you want to delete this community? This action cannot be undone.')) return;
-		
+		if (!community) return;
+		deletingLoading = true;
 		try {
 			const { error } = await api.DELETE('/api/v1/communities/{community_id}', {
 				params: { path: { community_id: community.id } }
@@ -132,6 +135,9 @@
 			goto('/communities');
 		} catch (error: any) {
 			toasts.show(error.message || 'Failed to delete community', 'error');
+		} finally {
+			deletingLoading = false;
+			closeMenu();
 		}
 	}
 </script>
@@ -289,7 +295,7 @@
 					<div class="relative z-30">
 						<button
 							id="btn-community-menu"
-							onclick={() => { menuOpen = !menuOpen; leaveConfirm = false; }}
+							onclick={() => { menuOpen = !menuOpen; leaveConfirm = false; deleteConfirm = false; }}
 							class="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-sidebar text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
 							aria-label="More options"
 						>
@@ -311,13 +317,34 @@
 										Community Options
 									</button>
 
-									<button
-										onclick={handleDeleteCommunity}
-										class="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-500 transition-colors hover:bg-red-500/10"
-									>
-										<Trash2 class="h-3.75 w-3.75" />
-										Delete Community
-									</button>
+									{#if !deleteConfirm}
+										<button
+											onclick={() => (deleteConfirm = true)}
+											class="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-500 transition-colors hover:bg-red-500/10"
+										>
+											<Trash2 class="h-3.75 w-3.75" />
+											Delete Community
+										</button>
+									{:else}
+										<div class="px-4 py-3">
+											<p class="text-xs text-muted-foreground mb-3">Are you sure? This cannot be undone.</p>
+											<div class="flex gap-2">
+												<button
+													onclick={handleDeleteCommunity}
+													disabled={deletingLoading}
+													class="flex-1 rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/80 disabled:opacity-60"
+												>
+													{deletingLoading ? 'Deleting…' : 'Yes, Delete'}
+												</button>
+												<button
+													onclick={() => (deleteConfirm = false)}
+													class="flex-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+												>
+													Cancel
+												</button>
+											</div>
+										</div>
+									{/if}
 									<div class="my-1 border-t border-border"></div>
 								{/if}
 
