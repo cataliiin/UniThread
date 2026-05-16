@@ -174,35 +174,40 @@
 
 		<div class="mx-auto max-w-4xl px-4">
 			<!-- Community Header -->
-			<div class="relative -mt-16 mb-6 flex items-end gap-4">
-				<!-- Icon -->
-				<div class="h-32 w-32 shrink-0 overflow-hidden rounded-2xl border-4 border-background bg-muted shadow-xl">
-					{#if community.icon_key}
-						<img src={getImageUrl(community.icon_key)} alt="{community.name} icon" class="h-full w-full object-cover" />
-					{:else}
-						<div class="flex h-full w-full items-center justify-center bg-indigo-600 text-4xl font-bold text-white">
-							{community.name.charAt(0).toUpperCase()}
-						</div>
-					{/if}
-				</div>
-
-				<!-- Name & Meta -->
-				<div class="mb-2 min-w-0 flex-1">
-					<div class="flex flex-wrap items-center gap-2">
-						<h1 class="text-2xl font-bold text-foreground">{community.name}</h1>
-						{#if isOwner}
-							<span class="rounded-full bg-indigo-500/20 px-3 py-1 text-xs font-semibold text-indigo-400">Owner</span>
-						{:else if isAdmin}
-							<span class="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-400">Admin</span>
-						{:else if userRole === 'member'}
-							<span class="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-400">Member</span>
+			<div class="relative -mt-16 mb-6 flex flex-col md:flex-row items-start md:items-end gap-4 text-left">
+				<!-- Top row: Icon + Name & Meta side-by-side on all screens -->
+				<div class="flex items-end gap-4 w-full md:w-auto">
+					<!-- Icon -->
+					<div class="h-24 w-24 sm:h-32 sm:w-32 shrink-0 overflow-hidden rounded-2xl border-4 border-background bg-muted shadow-xl">
+						{#if community.icon_key}
+							<img src={getImageUrl(community.icon_key)} alt="{community.name} icon" class="h-full w-full object-cover" />
+						{:else}
+							<div class="flex h-full w-full items-center justify-center bg-indigo-600 text-3xl sm:text-4xl font-bold text-white">
+								{community.name.charAt(0).toUpperCase()}
+							</div>
 						{/if}
 					</div>
-					<p class="mt-1 text-sm text-muted-foreground">{community.member_count} members</p>
+
+					<!-- Name & Meta -->
+					<div class="mb-2 min-w-0 flex-1">
+						<div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+							<h1 class="text-xl sm:text-2xl font-bold text-foreground break-all leading-tight">{community.name}</h1>
+							<div class="flex items-center gap-2">
+								{#if isOwner}
+									<span class="rounded-full bg-indigo-500/20 px-2.5 py-0.5 text-xs font-semibold text-indigo-400">Owner</span>
+								{:else if isAdmin}
+									<span class="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs font-semibold text-amber-400">Admin</span>
+								{:else if userRole === 'member'}
+									<span class="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">Member</span>
+								{/if}
+							</div>
+						</div>
+						<p class="mt-1 text-xs sm:text-sm text-muted-foreground">{community.member_count} members</p>
+					</div>
 				</div>
 
 				<!-- Action Buttons -->
-				<div class="mb-2 flex shrink-0 items-center gap-2">
+				<div class="mb-2 flex flex-wrap justify-start items-center gap-2 w-full md:w-auto mt-2 md:mt-0 md:ml-auto">
 					{#if !community.user_membership_status}
 						{#if community.type === 'public'}
 							<button
