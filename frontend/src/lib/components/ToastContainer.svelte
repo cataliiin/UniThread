@@ -24,7 +24,7 @@
 </script>
 
 <div
-	class="pointer-events-none fixed bottom-20 left-1/2 z-9999 flex -translate-x-1/2 flex-col gap-3 sm:right-4 sm:bottom-4 sm:left-auto sm:translate-x-0 lg:right-6 lg:bottom-6"
+	class="pointer-events-none fixed bottom-20 right-4 z-9999 flex flex-col gap-3 sm:bottom-4 lg:right-6 lg:bottom-6"
 >
 	{#each visibleToasts as toast (toast.id)}
 		<div
