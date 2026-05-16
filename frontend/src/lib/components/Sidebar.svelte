@@ -4,6 +4,7 @@
 	import { toasts } from '$lib/stores/toast.svelte';
 	import { invitationsState } from '$lib/stores/invitations.svelte';
 	import UserAvatar from './UserAvatar.svelte';
+	import ExamCountdown from './ExamCountdown.svelte';
 	import logo from '$lib/assets/UniThread_Logo.svg';
 
 	let avatarUrl = $derived(user.avatarSource);
@@ -122,6 +123,10 @@
 			{@render navLink(link)}
 		{/each}
 	</nav>
+
+	<div class="mt-auto">
+		<ExamCountdown />
+	</div>
 
 	<!-- Footer -->
 	<div class="mt-auto border-t border-sidebar-border p-4">
