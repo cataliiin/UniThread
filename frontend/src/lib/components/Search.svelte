@@ -331,7 +331,13 @@
 					</h2>
 					<div class="space-y-3">
 						{#each searchState.posts as post (post.id)}
-							<article class="group rounded-xl border border-border bg-card p-4 transition-all duration-300 hover:border-primary/30">
+							<article 
+								role="button"
+								tabindex="0"
+								class="group rounded-xl border border-border bg-card p-4 transition-all duration-300 hover:border-primary/30 cursor-pointer text-left w-full"
+								onclick={() => goto(`/posts/${post.id}`)}
+								onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/posts/${post.id}`); }}
+							>
 								{#if !post.author}
 									<div class="flex items-center gap-3">
 										<div
