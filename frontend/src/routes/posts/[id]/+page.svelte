@@ -29,6 +29,7 @@
 	let commentsLoading = $state(true);
 	let newCommentBody = $state('');
 	let submitting = $state(false);
+	const MAX_COMMENT_LENGTH = 1000;
 
 	// Confirm Dialog state
 	let confirmOpen = $state(false);
@@ -53,6 +54,10 @@
 
 	async function handleAddComment() {
 		if (!newCommentBody.trim() || submitting) return;
+		if (newCommentBody.length > MAX_COMMENT_LENGTH) {
+			toast.error(`Comment cannot exceed ${MAX_COMMENT_LENGTH} characters.`);
+			return;
+		}
 		if (!userStore.isAuthenticated) {
 			toast.error('You must be logged in to comment.');
 			return;
@@ -165,13 +170,23 @@
 						<div class="flex-1 space-y-3">
 							<textarea
 								bind:value={newCommentBody}
+								maxlength={MAX_COMMENT_LENGTH}
 								placeholder="Add a comment..."
 								class="w-full min-h-[100px] rounded-xl border border-border bg-secondary/20 p-4 text-sm text-foreground transition-all focus:border-primary/50 focus:outline-none focus:ring-4 focus:ring-primary/5"
 							></textarea>
-							<div class="flex justify-end">
+							<div class="flex justify-between items-center">
+								<!-- Character Counter -->
+								<span 
+									class="text-xs transition-colors duration-300
+									{newCommentBody.length > MAX_COMMENT_LENGTH - 100 
+										? 'text-amber-500 font-semibold' 
+										: 'text-muted-foreground/60'}"
+								>
+									{newCommentBody.length} / {MAX_COMMENT_LENGTH} characters
+								</span>
 								<button
 									onclick={handleAddComment}
-									disabled={!newCommentBody.trim() || submitting}
+									disabled={!newCommentBody.trim() || newCommentBody.length > MAX_COMMENT_LENGTH || submitting}
 									class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 disabled:opacity-50 disabled:shadow-none"
 								>
 									{#if submitting}

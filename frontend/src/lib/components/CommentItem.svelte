@@ -37,7 +37,7 @@
 	// We could also check if user is community admin here if we pass community context
 </script>
 
-<div class="group flex gap-3 px-3 py-4 border-b border-border/40 last:border-0 transition-all duration-300 {isAuthor ? 'bg-primary/5 rounded-xl border-none my-1 shadow-sm' : ''}">
+<div class="group flex items-start gap-3 px-3 py-4 border-b border-border/40 last:border-0 transition-all duration-300 {isAuthor ? 'bg-primary/5 rounded-xl border-none my-1 shadow-sm' : ''}">
 	<!-- Avatar -->
 	{#if !comment.author}
 		<UserAvatar initials="A" className="h-8 w-8 text-xs" />
@@ -56,20 +56,22 @@
 	{/if}
 
 	<div class="flex-1 min-w-0">
-		<div class="flex items-center justify-between gap-2 mb-1">
-			<div class="flex items-center gap-2 overflow-hidden">
+		<div class="flex items-start justify-between gap-2 mb-1">
+			<div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 min-w-0">
 				<button 
-					class="text-sm font-bold text-foreground hover:text-primary transition-colors truncate"
+					class="text-sm font-bold text-foreground hover:text-primary transition-colors truncate max-w-[140px] sm:max-w-[200px]"
 					onclick={() => comment.author_id && goto(`/profile/${comment.author_id}`)}
 				>
 					{getAuthorDisplayName(comment.author)}
 				</button>
 
 				{#if comment.author}
-					<span class="text-xs text-muted-foreground/60">@{comment.author.username}</span>
+					<span class="text-xs text-muted-foreground/50 truncate max-w-[100px] sm:max-w-none">@{comment.author.username}</span>
 				{/if}
 
-				<span class="text-xs text-muted-foreground/60">{formatTimeAgo(comment.created_at)}</span>
+				<span class="text-xs text-muted-foreground/30 select-none">·</span>
+
+				<span class="text-xs text-muted-foreground/60 shrink-0">{formatTimeAgo(comment.created_at)}</span>
 			</div>
 
 			{#if isAuthor}
@@ -82,6 +84,6 @@
 				</button>
 			{/if}
 		</div>
-		<p class="text-sm leading-relaxed text-card-foreground/90 whitespace-pre-wrap">{comment.body}</p>
+		<p class="text-sm leading-relaxed text-card-foreground/90 whitespace-pre-wrap break-words">{comment.body}</p>
 	</div>
 </div>
