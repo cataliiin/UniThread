@@ -66,14 +66,14 @@
 		</a>
 	{/if}
 	
-	<div class="flex flex-col max-w-[85%] sm:max-w-[70%] {isMe ? 'items-end' : 'items-start'}">
+	<div class="flex flex-col max-w-[85%] sm:max-w-[70%] min-w-0 {isMe ? 'items-end' : 'items-start'}">
 		<div 
-			class="relative rounded-2xl px-4 py-2.5 text-sm shadow-sm transition-all duration-300
+			class="relative rounded-2xl px-4 py-2.5 text-sm shadow-sm transition-all duration-300 w-full
 			{isMe 
 				? 'bg-primary text-primary-foreground rounded-br-none shadow-primary/20' 
 				: 'bg-card border border-border/60 text-foreground rounded-bl-none shadow-black/5 hover:border-primary/30'}"
 		>
-			<p class="whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
+			<p class="whitespace-pre-wrap break-words [word-break:break-word] leading-relaxed">{msg.content}</p>
 			
 			<!-- Time on hover for clean look -->
 			<div class="absolute -bottom-5 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-[10px] text-muted-foreground font-medium {isMe ? 'right-0' : 'left-0'}">
