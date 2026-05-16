@@ -31,7 +31,7 @@
 	<title>Create Post | UniThread</title>
 </svelte:head>
 
-<div class="container mx-auto max-w-2xl py-8">
+<div class="mx-auto max-w-2xl px-4 py-8">
 	<div class="mb-8">
 		<h1 class="text-3xl font-bold tracking-tight">Create a Post</h1>
 		<p class="mt-2 text-muted-foreground">Share something with your community.</p>
