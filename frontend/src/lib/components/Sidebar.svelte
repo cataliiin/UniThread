@@ -5,7 +5,7 @@
 	import { invitationsState } from '$lib/stores/invitations.svelte';
 	import UserAvatar from './UserAvatar.svelte';
 	import ExamCountdown from './ExamCountdown.svelte';
-	import logo from '$lib/assets/UniThread_Logo.svg';
+	import Logo from './Logo.svelte';
 
 	let avatarUrl = $derived(user.avatarSource);
 	let pendingInvites = $derived(invitationsState.pendingCount);
@@ -124,12 +124,10 @@
 >
 	<!-- Header -->
 	<div class="flex items-center gap-4 border-b border-sidebar-border p-6">
-		<div
-			class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-card border border-border p-1 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40"
-		>
-			<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
-		</div>
-		<span class="text-xl font-bold tracking-tight text-sidebar-foreground">UniThread</span>
+		<a href="/dashboard" class="flex items-center gap-3 transition-transform hover:scale-102">
+			<Logo className="h-9 w-9 text-foreground" />
+			<span class="text-xl font-bold tracking-tight text-sidebar-foreground">UniThread</span>
+		</a>
 	</div>
 
 	<!-- Navigation -->

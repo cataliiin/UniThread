@@ -6,7 +6,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Loader2, AlertCircle, Eye, EyeOff } from '@lucide/svelte';
-	import logo from '$lib/assets/UniThread_Logo.svg';
+	import Logo from './Logo.svelte';
 
 	let email = $state('');
 	let username = $state('');
@@ -121,11 +121,7 @@
 </script>
 
 <div class="mb-8 flex flex-col items-center">
-	<div
-		class="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-card border border-border p-2 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40"
-	>
-		<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
-	</div>
+	<Logo className="h-14 w-14 mb-4 text-foreground transition-transform duration-500 hover:rotate-6 hover:scale-105" />
 	<h1 class="text-2xl font-bold text-foreground">Create UniThread Account</h1>
 	<p class="text-muted-foreground">Join the community</p>
 </div>

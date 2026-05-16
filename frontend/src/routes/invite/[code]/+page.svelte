@@ -6,7 +6,7 @@
 	import { user } from '$lib/stores/user.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Loader2, Users } from '@lucide/svelte';
-	import logo from '$lib/assets/UniThread_Logo.svg';
+	import Logo from '$lib/components/Logo.svelte';
 
 	let loading = $state(false);
 
@@ -41,9 +41,7 @@
 		{#if $page.data?.invite}
 			<div class="rounded-2xl border border-border bg-card p-8 shadow-xl">
 				<div class="mb-8 flex flex-col items-center">
-					<div class="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40">
-						<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
-					</div>
+					<Logo className="h-14 w-14 mb-4 text-foreground transition-transform duration-500 hover:rotate-6 hover:scale-105" />
 					<div class="mx-auto h-20 w-20 rounded-full bg-primary/20 flex items-center justify-center mb-4">
 						<Users class="h-10 w-10 text-primary" />
 					</div>

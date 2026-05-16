@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import logo from '$lib/assets/UniThread_Logo.svg';
+	import Logo from '$lib/components/Logo.svelte';
 
 	let isVisible = $state(false);
 
@@ -23,9 +23,7 @@
 	<nav class="sticky top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-md transition-all duration-300">
 		<div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 			<div class="flex items-center gap-3">
-				<div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-card border border-border p-1 shadow-lg shadow-primary/20">
-					<img src={logo} alt="UniThread Logo" class="h-full w-full object-contain" />
-				</div>
+				<Logo className="h-9 w-9 text-foreground transition-transform duration-300 hover:scale-105" />
 				<span class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">UniThread</span>
 			</div>
 			<div class="flex items-center gap-4">
