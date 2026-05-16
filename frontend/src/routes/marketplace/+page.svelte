@@ -7,7 +7,6 @@
 	import {
 		allCategories,
 		categoryLabels,
-		categoryIcons,
 		sortLabels,
 		type MarketplaceSortOption,
 		type MarketplaceCategory,
@@ -15,11 +14,22 @@
 	} from '$lib/types/marketplace';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
+	import { Laptop, Shirt, Book, Armchair, Home, Wrench, Package, ShoppingBag, Heart } from '@lucide/svelte';
 
 	const marketplace = createMarketplaceState();
 
 	let scrollRef: HTMLDivElement;
 	let searchDebounce: ReturnType<typeof setTimeout>;
+
+	const iconMap = {
+		Laptop,
+		Shirt,
+		Book,
+		Armchair,
+		Home,
+		Wrench,
+		Package
+	};
 
 	onMount(() => {
 		marketplace.loadListings(true);
@@ -215,7 +225,6 @@
 					<option value="">All</option>
 					{#each allCategories as cat}
 						<option value={cat}>
-							{categoryIcons[cat]}
 							{categoryLabels[cat]}
 						</option>
 					{/each}
@@ -317,9 +326,13 @@
 	{#if !marketplace.loading && marketplace.listings.length === 0}
 		<div class="flex flex-col items-center justify-center py-16 text-center">
 			<div
-				class="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 text-4xl"
+				class="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 text-primary"
 			>
-				{marketplace.favoritesMode ? '❤️' : '🏪'}
+				{#if marketplace.favoritesMode}
+					<Heart size={40} />
+				{:else}
+					<ShoppingBag size={40} />
+				{/if}
 			</div>
 			<h3 class="mb-2 text-lg font-semibold text-foreground">
 				{marketplace.favoritesMode ? 'No favorites yet' : 'No listings found'}

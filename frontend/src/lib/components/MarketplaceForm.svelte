@@ -24,7 +24,7 @@
 		title: '',
 		description: '',
 		category: 'other' as MarketplaceCategory,
-		priceDisplay: '',
+		priceDisplay: '' as string | number,
 		is_negotiable: false
 	});
 
@@ -36,8 +36,9 @@
 		if (!formData.title.trim()) newErrors.title = 'Title is required';
 		if (!formData.description.trim()) newErrors.description = 'Description is required';
 
-		const price = parseFloat(formData.priceDisplay);
-		if (!formData.priceDisplay.trim() || isNaN(price) || price <= 0) {
+		const priceStr = String(formData.priceDisplay).trim();
+		const price = parseFloat(priceStr);
+		if (!priceStr || isNaN(price) || price <= 0) {
 			newErrors.price = 'Enter a valid price greater than 0';
 		}
 
@@ -49,7 +50,7 @@
 		e.preventDefault();
 		if (!validate()) return;
 
-		const priceInCents = Math.round(parseFloat(formData.priceDisplay) * 100);
+		const priceInCents = Math.round(parseFloat(String(formData.priceDisplay)) * 100);
 
 		onSubmit({
 			title: formData.title.trim(),

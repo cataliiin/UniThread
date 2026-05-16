@@ -38,8 +38,8 @@
 </script>
 
 <aside
-	class="relative z-10 flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300
-	{sidebarOpen ? 'w-[360px]' : 'w-12'}
+	class="relative z-10 flex flex-col border-r border-sidebar-border bg-sidebar overflow-hidden transition-all duration-300
+	{sidebarOpen ? 'w-[360px]' : 'w-0'}
 	{sidebarOpen ? 'lg:static' : 'lg:static'}
 	max-lg:absolute max-lg:inset-y-0 max-lg:left-0 max-lg:shadow-2xl max-lg:z-20
 	{!sidebarOpen && 'max-lg:-translate-x-full'}"

@@ -16,15 +16,15 @@ export const categoryLabels: Record<MarketplaceCategory, string> = {
 	other: 'Other'
 };
 
-/** Icons for each category (emoji shorthand) */
+/** Icon names for each category (Lucide icon names) */
 export const categoryIcons: Record<MarketplaceCategory, string> = {
-	electronics: '💻',
-	clothing: '👕',
-	books: '📚',
-	furniture: '🪑',
-	housing: '🏠',
-	services: '🔧',
-	other: '📦'
+	electronics: 'Laptop',
+	clothing: 'Shirt',
+	books: 'Book',
+	furniture: 'Armchair',
+	housing: 'Home',
+	services: 'Wrench',
+	other: 'Package'
 };
 
 export const allCategories: MarketplaceCategory[] = [

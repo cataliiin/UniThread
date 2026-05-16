@@ -2,6 +2,7 @@
 	import type { MarketplaceListing } from '$lib/types/marketplace';
 	import { categoryLabels, categoryIcons } from '$lib/types/marketplace';
 	import { user } from '$lib/stores/user.svelte';
+	import { Laptop, Shirt, Book, Armchair, Home, Wrench, Package } from '@lucide/svelte';
 
 	let {
 		listing,
@@ -40,6 +41,21 @@
 	let displayCategory = $derived(
 		listing.category === 'housing' ? 'mentoring' : listing.category
 	);
+
+	const iconMap = {
+		Laptop,
+		Shirt,
+		Book,
+		Armchair,
+		Home,
+		Wrench,
+		Package
+	};
+
+	let CategoryIcon = $derived.by(() => {
+		const iconName = categoryIcons[displayCategory as keyof typeof categoryIcons] || 'Package';
+		return iconMap[iconName as keyof typeof iconMap] || Package;
+	});
 </script>
 
 <article
@@ -50,7 +66,7 @@
 		<span
 			class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
 		>
-			<span>{categoryIcons[displayCategory as keyof typeof categoryIcons] || '📦'}</span>
+			<svelte:component this={CategoryIcon} size={16} />
 			{categoryLabels[displayCategory as keyof typeof categoryLabels] || displayCategory}
 		</span>
 		<span class="text-xs text-muted-foreground/60">{formatTimeAgo(listing.created_at)}</span>
