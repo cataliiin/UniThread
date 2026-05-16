@@ -162,6 +162,11 @@
 	onMount(() => {
 		if (!browser) return;
 
+		// Close sidebar by default on mobile screens to maximize map viewport
+		if (window.innerWidth < 1024) {
+			sidebarOpen = false;
+		}
+
 		(async () => {
 			const leaflet = await import('leaflet');
 			L = leaflet.default || leaflet;
