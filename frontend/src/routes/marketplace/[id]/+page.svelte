@@ -175,7 +175,7 @@
 			<!-- Category Badge -->
 			<div>
 				<span class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
-					<svelte:component this={CategoryIcon} size={14} />
+					<CategoryIcon size={14} />
 					{categoryLabels[listing.category as keyof typeof categoryLabels] || listing.category}
 				</span>
 			</div>

@@ -11,3 +11,5 @@ export { UniversitiesService } from './UniversitiesService';
 export { UsersService } from './UsersService';
 export { CommentsService } from './CommentsService';
 export { ExternalService } from './ExternalService';
+export { MessagesService } from './MessagesService';
+export { RelationshipsService } from './RelationshipsService';
