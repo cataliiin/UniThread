@@ -52,7 +52,7 @@
 			}
 
 			toasts.show('Welcome back! Logging you in…', 'success');
-			setTimeout(() => goto('/'), 1000);
+			setTimeout(() => goto('/dashboard'), 1000);
 		} catch {
 			toasts.show('An unexpected error occurred. Please try again.', 'error');
 		} finally {

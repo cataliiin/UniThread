@@ -29,7 +29,13 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 DbDep = Annotated[AsyncSession, Depends(get_db)]
 
 
-async def get_token_from_cookie(request: Request) -> str:
+async def get_token_from_any_source(request: Request) -> str:
+    # 1. Check Authorization Header
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        return auth_header.split(" ")[1]
+
+    # 2. Check Cookie
     token = request.cookies.get("access_token")
     if not token:
         raise HTTPException(
@@ -40,7 +46,7 @@ async def get_token_from_cookie(request: Request) -> str:
 
 
 async def get_current_user(
-    token: Annotated[str, Depends(get_token_from_cookie)],
+    token: Annotated[str, Depends(get_token_from_any_source)],
     db: DbDep,
 ) -> User:
     credentials_exception = HTTPException(

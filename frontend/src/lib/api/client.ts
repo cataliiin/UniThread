@@ -3,7 +3,7 @@ import type { paths } from '$lib/api/openapi-generated-schema';
 import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
 
-const publicBaseUrl = 'http://localhost:8000';
+const publicBaseUrl = 'http://127.0.0.1:8000';
 
 const baseUrl = !browser && publicBaseUrl.startsWith('/')
     ? 'http://backend:8000'

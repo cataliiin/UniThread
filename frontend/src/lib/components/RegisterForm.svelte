@@ -101,7 +101,7 @@
 
 			toasts.show('Registration successful! Logging you in...', 'success');
 			setTimeout(() => {
-				goto('/');
+				goto('/dashboard');
 			}, 1500);
 		} catch (error: any) {
 			let errorMessage = error.message || 'An error occurred during registration.';

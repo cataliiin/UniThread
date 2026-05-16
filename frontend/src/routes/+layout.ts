@@ -20,9 +20,7 @@ export const load: LayoutLoad = async ({ url }) => {
 		}
 		
 		if (healthData.status === 'degraded') {
-			throw error(503, {
-				message: 'The storage service (MinIO) is currently offline. Some features may be unavailable.'
-			});
+			console.warn('Backend reported degraded status (MinIO offline). Some image features will fail.');
 		}
 	} catch (err: any) {
 		// If it's already a SvelteKit error, rethrow it
@@ -36,26 +34,26 @@ export const load: LayoutLoad = async ({ url }) => {
 		});
 	}
 
-	// 2. Authentication Logic
-	let isAuthenticated = false;
-
+	// 2. Redirect authenticated users away from public pages
 	if (browser) {
-		const saved = localStorage.getItem('currentUser');
-		isAuthenticated = !!saved;
-
-		// Allow both login and register without being authenticated
-		const isAuthPage = url.pathname === '/login' || url.pathname === '/register';
-
-		if (!isAuthenticated && !isAuthPage) {
-			throw redirect(307, '/login');
-		}
-
-		if (isAuthenticated && isAuthPage) {
-			throw redirect(307, '/');
+		const isPublicPage = url.pathname === '/' || url.pathname === '/login' || url.pathname === '/register';
+		if (isPublicPage) {
+			let isAuthenticated = false;
+			try {
+				const saved = localStorage.getItem('currentUser');
+				if (saved) {
+					const data = JSON.parse(saved);
+					isAuthenticated = data.isAuthenticated === true || !!data.id;
+				}
+			} catch {
+				// ignore
+			}
+			
+			if (isAuthenticated) {
+				throw redirect(307, '/dashboard');
+			}
 		}
 	}
 
-	return {
-		isAuthenticated
-	};
+	return {};
 };
