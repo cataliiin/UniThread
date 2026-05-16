@@ -4,6 +4,8 @@ import { requireData } from '$lib/api/services/helpers';
 import { CommunitiesService } from '$lib/api/services/CommunitiesService';
 import { PostsService } from '$lib/api/services/PostsService';
 import { UsersService } from '$lib/api/services/UsersService';
+import { MarketplaceService } from '$lib/api/services/MarketplaceService';
+import type { MarketplaceListing } from '$lib/types/marketplace';
 
 type PresignedUrlRequest = components['schemas']['PresignedUrlRequest'];
 type PresignedUrlResponse = components['schemas']['PresignedUrlResponse'];
@@ -86,6 +88,19 @@ export const StorageService = {
             contentType
         );
         return PostsService.updatePost(postId, { image_key: file_key });
+    },
+
+    async uploadMarketplaceImage(
+        listingId: string,
+        file: Blob,
+        contentType?: string
+    ): Promise<MarketplaceListing> {
+        const { file_key } = await StorageService.uploadAsset(
+            'marketplace-assets',
+            file,
+            contentType
+        );
+        return MarketplaceService.updateListing(listingId, { image_key: file_key });
     },
 
     async uploadCommunityIcon(
