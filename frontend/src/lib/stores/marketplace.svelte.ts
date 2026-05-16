@@ -224,3 +224,5 @@ export function createMarketplaceState() {
 		toggleCreateForm
 	};
 }
+
+export const marketplaceState = createMarketplaceState();

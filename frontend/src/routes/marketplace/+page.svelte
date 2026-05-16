@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { createMarketplaceState } from '$lib/stores/marketplace.svelte';
+	import { marketplaceState } from '$lib/stores/marketplace.svelte';
 	import MarketplaceCard from '$lib/components/MarketplaceCard.svelte';
 	import MarketplaceForm from '$lib/components/MarketplaceForm.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
@@ -16,7 +16,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Laptop, Shirt, Book, Armchair, Home, Wrench, Package, ShoppingBag, Heart } from '@lucide/svelte';
 
-	const marketplace = createMarketplaceState();
+	const marketplace = marketplaceState;
 
 	let scrollRef: HTMLDivElement;
 	let searchDebounce: ReturnType<typeof setTimeout>;
@@ -32,7 +32,10 @@
 	};
 
 	onMount(() => {
-		marketplace.loadListings(true);
+		// Load listings on mount only if they are not already populated in our singleton cache
+		if (marketplace.listings.length === 0) {
+			marketplace.loadListings(true);
+		}
 
 		// Infinite scroll observer
 		const observer = new IntersectionObserver(

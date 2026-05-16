@@ -3,7 +3,7 @@
 	import { categoryLabels, categoryIcons } from '$lib/types/marketplace';
 	import { user } from '$lib/stores/user.svelte';
 	import { StorageService } from '$lib/api/services/StorageService';
-	import { MarketplaceService } from '$lib/api/services/MarketplaceService';
+	import { marketplaceState } from '$lib/stores/marketplace.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { 
@@ -72,13 +72,8 @@
 		favoriteCount = wasFavorited ? favoriteCount - 1 : favoriteCount + 1;
 
 		try {
-			if (wasFavorited) {
-				await MarketplaceService.unfavoriteListing(listing.id);
-				toast.success('Removed from favorites');
-			} else {
-				await MarketplaceService.favoriteListing(listing.id);
-				toast.success('Added to favorites');
-			}
+			await marketplaceState.toggleFavorite(listing.id);
+			toast.success(wasFavorited ? 'Removed from favorites' : 'Added to favorites');
 		} catch (e) {
 			console.error('Failed to toggle favorite:', e);
 			// Revert
@@ -90,9 +85,13 @@
 
 	async function handleMarkSold() {
 		try {
-			await MarketplaceService.updateListing(listing.id, { is_active: false });
-			toast.success('Item marked as sold');
-			goto('/marketplace');
+			const ok = await marketplaceState.markSold(listing.id);
+			if (ok) {
+				toast.success('Item marked as sold');
+				goto('/marketplace');
+			} else {
+				throw new Error('Failed to mark listing as sold');
+			}
 		} catch (e) {
 			toast.error('Failed to update listing');
 		}
@@ -100,9 +99,13 @@
 
 	async function handleDelete() {
 		try {
-			await MarketplaceService.deleteListing(listing.id);
-			toast.success('Listing deleted successfully');
-			goto('/marketplace');
+			const ok = await marketplaceState.deleteListing(listing.id);
+			if (ok) {
+				toast.success('Listing deleted successfully');
+				goto('/marketplace');
+			} else {
+				throw new Error('Failed to delete listing');
+			}
 		} catch (e) {
 			toast.error('Failed to delete listing');
 		}
