@@ -17,7 +17,7 @@
 </script>
 
 <Dialog.Root bind:open>
-	<Dialog.Content class="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+<Dialog.Content class="sm:max-w-[600px] w-[calc(100%-2rem)] max-w-full rounded-2xl border border-border bg-card shadow-2xl">
 		<Dialog.Header>
 			<Dialog.Title class="text-2xl font-bold">Create a Post</Dialog.Title>
 			<Dialog.Description>
@@ -31,6 +31,7 @@
 				{communities} 
 				defaultCommunityId={communityId} 
 				onSuccess={handleSuccess}
+				layout="compact"
 			/>
 		</div>
 	</Dialog.Content>

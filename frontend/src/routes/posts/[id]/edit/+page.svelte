@@ -40,19 +40,17 @@
 	<title>Edit Post | UniThread</title>
 </svelte:head>
 
-<div class="mx-auto max-w-2xl px-4 py-8">
+<div class="mx-auto max-w-5xl px-4 py-8">
 	<div class="mb-8">
 		<h1 class="text-3xl font-bold tracking-tight">Edit Post</h1>
 		<p class="mt-2 text-muted-foreground">Modify your post's content.</p>
 	</div>
 
-	<div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-		{#if loading}
-			<div class="flex justify-center py-8">
-				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-			</div>
-		{:else if post}
-			<PostForm mode="edit" {post} />
-		{/if}
-	</div>
+	{#if loading}
+		<div class="flex justify-center py-12 rounded-2xl border bg-card shadow-sm">
+			<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+		</div>
+	{:else if post}
+		<PostForm mode="edit" {post} />
+	{/if}
 </div>
