@@ -8,6 +8,7 @@
 	import { Trash2, Megaphone } from 'lucide-svelte';
 	import { getAuthorDisplayName } from '$lib/utils/user';
 	import ConfirmDialog from './ConfirmDialog.svelte';
+	import UserAvatar from './UserAvatar.svelte';
 	let {
 		post,
 		isFullView = false,
@@ -128,17 +129,18 @@
 	<div class="mb-3 flex items-center gap-3">
 		<!-- Avatar -->
 		{#if !post.author}
-			<div
-				class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary transition-all duration-300 group-hover:bg-primary/20"
-			>
-				A
-			</div>
+			<UserAvatar initials="A" size="sm" />
 		{:else}
 			<button 
-				class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary transition-all duration-300 hover:bg-primary/20"
+				class="flex items-center justify-center rounded-full transition-all duration-300 hover:scale-105 active:scale-95"
 				onclick={(e) => { e.stopPropagation(); goto(`/profile/${post.author?.id}`); }}
+				title={`View ${getAuthorDisplayName(post.author)}'s profile`}
 			>
-				{getAuthorDisplayName(post.author).charAt(0)}
+				<UserAvatar
+					src={post.author.avatar_key ? StorageService.getPublicUrl('user-assets', post.author.avatar_key) : null}
+					initials={getAuthorDisplayName(post.author).charAt(0)}
+					size="sm"
+				/>
 			</button>
 		{/if}
 
