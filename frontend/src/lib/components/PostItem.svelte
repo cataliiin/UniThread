@@ -23,6 +23,9 @@
 	let confirmDeleteOpen = $state(false);
 
 	function formatTimeAgo(dateString: string): string {
+		if (!dateString.endsWith('Z') && !dateString.includes('+')) {
+			dateString += 'Z';
+		}
 		const date = new Date(dateString);
 		const now = new Date();
 		const diffMs = now.getTime() - date.getTime();
