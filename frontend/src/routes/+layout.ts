@@ -5,33 +5,43 @@ import { HealthService } from '$lib/api/services';
 
 export const ssr = false;
 
+// Cache variables to prevent heavy, blocking health check HTTP calls on every client-side page navigation
+let lastHealthCheckTime = 0;
+let cachedHealthData: any = null;
+const CACHE_DURATION_MS = 15000; // 15 seconds throttle
+
 export const load: LayoutLoad = async ({ url }) => {
 	// Ensure this re-runs on every navigation
 	url.pathname;
 
-	// 1. Health Check
-	try {
-		const healthData = await HealthService.getHealth();
-		
-		if (healthData.status === 'down') {
+	// 1. Health Check (Throttled/Cached to prevent blocking client navigation)
+	const now = Date.now();
+	if (!cachedHealthData || now - lastHealthCheckTime > CACHE_DURATION_MS) {
+		try {
+			cachedHealthData = await HealthService.getHealth();
+			lastHealthCheckTime = now;
+		} catch (err: any) {
+			// If it's already a SvelteKit error, rethrow it
+			if (err.status && err.body) throw err;
+
+			// If fetch fails completely (backend offline)
+			console.error('DEBUG: Health check failed, throwing 503 error', err);
 			throw error(503, {
-				message: 'The database is currently unreachable. The system is down for maintenance.'
+				message:
+					'Could not connect to the server. Make sure the backend is running and reachable.'
 			});
 		}
-		
-		if (healthData.status === 'degraded') {
-			console.warn('Backend reported degraded status (MinIO offline). Some image features will fail.');
-		}
-	} catch (err: any) {
-		// If it's already a SvelteKit error, rethrow it
-		if (err.status && err.body) throw err;
+	}
 
-		// If fetch fails completely (backend offline)
-		console.error('DEBUG: Health check failed, throwing 503 error', err);
+	// Verify health from cache
+	if (cachedHealthData && cachedHealthData.status === 'down') {
 		throw error(503, {
-			message:
-				'Could not connect to the server. Make sure the backend is running and reachable.'
+			message: 'The database is currently unreachable. The system is down for maintenance.'
 		});
+	}
+
+	if (cachedHealthData && cachedHealthData.status === 'degraded') {
+		console.warn('Backend reported degraded status (MinIO offline). Some image features will fail.');
 	}
 
 	// 2. Redirect authenticated users away from public pages
