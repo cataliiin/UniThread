@@ -1,6 +1,6 @@
 import { getAuthorDisplayName } from '$lib/utils/user';
+import { goto } from '$app/navigation';
 import {
-
 	type SearchFilter,
 	type UserResult,
 	type CommunityResult,
@@ -143,6 +143,7 @@ function createSearchState() {
 				if (res.status === 'approved') {
 					community.member_count++;
 					toasts.show('Joined community', 'success');
+					goto(`/communities/${idStr}`);
 				} else {
 					toasts.show('Join request sent', 'success');
 				}

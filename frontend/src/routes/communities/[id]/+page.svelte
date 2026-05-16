@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import type { PageData } from './$types';
 	import { communityState } from '$lib/stores/community.svelte';
 	import { user } from '$lib/stores/user.svelte';
@@ -38,7 +38,10 @@
 
 	async function handleJoin() {
 		if (!community) return;
-		await communityState.joinCommunity(community.id);
+		const ok = await communityState.joinCommunity(community.id);
+		if (ok) {
+			await invalidateAll();
+		}
 	}
 
 	async function handleLeave() {
@@ -48,7 +51,7 @@
 		leavingLoading = false;
 		if (ok) {
 			closeMenu();
-			// Stay on page to show Join button if public, or keep as is
+			goto('/communities');
 		}
 	}
 
