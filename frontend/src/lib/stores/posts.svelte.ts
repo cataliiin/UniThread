@@ -136,6 +136,13 @@ export function createPostsState(getCommunityId: () => string | null = () => nul
 		feedType = 'global';
 	}
 
+	function refresh() {
+		posts = [];
+		page = 1;
+		hasMore = true;
+		loadMore();
+	}
+
 	return {
 		get posts() {
 			return posts;
@@ -159,6 +166,7 @@ export function createPostsState(getCommunityId: () => string | null = () => nul
 		setSort,
 		setFeedType,
 		toggleLike,
-		reset
+		reset,
+		refresh
 	};
 }

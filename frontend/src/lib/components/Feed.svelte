@@ -4,10 +4,14 @@
 	import { onMount } from 'svelte';
 	import { user } from '$lib/stores/user.svelte';
 
-	let { communityId = null }: { communityId?: string | null } = $props();
+	let { communityId = null, refresh = $bindable() }: { communityId?: string | null; refresh?: () => void } = $props();
 
 	// Instantiate the store explicitly for this feed
 	const posts = createPostsState(() => communityId);
+
+	refresh = () => {
+		posts.refresh();
+	};
 
 	let containerRef: HTMLDivElement;
 

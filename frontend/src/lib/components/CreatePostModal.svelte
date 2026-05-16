@@ -7,12 +7,14 @@
 		communityId?: string | null;
 		communities?: any[];
 		open?: boolean;
+		onSuccess?: () => void;
 	}
 
-	let { communityId = null, communities = [], open = $bindable(false) }: Props = $props();
+	let { communityId = null, communities = [], open = $bindable(false), onSuccess }: Props = $props();
 
 	function handleSuccess() {
 		open = false;
+		onSuccess?.();
 	}
 </script>
 

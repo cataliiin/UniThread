@@ -145,6 +145,13 @@
 			closeMenu();
 		}
 	}
+
+	let refreshFeed = $state<() => void>();
+
+	function handlePostSuccess() {
+		refreshFeed?.();
+		toasts.show('Post created successfully!', 'success');
+	}
 </script>
 
 <svelte:head>
@@ -439,7 +446,7 @@
 			<!-- Posts Feed -->
 			<div class="mt-8">
 				{#if community.type === 'public' || community.user_membership_status === 'approved' || isOwner}
-					<Feed communityId={community.id} />
+					<Feed communityId={community.id} bind:refresh={refreshFeed} />
 				{:else}
 					<div class="rounded-xl border border-border bg-sidebar/40 p-12 text-center">
 						<div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
@@ -475,6 +482,7 @@
 	communityId={community?.id} 
 	communities={communityState.myCommunities} 
 	bind:open={modalOpen} 
+	onSuccess={handlePostSuccess}
 />
 </div>
 
