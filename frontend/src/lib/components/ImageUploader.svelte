@@ -5,7 +5,7 @@
 		onImageUpload: (fileKey: string) => void;
 		onImageRemove: () => void;
 		uploadHandler: (file: File) => Promise<string>;
-		aspectRatio?: 'square' | 'banner';
+		aspectRatio?: 'square' | 'banner' | 'video';
 		label: string;
 		accept?: string;
 	}
@@ -26,7 +26,8 @@
 	let fileInput: HTMLInputElement | null = $state(null);
 
 	const aspectClasses = $derived(
-		aspectRatio === 'banner' ? 'aspect-[3/1]' : 'aspect-square'
+		aspectRatio === 'banner' ? 'aspect-[3/1]' : 
+		aspectRatio === 'video' ? 'aspect-video' : 'aspect-square'
 	);
 
 	const maxSizeMB = 5;

@@ -9,6 +9,8 @@
 		type MarketplaceCategory,
 		type MarketplaceListingCreate
 	} from '$lib/types/marketplace';
+	import { StorageService } from '$lib/api/services/StorageService';
+	import ImageUploader from '$lib/components/ImageUploader.svelte';
 
 	let {
 		onSubmit,
@@ -25,8 +27,16 @@
 		description: '',
 		category: 'other' as MarketplaceCategory,
 		priceDisplay: '' as string | number,
-		is_negotiable: false
+		is_negotiable: false,
+		image_key: null as string | null
 	});
+
+	let imageUrl = $derived(StorageService.getPublicUrl('marketplace-assets', formData.image_key));
+
+	async function handleUpload(file: File) {
+		const { file_key } = await StorageService.uploadAsset('marketplace-assets', file);
+		return file_key;
+	}
 
 	let errors = $state<Record<string, string>>({});
 
@@ -57,12 +67,27 @@
 			description: formData.description.trim(),
 			category: formData.category,
 			price: priceInCents,
-			is_negotiable: formData.is_negotiable
+			is_negotiable: formData.is_negotiable,
+			image_key: formData.image_key ?? undefined
 		});
 	}
 </script>
 
 <form onsubmit={handleSubmit} class="space-y-5">
+	<!-- Image -->
+	<div class="space-y-2">
+		<div class="max-w-md">
+			<ImageUploader
+				label="Item Image"
+				{imageUrl}
+				aspectRatio="video"
+				onImageUpload={(key) => (formData.image_key = key)}
+				onImageRemove={() => (formData.image_key = null)}
+				uploadHandler={handleUpload}
+			/>
+		</div>
+	</div>
+
 	<!-- Title -->
 	<div class="space-y-2">
 		<Label for="listing-title">Title</Label>

@@ -2,7 +2,9 @@
 	import type { MarketplaceListing } from '$lib/types/marketplace';
 	import { categoryLabels, categoryIcons } from '$lib/types/marketplace';
 	import { user } from '$lib/stores/user.svelte';
-	import { Laptop, Shirt, Book, Armchair, Home, Wrench, Package } from '@lucide/svelte';
+	import { Laptop, Shirt, Book, Armchair, Home, Wrench, Package, MessageSquare } from '@lucide/svelte';
+	import { StorageService } from '$lib/api/services/StorageService';
+	import { goto } from '$app/navigation';
 
 	let {
 		listing,
@@ -59,10 +61,13 @@
 		const iconName = categoryIcons[displayCategory as keyof typeof categoryIcons] || 'Package';
 		return iconMap[iconName as keyof typeof iconMap] || Package;
 	});
+
+	let imageUrl = $derived(StorageService.getPublicUrl('marketplace-assets', listing.image_key));
 </script>
 
 <article
-	class="group relative rounded-2xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_20px_rgba(50,65,95,0.1)]"
+	class="group relative flex h-full flex-col rounded-2xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_20px_rgba(50,65,95,0.1)] cursor-pointer"
+	onclick={() => goto(`/marketplace/${listing.id}`)}
 >
 	<!-- Category Badge + Time -->
 	<div class="mb-3 flex items-center justify-between">
@@ -75,9 +80,23 @@
 		<span class="text-xs text-muted-foreground/60">{formatTimeAgo(listing.created_at)}</span>
 	</div>
 
+	<!-- Image -->
+	{#if imageUrl}
+		<div class="mb-4 aspect-video overflow-hidden rounded-xl bg-muted/30 relative">
+			<img src={imageUrl} alt={listing.title} class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+			<div class="absolute inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+				<span class="text-xs font-semibold text-white bg-background/25 px-3 py-1.5 rounded-full border border-white/20 flex items-center gap-1 shadow-md backdrop-blur-md">
+					View Details
+					<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="translate-y-[0.5px]"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+				</span>
+			</div>
+		</div>
+	{/if}
+
 	<!-- Title -->
-	<h3 class="mb-2 text-lg font-semibold text-card-foreground line-clamp-2">
-		{listing.title}
+	<h3 class="mb-2 text-lg font-semibold text-card-foreground line-clamp-2 group-hover:text-primary transition-colors flex items-start gap-1">
+		<span class="flex-1">{listing.title}</span>
+		<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-primary opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 mt-1 flex-shrink-0"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
 	</h3>
 
 	<!-- Description -->
@@ -100,7 +119,7 @@
 	</div>
 
 	<!-- Author + Actions -->
-	<div class="flex items-center justify-between border-t border-border/50 pt-3">
+	<div class="mt-auto flex items-center justify-between border-t border-border/50 pt-3">
 		<!-- Author -->
 		<div class="flex items-center gap-2">
 			<div
@@ -110,6 +129,20 @@
 			</div>
 			<span class="text-xs text-muted-foreground">@{listing.author.username}</span>
 		</div>
+
+		<!-- Message Button -->
+		{#if !isOwner}
+			<button
+				class="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-all hover:bg-primary/20"
+				onclick={(e) => {
+					e.stopPropagation();
+					alert('Messaging is not implemented yet');
+				}}
+			>
+				<MessageSquare size={14} />
+				Message
+			</button>
+		{/if}
 
 		<!-- Actions -->
 		<div class="flex items-center gap-2">
