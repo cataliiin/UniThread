@@ -41,13 +41,14 @@ export const StorageService = {
         file: Blob,
         contentType?: string
     ): Promise<void> {
-        const resolvedType = contentType ?? (file.type || 'application/octet-stream');
+        // Since MinIO presigned PUT URLs are generated without explicit headers,
+        // sending a Content-Type header in the PUT request causes a 403 Forbidden signature mismatch.
+        // We convert the file/blob into a raw ArrayBuffer to prevent the browser from automatically 
+        // appending a Content-Type header, ensuring signature compliance.
+        const arrayBuffer = await file.arrayBuffer();
         const response = await fetch(url, {
             method: 'PUT',
-            headers: {
-                'Content-Type': resolvedType,
-            },
-            body: file,
+            body: arrayBuffer,
         });
 
         if (!response.ok) {

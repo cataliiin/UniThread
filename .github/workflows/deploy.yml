@@ -1,0 +1,47 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main  # Triggers automatically when code is pushed or merged to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Deploy to DigitalOcean Droplet via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USERNAME }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: 22
+          script: |
+            # Ensure the deployment directory exists
+            if [ ! -d "/var/www/unithread" ]; then
+              mkdir -p /var/www
+              git clone https://github.com/${{ github.repository }}.git /var/www/unithread
+            fi
+            
+            cd /var/www/unithread
+            
+            # Reset any local changes and pull the latest code from the main branch
+            git fetch --all
+            git reset --hard origin/main
+            
+            # Securely inject production environment configurations from GitHub Secrets
+            echo "${{ secrets.PROD_ENV }}" > .env
+            echo "${{ secrets.BACKEND_PROD_ENV }}" > backend/.env
+            echo "${{ secrets.FRONTEND_PROD_ENV }}" > frontend/.env
+            
+            # Stop any running production services to ensure clean port releases
+            docker compose --profile production down
+            
+            # Rebuild and launch the entire production stack in background daemon mode
+            docker compose --profile production up -d --build
+            
+            # Prune unused docker assets to prevent disk bloat on the Droplet
+            docker image prune -f

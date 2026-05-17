@@ -49,3 +49,11 @@ AsyncSessionLocal = async_sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,
 )
+
+
+async def init_db() -> None:
+    """Automated schema initializer. Creates all tables registered in metadata if they do not exist."""
+    from app.database.models import Base
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+

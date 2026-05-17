@@ -23,6 +23,7 @@ class Config(BaseSettings):
     COOKIE_SECURE: bool = False
 
     MINIO_ENDPOINT: str = "localhost:9000"
+    MINIO_PUBLIC_URL: str = "http://localhost:9000"
     MINIO_ACCESS_KEY: str = "secret_key"
     MINIO_SECRET_KEY: str = "secret_key"
     MINIO_SECURE: bool = False

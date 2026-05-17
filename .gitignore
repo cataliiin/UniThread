@@ -4,6 +4,8 @@
 .DS_Store
 Thumbs.db
 
+
+data/*
 # =========================
 # Editoare & IDE-uri (VSCode, IntelliJ, etc.)
 # =========================
@@ -26,6 +28,7 @@ Thumbs.db
 .env.*
 !.env.example
 *.pem
+set_secrets.ps1
 
 # =========================
 # Backend (Python / FastAPI)

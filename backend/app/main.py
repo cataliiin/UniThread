@@ -23,8 +23,18 @@ logger = logging.getLogger("uvicorn.error")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 1. Automatically initialize database tables if they do not exist
+    from app.database.session import init_db
+    try:
+        await init_db()
+        logger.info("Database tables verified/initialized successfully.")
+    except Exception as e:
+        logger.error(f"Failed to auto-initialize database tables: {e}", exc_info=True)
+
+    # 2. Automatically initialize MinIO buckets with public/private S3 policies
     init_minio()
 
+    # 3. Perform startup health checks and launch periodic worker
     await perform_health_checks()
 
     bg_task = asyncio.create_task(health_check_worker())
@@ -32,6 +42,7 @@ async def lifespan(app: FastAPI):
     yield
 
     bg_task.cancel()
+
 
 
 app = FastAPI(
