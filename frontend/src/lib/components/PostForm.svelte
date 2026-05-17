@@ -60,19 +60,52 @@
 		}
 	});
 
+	let errors = $state<Record<string, string>>({});
+
+	function validate(): boolean {
+		const newErrors: Record<string, string> = {};
+
+		if (!formData.title.trim()) {
+			newErrors.title = 'Title is required';
+		}
+		if (!formData.body.trim()) {
+			newErrors.body = 'Content is required';
+		}
+		if (mode === 'create' && !formData.community_id) {
+			newErrors.community_id = 'Please select a community';
+		}
+
+		errors = newErrors;
+		return Object.keys(newErrors).length === 0;
+	}
+
+	// Reactively clear errors when fields become valid
+	$effect(() => {
+		if (formData.title.trim() && errors.title) {
+			errors.title = '';
+		}
+	});
+	$effect(() => {
+		if (formData.body.trim() && errors.body) {
+			errors.body = '';
+		}
+	});
+	$effect(() => {
+		if (formData.community_id && errors.community_id) {
+			errors.community_id = '';
+		}
+	});
+
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
 
-		if (
-			!formData.title.trim() ||
-			!formData.body.trim() ||
-			(mode === 'create' && !formData.community_id)
-		) {
-			toast.error('Title, content, and community are required.');
+		if (!validate()) {
+			toast.error('Please fill in the required fields.');
 			return;
 		}
 
 		if (formData.body.length > 5000) {
+			errors.body = 'Content cannot exceed 5000 characters.';
 			toast.error('Content cannot exceed 5000 characters.');
 			return;
 		}
@@ -121,9 +154,11 @@
 				id="title"
 				placeholder="An interesting title..."
 				bind:value={formData.title}
-				required
-				class="w-full bg-transparent border-none text-xl font-bold tracking-tight placeholder:text-muted-foreground/30 focus:outline-none focus:ring-0 p-0 text-foreground transition-all focus:placeholder:text-muted-foreground/20"
+				class="w-full bg-transparent border-none text-xl font-bold tracking-tight placeholder:text-muted-foreground/30 focus:outline-none focus:ring-0 p-0 text-foreground transition-all focus:placeholder:text-muted-foreground/20 {errors.title ? 'border-b border-destructive/60 pb-1' : ''}"
 			/>
+			{#if errors.title}
+				<p class="text-xs text-destructive mt-1 font-medium">{errors.title}</p>
+			{/if}
 		</div>
 
 		<hr class="border-border/50" />
@@ -134,11 +169,13 @@
 				id="body"
 				placeholder="What's on your mind? Write your post content..."
 				bind:value={formData.body}
-				required
 				maxlength="5000"
 				rows={8}
-				class="w-full bg-transparent border-none text-sm leading-relaxed placeholder:text-muted-foreground/30 focus:outline-none focus:ring-0 p-0 min-h-[200px] text-foreground/90 resize-none transition-all focus:placeholder:text-muted-foreground/20 pb-8 animate-none"
+				class="w-full bg-transparent text-sm leading-relaxed placeholder:text-muted-foreground/30 focus:outline-none focus:ring-0 min-h-[200px] text-foreground/90 resize-none transition-all focus:placeholder:text-muted-foreground/20 pb-8 animate-none rounded-xl transition-all duration-200 {errors.body ? 'border border-destructive bg-destructive/5 p-3' : 'border-none p-2'}"
 			></textarea>
+			{#if errors.body}
+				<p class="text-xs text-destructive mt-1 font-medium">{errors.body}</p>
+			{/if}
 			
 			<div class="flex justify-end text-xs text-muted-foreground/60 select-none pb-1">
 				<span class={formData.body.length > 4500 ? 'text-amber-500 font-semibold' : ''}>
@@ -168,6 +205,9 @@
 						Select Community
 					</Label>
 					<CommunitySelector {communities} bind:selectedId={formData.community_id} />
+					{#if errors.community_id}
+						<p class="text-xs text-destructive mt-1 font-medium">{errors.community_id}</p>
+					{/if}
 				</div>
 			{/if}
 
@@ -266,9 +306,11 @@
 					id="title"
 					placeholder="An interesting title..."
 					bind:value={formData.title}
-					required
-					class="w-full bg-transparent border-none text-2xl md:text-3xl font-extrabold tracking-tight placeholder:text-muted-foreground/30 focus:outline-none focus:ring-0 p-0 text-foreground transition-all focus:placeholder:text-muted-foreground/20"
+					class="w-full bg-transparent border-none text-2xl md:text-3xl font-extrabold tracking-tight placeholder:text-muted-foreground/30 focus:outline-none focus:ring-0 p-0 text-foreground transition-all focus:placeholder:text-muted-foreground/20 {errors.title ? 'border-b border-destructive/60 pb-1' : ''}"
 				/>
+				{#if errors.title}
+					<p class="text-xs text-destructive mt-1 font-medium">{errors.title}</p>
+				{/if}
 			</div>
 
 			<hr class="border-border/50" />
@@ -279,11 +321,13 @@
 					id="body"
 					placeholder="What's on your mind? Write your post content here..."
 					bind:value={formData.body}
-					required
 					maxlength="5000"
 					rows={12}
-					class="w-full bg-transparent border-none text-base md:text-lg leading-relaxed placeholder:text-muted-foreground/30 focus:outline-none focus:ring-0 p-0 min-h-[300px] text-foreground/90 resize-none transition-all focus:placeholder:text-muted-foreground/20 pb-8"
+					class="w-full bg-transparent text-base md:text-lg leading-relaxed placeholder:text-muted-foreground/30 focus:outline-none focus:ring-0 min-h-[300px] text-foreground/90 resize-none transition-all focus:placeholder:text-muted-foreground/20 pb-8 rounded-2xl transition-all duration-200 {errors.body ? 'border border-destructive bg-destructive/5 p-3' : 'border-none p-2'}"
 				></textarea>
+				{#if errors.body}
+					<p class="text-xs text-destructive mt-1 font-medium">{errors.body}</p>
+				{/if}
 				
 				<div class="flex justify-end text-xs text-muted-foreground/60 select-none pb-2">
 					<span class={formData.body.length > 4500 ? 'text-amber-500 font-semibold' : ''}>
@@ -320,6 +364,9 @@
 							Select Community
 						</Label>
 						<CommunitySelector {communities} bind:selectedId={formData.community_id} />
+						{#if errors.community_id}
+							<p class="text-xs text-destructive mt-1 font-medium">{errors.community_id}</p>
+						{/if}
 						{#if communities.length === 0}
 							<p class="text-xs text-destructive mt-1 font-medium">You are not a member of any communities yet.</p>
 						{/if}
