@@ -14,11 +14,16 @@ jobs:
 
       - name: Deploy to DigitalOcean Droplet via SSH
         uses: appleboy/ssh-action@v1.0.0
+        env:
+          PROD_ENV: ${{ secrets.PROD_ENV }}
+          BACKEND_PROD_ENV: ${{ secrets.BACKEND_PROD_ENV }}
+          FRONTEND_PROD_ENV: ${{ secrets.FRONTEND_PROD_ENV }}
         with:
           host: ${{ secrets.DO_HOST }}
           username: ${{ secrets.DO_USERNAME }}
           key: ${{ secrets.DO_SSH_KEY }}
           port: 22
+          envs: PROD_ENV, BACKEND_PROD_ENV, FRONTEND_PROD_ENV
           script: |
             # Ensure the deployment directory exists
             if [ ! -d "/var/www/unithread" ]; then
@@ -33,9 +38,9 @@ jobs:
             git reset --hard origin/production
             
             # Securely inject production environment configurations from GitHub Secrets
-            echo "${{ secrets.PROD_ENV }}" > .env
-            echo "${{ secrets.BACKEND_PROD_ENV }}" > backend/.env
-            echo "${{ secrets.FRONTEND_PROD_ENV }}" > frontend/.env
+            echo "$PROD_ENV" > .env
+            echo "$BACKEND_PROD_ENV" > backend/.env
+            echo "$FRONTEND_PROD_ENV" > frontend/.env
             
             # Stop any running production services to ensure clean port releases
             docker compose --profile production down
