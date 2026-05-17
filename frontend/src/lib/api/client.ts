@@ -2,8 +2,9 @@ import createClient, { type Middleware } from 'openapi-fetch';
 import type { paths } from '$lib/api/openapi-generated-schema';
 import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
+import { PUBLIC_API_URL } from '$env/static/public';
 
-const publicBaseUrl = 'http://127.0.0.1:8000';
+const publicBaseUrl = PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 const baseUrl = !browser && publicBaseUrl.startsWith('/')
     ? 'http://backend:8000'
