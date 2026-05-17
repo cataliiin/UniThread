@@ -28,9 +28,9 @@ jobs:
             
             cd /var/www/unithread
             
-            # Reset any local changes and pull the latest code from the main branch
+            # Reset any local changes and pull the latest code from the production branch
             git fetch --all
-            git reset --hard origin/main
+            git reset --hard origin/production
             
             # Securely inject production environment configurations from GitHub Secrets
             echo "${{ secrets.PROD_ENV }}" > .env
