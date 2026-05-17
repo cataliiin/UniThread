@@ -5,7 +5,10 @@ export enum NotificationType {
     Like = "like",
     Comment = "comment",
     AcceptInvitation = "accept_invitation",
-    DeclineInvitation = "decline_invitation"
+    DeclineInvitation = "decline_invitation",
+    JoinRequest = "join_request",
+    AcceptJoinRequest = "accept_join_request",
+    DeclineJoinRequest = "decline_join_request"
 }
 
 export interface BaseNotification {
@@ -43,6 +46,30 @@ export interface DeclineInvitationNotification extends BaseNotification {
     message: string;
 }
 
+export interface JoinRequestNotification extends BaseNotification {
+    type: NotificationType.JoinRequest;
+    community_id: string;
+    community_name: string;
+    community_icon: string | null;
+    message: string;
+}
+
+export interface AcceptJoinRequestNotification extends BaseNotification {
+    type: NotificationType.AcceptJoinRequest;
+    community_id: string;
+    community_name: string;
+    community_icon: string | null;
+    message: string;
+}
+
+export interface DeclineJoinRequestNotification extends BaseNotification {
+    type: NotificationType.DeclineJoinRequest;
+    community_id: string;
+    community_name: string;
+    community_icon: string | null;
+    message: string;
+}
+
 export interface MessageNotification extends BaseNotification {
     type: NotificationType.Message;
     message: string;
@@ -74,6 +101,9 @@ export type Notification =
     InvitationNotification |
     AcceptInvitationNotification |
     DeclineInvitationNotification |
+    JoinRequestNotification |
+    AcceptJoinRequestNotification |
+    DeclineJoinRequestNotification |
     MessageNotification |
     PostNotification |
     LikeNotification |

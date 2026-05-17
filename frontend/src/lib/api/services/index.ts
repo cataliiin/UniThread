@@ -13,3 +13,5 @@ export { CommentsService } from './CommentsService';
 export { ExternalService } from './ExternalService';
 export { MessagesService } from './MessagesService';
 export { RelationshipsService } from './RelationshipsService';
+export { NotificationsService } from './NotificationsService';
+

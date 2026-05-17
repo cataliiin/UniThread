@@ -25,18 +25,19 @@ function createInvitationsState() {
 				data.map(async (invite) => {
 					try {
 						const [community, inviter] = await Promise.all([
-							CommunitiesService.get(invite.community_id).catch(() => null),
+							(invite as any).community
+								? Promise.resolve((invite as any).community)
+								: CommunitiesService.get(invite.community_id).catch(() => null),
 							UsersService.getUserProfile(invite.invited_by).catch(() => null)
 						]);
 
 						const inviterName = getAuthorDisplayName(inviter);
-						const inviterDisplay = inviter && inviterName !== inviter.username 
-							? `${inviterName} @${inviter.username}`
-							: inviterName;
+						const inviterDisplay = inviterName;
+
 
 						return {
 							...invite,
-							community_name: community?.name || `Community (${invite.community_id.substring(0, 4)})`,
+							community_name: (invite as any).community?.name || community?.name || `Community (${invite.community_id.substring(0, 4)})`,
 							invited_by: invite.invited_by,
 							inviter_name: inviterDisplay,
 							status: invite.status,

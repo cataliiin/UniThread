@@ -27,8 +27,9 @@ from app.database.models.community import (
     CommunityJoinAnswer,
     CommunityJoinQuestion,
     CommunityMember,
+    CommunityInvitation,
 )
-from app.database.models.enums import CommunityType, MemberStatus
+from app.database.models.enums import CommunityType, MemberStatus, InvitationStatus
 from app.database.models.post import Post
 from app.database.models.user import User
 from app.schemas.community import (
@@ -111,7 +112,8 @@ async def list_communities(
 
     # Query communities in user's university
     base_query = select(Community).where(
-        Community.university_id == current_user.university_id
+        (Community.university_id == current_user.university_id)
+        & (Community.type != CommunityType.invite)
     )
 
     total = await db.scalar(select(func.count()).select_from(base_query.subquery()))
@@ -138,7 +140,10 @@ async def list_communities(
 
     stmt = (
         select(Community, count_subq, status_subq)
-        .where(Community.university_id == current_user.university_id)
+        .where(
+            (Community.university_id == current_user.university_id)
+            & (Community.type != CommunityType.invite)
+        )
         .order_by(Community.created_at.desc(), Community.id.asc())
         .offset(offset)
         .limit(actual_size)
@@ -226,8 +231,16 @@ async def get_community(community_id: UUID, current_user: CurrentUser, db: DbDep
         is_owner = comm.owner_id == current_user.id
         is_approved_member = user_membership_status == MemberStatus.approved
         if not is_owner and not is_approved_member:
-            # Hide invite-only communities from non-members to reduce enumeration.
-            raise NotFoundException("Community not found.")
+            has_invitation = await db.scalar(
+                select(CommunityInvitation).where(
+                    (CommunityInvitation.community_id == comm.id)
+                    & (CommunityInvitation.invited_user == current_user.id)
+                    & (CommunityInvitation.status == InvitationStatus.pending)
+                )
+            )
+            if not has_invitation:
+                # Hide invite-only communities from non-members to reduce enumeration.
+                raise NotFoundException("Community not found.")
 
     c_resp = CommunityResponse.model_validate(comm)
     c_resp.member_count = member_count or 0
@@ -360,8 +373,16 @@ async def list_community_members(
     """
     comm = await get_community_with_tenant_check(community_id, current_user, db)
 
-    if comm.type != CommunityType.public:
-        await require_approved_member(community_id, current_user, db)
+    if comm.type == CommunityType.invite:
+        has_invitation = await db.scalar(
+            select(CommunityInvitation).where(
+                (CommunityInvitation.community_id == comm.id)
+                & (CommunityInvitation.invited_user == current_user.id)
+                & (CommunityInvitation.status == InvitationStatus.pending)
+            )
+        )
+        if not has_invitation:
+            await require_approved_member(community_id, current_user, db)
 
     actual_size = max(1, min(size, 100))
     offset = (page - 1) * actual_size
@@ -482,6 +503,25 @@ async def join_community(
         is_admin=False,
     )
     db.add(new_member)
+    
+    if new_status == MemberStatus.pending:
+        from app.database.models.enums import NotificationType
+        from app.database.models.notification import Notification
+
+        sender_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.username
+        notif = Notification(
+            sender_id=current_user.id,
+            receiver_id=comm.owner_id,
+            type=NotificationType.join_request,
+            action_url=f"/communities/{comm.id}/requests",
+            data={
+                "community_id": str(comm.id),
+                "community_name": comm.name,
+                "message": f"{sender_name} requested to join {comm.name}",
+            }
+        )
+        db.add(notif)
+
     await db.commit()
     await db.refresh(new_member)
 
@@ -528,7 +568,18 @@ async def list_community_admins(
     comm = await get_community_with_tenant_check(community_id, current_user, db)
 
     if comm.type in (CommunityType.request, CommunityType.invite):
-        await require_approved_member(community_id, current_user, db)
+        if comm.type == CommunityType.invite:
+            has_invitation = await db.scalar(
+                select(CommunityInvitation).where(
+                    (CommunityInvitation.community_id == comm.id)
+                    & (CommunityInvitation.invited_user == current_user.id)
+                    & (CommunityInvitation.status == InvitationStatus.pending)
+                )
+            )
+            if not has_invitation:
+                await require_approved_member(community_id, current_user, db)
+        else:
+            await require_approved_member(community_id, current_user, db)
 
     admins = await db.scalars(
         select(User)

@@ -232,7 +232,7 @@ async def approve_join_request(
     db: DbDep,
 ):
     """Approve a pending join request (Admin only)."""
-    await require_community_admin(community_id, current_user, db)
+    community = await require_community_admin(community_id, current_user, db)
 
     member = await db.scalar(
         select(CommunityMember).where(
@@ -265,6 +265,22 @@ async def approve_join_request(
     for answer in answers:
         await db.delete(answer)
 
+    from app.database.models.enums import NotificationType
+    from app.database.models.notification import Notification
+
+    notif = Notification(
+        sender_id=current_user.id,
+        receiver_id=user_id,
+        type=NotificationType.accept_join_request,
+        action_url=f"/communities/{community_id}",
+        data={
+            "community_id": str(community_id),
+            "community_name": community.name,
+            "message": f"Your request to join {community.name} was approved!",
+        }
+    )
+    db.add(notif)
+
     await db.commit()
     await db.refresh(member)
     return member
@@ -280,7 +296,7 @@ async def reject_join_request(
     db: DbDep,
 ):
     """Reject and delete a pending join request + submitted answers (Admin only)."""
-    await require_community_admin(community_id, current_user, db)
+    community = await require_community_admin(community_id, current_user, db)
 
     member = await db.scalar(
         select(CommunityMember).where(
@@ -313,6 +329,23 @@ async def reject_join_request(
         await db.delete(answer)
 
     await db.delete(member)
+
+    from app.database.models.enums import NotificationType
+    from app.database.models.notification import Notification
+
+    notif = Notification(
+        sender_id=current_user.id,
+        receiver_id=user_id,
+        type=NotificationType.decline_join_request,
+        action_url=f"/communities/{community_id}",
+        data={
+            "community_id": str(community_id),
+            "community_name": community.name,
+            "message": f"Your request to join {community.name} was declined.",
+        }
+    )
+    db.add(notif)
+
     await db.commit()
 
 
@@ -396,6 +429,32 @@ async def delete_invite_link(
 # ── Direct Invitations ────────────────────────────────────────────────────────
 
 
+@router.get(
+    "/{community_id}/invitations",
+    response_model=list[CommunityInvitationResponse],
+)
+async def list_community_invitations(
+    community_id: UUID,
+    current_user: CurrentUser,
+    db: DbDep,
+):
+    """List all direct invitations for a community (Admin only)."""
+    await require_community_admin(community_id, current_user, db)
+
+    invitations = (
+        (
+            await db.execute(
+                select(CommunityInvitation).where(
+                    CommunityInvitation.community_id == community_id
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return invitations
+
+
 @router.post(
     "/{community_id}/invitations",
     response_model=CommunityInvitationResponse,
@@ -433,18 +492,29 @@ async def create_direct_invitation(
     if existing_member:
         raise AlreadyCommunityMemberException()
 
-    # Check no duplicate pending invitation
+    # Check if an invitation already exists (regardless of status)
     existing_invite = await db.scalar(
         select(CommunityInvitation).where(
             (CommunityInvitation.community_id == community_id)
             & (CommunityInvitation.invited_user == invitation_in.invited_user)
-            & (CommunityInvitation.status == InvitationStatus.pending)
         )
     )
     if existing_invite:
         from app.core.exceptions import ConflictException
 
-        raise ConflictException("A pending invitation for this user already exists.")
+        if existing_invite.status == InvitationStatus.pending:
+            raise ConflictException("A pending invitation for this user already exists.")
+        
+        # If it was declined or accepted previously, we can reuse the same row
+        # and promote it back to pending to bypass the SQLite UniqueConstraint
+        existing_invite.status = InvitationStatus.pending
+        existing_invite.invited_by = current_user.id
+        existing_invite.created_at = func.now()
+        db.add(existing_invite)
+        await db.commit()
+        await db.refresh(existing_invite)
+        existing_invite.community = comm
+        return existing_invite
 
     new_invitation = CommunityInvitation(
         community_id=community_id,
@@ -455,6 +525,7 @@ async def create_direct_invitation(
     db.add(new_invitation)
     await db.commit()
     await db.refresh(new_invitation)
+    new_invitation.community = comm
     return new_invitation
 
 

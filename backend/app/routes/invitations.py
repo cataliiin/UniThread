@@ -133,10 +133,12 @@ async def list_my_invitations(current_user: CurrentUser, db: DbDep):
     invitations = (
         (
             await db.execute(
-                select(CommunityInvitation).where(
+                select(CommunityInvitation)
+                .where(
                     (CommunityInvitation.invited_user == current_user.id)
                     & (CommunityInvitation.status == InvitationStatus.pending)
                 )
+                .options(selectinload(CommunityInvitation.community))
             )
         )
         .scalars()
@@ -174,15 +176,36 @@ async def accept_invitation(invite_id: UUID, current_user: CurrentUser, db: DbDe
             & (CommunityMember.user_id == current_user.id)
         )
     )
+    
+    from app.database.models.enums import NotificationType
+    from app.database.models.notification import Notification
+
+    sender_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.username
+
     if existing:
         if existing.status == MemberStatus.approved:
+            await db.delete(invitation)
+            await db.commit()
             raise AlreadyCommunityMemberException()
         else:
             # Upgrade pending request to approved
             existing.status = MemberStatus.approved
-            invitation.status = InvitationStatus.accepted
+            await db.delete(invitation)
             db.add(existing)
-            db.add(invitation)
+            
+            notif = Notification(
+                sender_id=current_user.id,
+                receiver_id=invitation.invited_by,
+                type=NotificationType.accept_invitation,
+                action_url=f"/communities/{invitation.community_id}",
+                data={
+                    "community_id": str(invitation.community_id),
+                    "community_name": invitation.community.name,
+                    "message": f"{sender_name} accepted your invitation to join {invitation.community.name}",
+                }
+            )
+            db.add(notif)
+            
             await db.commit()
             await db.refresh(existing)
             return existing
@@ -194,8 +217,21 @@ async def accept_invitation(invite_id: UUID, current_user: CurrentUser, db: DbDe
         is_admin=False,
     )
     db.add(new_member)
-    invitation.status = InvitationStatus.accepted
-    db.add(invitation)
+    await db.delete(invitation)
+    
+    notif = Notification(
+        sender_id=current_user.id,
+        receiver_id=invitation.invited_by,
+        type=NotificationType.accept_invitation,
+        action_url=f"/communities/{invitation.community_id}",
+        data={
+            "community_id": str(invitation.community_id),
+            "community_name": invitation.community.name,
+            "message": f"{sender_name} accepted your invitation to join {invitation.community.name}",
+        }
+    )
+    db.add(notif)
+    
     await db.commit()
     await db.refresh(new_member)
 
@@ -207,18 +243,37 @@ async def accept_invitation(invite_id: UUID, current_user: CurrentUser, db: DbDe
 )
 async def decline_invitation(invite_id: UUID, current_user: CurrentUser, db: DbDep):
     """
-    Decline a direct invitation. Marks it as declined without adding the user to the community.
+    Decline a direct invitation. Deletes it from the database without adding the user to the community.
     """
     invitation = await db.scalar(
-        select(CommunityInvitation).where(
+        select(CommunityInvitation)
+        .where(
             (CommunityInvitation.id == invite_id)
             & (CommunityInvitation.invited_user == current_user.id)
             & (CommunityInvitation.status == InvitationStatus.pending)
         )
+        .options(selectinload(CommunityInvitation.community))
     )
     if not invitation:
         raise NotFoundException("Invitation not found or already responded to.")
 
-    invitation.status = InvitationStatus.declined
-    db.add(invitation)
+    await db.delete(invitation)
+    
+    from app.database.models.enums import NotificationType
+    from app.database.models.notification import Notification
+
+    sender_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.username
+    notif = Notification(
+        sender_id=current_user.id,
+        receiver_id=invitation.invited_by,
+        type=NotificationType.decline_invitation,
+        action_url=f"/communities/{invitation.community_id}",
+        data={
+            "community_id": str(invitation.community_id),
+            "community_name": invitation.community.name,
+            "message": f"{sender_name} declined your invitation to join {invitation.community.name}",
+        }
+    )
+    db.add(notif)
+    
     await db.commit()

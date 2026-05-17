@@ -69,6 +69,19 @@
 				<button class="font-bold hover:text-primary transition-colors" onclick={() => goto(`/profile/${notification.sender_id}`)}>{notification.sender_name}</button> declined your invitation to join
 				<strong>{notification.community_name}</strong>
 			</div>
+		{:else if notification.type === NotificationType.JoinRequest}
+			<div class="text-sm">
+				<button class="font-bold hover:text-primary transition-colors" onclick={() => goto(`/profile/${notification.sender_id}`)}>{notification.sender_name}</button> requested to join
+				<strong>{notification.community_name}</strong>
+			</div>
+		{:else if notification.type === NotificationType.AcceptJoinRequest}
+			<div class="text-sm">
+				Your request to join <strong>{notification.community_name}</strong> was approved!
+			</div>
+		{:else if notification.type === NotificationType.DeclineJoinRequest}
+			<div class="text-sm">
+				Your request to join <strong>{notification.community_name}</strong> was declined.
+			</div>
 		{:else if notification.type === NotificationType.Message}
 			<div class="text-sm">
 				<button class="font-bold hover:text-primary transition-colors" onclick={() => goto(`/profile/${notification.sender_id}`)}>{notification.sender_name}</button> sent you a message
@@ -87,14 +100,17 @@
 			</div>
 		{/if}
 
-		<!-- Action Buttons -->
-		<div class="mt-2 flex items-center gap-2">
+		<div class="mt-2 flex flex-wrap items-center gap-2">
 			{#if notification.type === NotificationType.Invitation}
 				<Button variant="default" size="sm" onclick={goToInvitaions}>View</Button>
+			{:else if notification.type === NotificationType.JoinRequest}
+				<Button variant="default" size="sm" onclick={() => { handleRead(); goto(`/communities/${(notification as any).community_id}/requests`); }}>View Request</Button>
+			{:else if notification.type === NotificationType.AcceptJoinRequest || notification.type === NotificationType.DeclineJoinRequest || notification.type === NotificationType.AcceptInvitation || notification.type === NotificationType.DeclineInvitation}
+				<Button variant="default" size="sm" onclick={() => { handleRead(); goto(`/communities/${(notification as any).community_id}`); }}>View Community</Button>
 			{:else if notification.type === NotificationType.Message}
 				<Button variant="default" size="sm" onclick={goToMessages}>View</Button>
 			{:else if notification.type === NotificationType.Post || notification.type === NotificationType.Like || notification.type === NotificationType.Comment}
-				<Button variant="default" size="sm" onclick={() => goToPost(notification.post_id)}
+				<Button variant="default" size="sm" onclick={() => goToPost((notification as any).post_id)}
 					>View</Button
 				>
 			{/if}

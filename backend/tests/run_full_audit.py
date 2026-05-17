@@ -362,9 +362,9 @@ def test_community_lifecycle_and_membership(ctx: AuditContext):
 	join_invite_direct = ctx.client.post(f"/api/v1/communities/{invite_id}/join", json={})
 	assert_status(join_invite_direct, 403, "join invite directly")
 
-	# Bob cannot list members for request community while pending
+	# Bob can list members for request community while pending
 	list_members_pending = ctx.client.get(f"/api/v1/communities/{request_id}/members")
-	assert_status(list_members_pending, 403, "members visibility for pending user")
+	assert_status(list_members_pending, 200, "members visibility for pending user")
 
 	# Alice approves Bob request
 	ctx.login("alice")
@@ -549,6 +549,165 @@ def test_search(ctx: AuditContext):
 	assert len(res_comms.json()["communities"]) >= 1
 
 
+def test_notifications(ctx: AuditContext):
+	public_id = ctx.communities["public"]
+
+	# Let's log in as Alice, and join public community again
+	ctx.login("alice")
+	join_public = ctx.client.post(f"/api/v1/communities/{public_id}/join", json={})
+	assert_status(join_public, 200, "alice joins public for notification test")
+
+	# Now we have both Bob and Alice in public community!
+	# Alice creates a post
+	post = ctx.client.post(
+		"/api/v1/posts",
+		json={
+			"title": "Notification test post",
+			"body": "This should alert members",
+			"community_id": public_id,
+			"is_anonymous": False,
+		},
+	)
+	assert_status(post, 201, "create post for notification")
+	post_id = post.json()["id"]
+
+	# Login as Bob (who is a member of public community)
+	ctx.login("bob")
+	notifs = ctx.client.get("/api/v1/notifications")
+	assert_status(notifs, 200, "list notifications")
+	notifs_list = notifs.json()
+	assert len(notifs_list) >= 1
+
+	# Find our post notification
+	our_notif = next((n for n in notifs_list if n["post_id"] == post_id), None)
+	assert our_notif is not None, "Post notification not found"
+	assert our_notif["type"] == "post"
+	assert our_notif["read"] is False
+
+	notif_id = our_notif["id"]
+
+	# Mark as read
+	mark_read = ctx.client.patch(f"/api/v1/notifications/{notif_id}/read")
+	assert_status(mark_read, 200, "mark notification read")
+	assert mark_read.json()["read"] is True
+
+	# Mark all read
+	mark_all = ctx.client.post("/api/v1/notifications/read-all")
+	assert_status(mark_all, 204, "mark all read")
+
+	# Delete notification
+	delete_notif = ctx.client.delete(f"/api/v1/notifications/{notif_id}")
+	assert_status(delete_notif, 204, "delete notification")
+
+	# Ensure it is gone
+	notifs_after = ctx.client.get("/api/v1/notifications")
+	assert_status(notifs_after, 200, "list notifications final")
+	assert not any(n["id"] == notif_id for n in notifs_after.json())
+
+	# --- Comment and Like Notification Flow Testing ---
+	# Login as Bob and comment on Alice's post
+	ctx.login("bob")
+	comment_resp = ctx.client.post(
+		f"/api/v1/posts/{post_id}/comments",
+		json={"body": "This is a great notification test comment!"},
+	)
+	assert_status(comment_resp, 201, "bob comments on alice's post")
+
+	# Bob upvotes/likes Alice's post
+	like_resp = ctx.client.post(
+		f"/api/v1/posts/{post_id}/vote",
+		json={"value": 1},
+	)
+	assert_status(like_resp, 200, "bob likes alice's post")
+
+	# Bob sends a message to Alice
+	alice_user_id = ctx.users["alice"]["id"]
+	msg_resp = ctx.client.post(
+		f"/api/v1/messages/{alice_user_id}",
+		json={"content": "Hello Alice! This is Bob."},
+	)
+	assert_status(msg_resp, 201, "bob sends message to alice")
+
+	# Login as Alice and check her new comment, like, and message notifications!
+	ctx.login("alice")
+	alice_notifs = ctx.client.get("/api/v1/notifications")
+	assert_status(alice_notifs, 200, "alice list notifications")
+	alice_notifs_list = alice_notifs.json()
+
+	# Find comment notification
+	comment_notif = next((n for n in alice_notifs_list if n["type"] == "comment"), None)
+	assert comment_notif is not None, "Comment notification not found for Alice"
+	assert comment_notif["post_id"] == post_id
+	assert "comment" in comment_notif["message"].lower()
+
+	# Find like notification
+	like_notif = next((n for n in alice_notifs_list if n["type"] == "like"), None)
+	assert like_notif is not None, "Like/vote notification not found for Alice"
+	assert like_notif["post_id"] == post_id
+	assert "like" in like_notif["message"].lower()
+
+	# Find message notification
+	msg_notif = next((n for n in alice_notifs_list if n["type"] == "message"), None)
+	assert msg_notif is not None, "Message notification not found for Alice"
+	assert msg_notif["action_url"] == "/messages"
+
+	# --- Direct Invitations flow ---
+	# Alice invites Bob to the "invite" community
+	ctx.login("alice")
+	invite_comm_id = ctx.communities["invite"]
+	bob_user_id = ctx.users["bob"]["id"]
+
+	# Kick Bob first so we can invite him
+	kick = ctx.client.delete(f"/api/v1/communities/{invite_comm_id}/members/{bob_user_id}")
+	assert_status(kick, 204, "alice kicks bob from invite community")
+
+	invite_resp = ctx.client.post(
+		f"/api/v1/communities/{invite_comm_id}/invitations",
+		json={"invited_user": bob_user_id},
+	)
+	assert_status(invite_resp, 201, "alice invites bob to invite community")
+
+	# Bob logs in and checks his invitations
+	ctx.login("bob")
+	my_invitations = ctx.client.get("/api/v1/me/invitations")
+	assert_status(my_invitations, 200, "bob gets invitations")
+	my_invitations_list = my_invitations.json()
+	bob_invite = next((inv for inv in my_invitations_list if inv["community_id"] == invite_comm_id), None)
+	assert bob_invite is not None, "Direct invitation to Bob not found"
+	assert bob_invite["status"] == "pending"
+
+	# Test preview capabilities before accepting:
+	# 1. Bob can read the invite community details
+	view_details = ctx.client.get(f"/api/v1/communities/{invite_comm_id}")
+	assert_status(view_details, 200, "invited user can preview community metadata")
+
+	# 2. Bob can list the community members
+	view_members = ctx.client.get(f"/api/v1/communities/{invite_comm_id}/members")
+	assert_status(view_members, 200, "invited user can preview community members list")
+
+	# 3. Bob CANNOT read community posts
+	view_posts = ctx.client.get(f"/api/v1/communities/{invite_comm_id}/posts")
+	assert_status(view_posts, 403, "invited user cannot view community posts")
+
+	# 4. Bob can list community admins
+	view_admins = ctx.client.get(f"/api/v1/communities/{invite_comm_id}/admins")
+	assert_status(view_admins, 200, "invited user can preview community admins list")
+
+	# Bob accepts the invitation
+	accept_invite = ctx.client.post(
+		f"/api/v1/me/invitations/{bob_invite['id']}/accept"
+	)
+	assert_status(accept_invite, 200, "bob accepts invitation")
+
+	# Verify Bob is now an approved member of "invite" community
+	is_member = ctx.client.get(f"/api/v1/communities/{invite_comm_id}")
+	assert_status(is_member, 200, "bob views invite community")
+	assert is_member.json()["user_membership_status"] == "approved"
+
+
+
+
+
 def test_openapi_omissions(ctx: AuditContext):
 	"""
 	Covers OpenAPI-listed capabilities that are easy to omit:
@@ -694,6 +853,7 @@ def run_suite() -> list[TestResult]:
 		("Admin Management", test_admin_management),
 		("Posts + Votes", test_posts_and_votes),
 		("Search", test_search),
+		("Notifications Flow", test_notifications),
 		("OpenAPI Omission Coverage", test_openapi_omissions),
 	]
 
@@ -722,6 +882,8 @@ def run_suite() -> list[TestResult]:
 					dt = time.perf_counter() - t0
 					results.append(TestResult(name=name, status="PASS", duration_s=dt))
 				except Exception as exc:  # noqa: BLE001
+					import traceback
+					traceback.print_exc()
 					dt = time.perf_counter() - t0
 					results.append(
 						TestResult(

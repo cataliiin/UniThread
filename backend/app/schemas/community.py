@@ -125,6 +125,8 @@ class CommunityInvitationResponse(BaseModel):
     status: InvitationStatus
     created_at: datetime
 
+    community: CommunityPublic | None = None
+
     model_config = ConfigDict(from_attributes=True)
 
 
