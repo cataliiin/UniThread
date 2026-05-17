@@ -122,7 +122,6 @@
 					is_anonymous: formData.is_anonymous,
 					image_key: formData.image_key
 				});
-				toast.success('Post created successfully!');
 				onSuccess?.();
 				goto(`/communities/${formData.community_id}`);
 			} else if (post) {
@@ -132,7 +131,6 @@
 					body: formData.body.trim(),
 					image_key: formData.image_key
 				});
-				toast.success('Post updated successfully!');
 				onSuccess?.();
 				goto(`/posts/${post.id}`);
 			}

@@ -25,6 +25,10 @@
 			loading = false;
 		}
 	});
+
+	function handleSuccess() {
+		toast.success('Post created successfully!');
+	}
 </script>
 
 <svelte:head>
@@ -42,6 +46,6 @@
 			<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
 		</div>
 	{:else}
-		<PostForm mode="create" {communities} {defaultCommunityId} />
+		<PostForm mode="create" {communities} {defaultCommunityId} onSuccess={handleSuccess} />
 	{/if}
 </div>

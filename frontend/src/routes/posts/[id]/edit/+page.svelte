@@ -34,6 +34,10 @@
 			loading = false;
 		}
 	});
+
+	function handleSuccess() {
+		toast.success('Post updated successfully!');
+	}
 </script>
 
 <svelte:head>
@@ -51,6 +55,6 @@
 			<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
 		</div>
 	{:else if post}
-		<PostForm mode="edit" {post} />
+		<PostForm mode="edit" {post} onSuccess={handleSuccess} />
 	{/if}
 </div>
