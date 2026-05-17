@@ -63,6 +63,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 @app.get("/health", tags=["Health"])
+@app.get("/api/health", tags=["Health"])
 async def health_check():
     db_ok = state.db_ok
     minio_ok = state.minio_ok
