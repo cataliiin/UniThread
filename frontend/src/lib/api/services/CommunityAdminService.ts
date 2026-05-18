@@ -215,6 +215,13 @@ export const CommunityAdminService = {
 		});
 	},
 
+	async listDirectInvitations(communityId: string): Promise<CommunityInvitationResponse[]> {
+		const { data } = await (api as any).GET('/api/v1/communities/{community_id}/invitations', {
+			params: { path: { community_id: communityId } },
+		});
+		return data || [];
+	},
+
 	async createDirectInvitation(
 		communityIdOrParams: string | { communityId: string; payload: CommunityInvitationCreate },
 		payload?: CommunityInvitationCreate

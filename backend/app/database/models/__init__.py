@@ -4,6 +4,7 @@ from app.database.models.enums import (
     InvitationStatus,
     MarketplaceCategory,
     MemberStatus,
+    NotificationType,
 )
 from app.database.models.university import University
 from app.database.models.user import User
@@ -20,6 +21,7 @@ from app.database.models.marketplace import MarketplaceFavorite, MarketplaceList
 from app.database.models.messaging import Message, UserRelationship
 from app.database.models.comment import Comment
 from app.database.models.vote import Vote
+from app.database.models.notification import Notification
 
 __all__ = [
     "Base",
@@ -27,6 +29,7 @@ __all__ = [
     "MemberStatus",
     "InvitationStatus",
     "MarketplaceCategory",
+    "NotificationType",
     "University",
     "User",
     "Community",
@@ -42,4 +45,5 @@ __all__ = [
     "UserRelationship",
     "Comment",
     "Vote",
+    "Notification",
 ]

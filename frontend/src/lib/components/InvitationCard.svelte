@@ -62,7 +62,7 @@
 
 	<Card.Content class="relative flex items-center gap-4 p-4">
 		<!-- Community Icon -->
-		<div class="shrink-0">
+		<a href="/communities/{invitation.community_id}" class="shrink-0 block hover:opacity-90 transition-opacity">
 			{#if invitation.community_icon}
 				<img
 					src={invitation.community_icon}
@@ -74,12 +74,14 @@
 					{communityInitial}
 				</div>
 			{/if}
-		</div>
+		</a>
 
 		<!-- Content -->
 		<div class="min-w-0 flex-1">
 			<h3 class="truncate font-semibold text-foreground">
-				{invitation.community_name || 'Unknown Community'}
+				<a href="/communities/{invitation.community_id}" class="hover:text-primary transition-colors">
+					{invitation.community_name || 'Unknown Community'}
+				</a>
 			</h3>
 			{#if invitation.community_description}
 				<p class="truncate text-sm text-muted-foreground">{invitation.community_description}</p>

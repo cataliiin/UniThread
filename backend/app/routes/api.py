@@ -7,6 +7,7 @@ from app.routes import (
     invitations,
     marketplace,
     messages,
+    notifications,
     posts,
     relationships,
     search,
@@ -29,3 +30,4 @@ api_router.include_router(posts.router)
 api_router.include_router(relationships.router)
 api_router.include_router(search.router)
 api_router.include_router(storage.router)
+api_router.include_router(notifications.router)

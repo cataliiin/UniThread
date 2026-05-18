@@ -152,6 +152,33 @@ async def create_post(post_in: PostCreate, current_user: CurrentUser, db: DbDep)
         is_anonymous=post_in.is_anonymous,
     )
     db.add(new_post)
+    await db.flush()  # To populate new_post.id
+
+    # Wire Post Notifications to all approved community members (except author)
+    from app.database.models.enums import NotificationType
+    from app.database.models.notification import Notification
+
+    member_stmt = select(CommunityMember.user_id).where(
+        (CommunityMember.community_id == community.id)
+        & (CommunityMember.status == MemberStatus.approved)
+        & (CommunityMember.user_id != current_user.id)
+    )
+    member_ids = (await db.execute(member_stmt)).scalars().all()
+
+    for m_id in member_ids:
+        notif = Notification(
+            sender_id=current_user.id if not post_in.is_anonymous else None,
+            receiver_id=m_id,
+            type=NotificationType.post,
+            action_url=f"/posts/{new_post.id}",
+            data={
+                "post_id": str(new_post.id),
+                "post_content": post_in.title,
+                "message": f"New post in {community.name}" if post_in.is_anonymous else f"{current_user.first_name or current_user.username} posted a new post in {community.name}",
+            },
+        )
+        db.add(notif)
+
     await db.commit()
     await db.refresh(new_post)
 
@@ -198,6 +225,26 @@ async def create_post_comment(
         body=comment_in.body,
     )
     db.add(comment)
+    await db.flush()
+
+    # Wire Comment Notification to post author (if not self and post has author)
+    if post.author_id and post.author_id != current_user.id:
+        from app.database.models.enums import NotificationType
+        from app.database.models.notification import Notification
+
+        notif = Notification(
+            sender_id=current_user.id,
+            receiver_id=post.author_id,
+            type=NotificationType.comment,
+            action_url=f"/posts/{post.id}",
+            data={
+                "post_id": str(post.id),
+                "post_content": post.title,
+                "message": f"{current_user.first_name or current_user.username} commented on your post",
+            },
+        )
+        db.add(notif)
+
     await db.commit()
 
     created_comment = await db.scalar(
@@ -318,7 +365,7 @@ async def vote_post(
     """
     Upvote or downvote a post. Returns the updated post with the new score.
     """
-    await get_viewable_post(post_id, current_user, db)
+    post = await get_viewable_post(post_id, current_user, db)
 
     existing_vote = await db.scalar(
         select(Vote).where(
@@ -338,6 +385,34 @@ async def vote_post(
                 user_id=current_user.id, post_id=post_id, value=vote_in.value
             )
             db.add(new_vote)
+
+    # Wire Like (Upvote) Notification to post author (if not self and post has author)
+    if vote_in.value == 1 and post.author_id and post.author_id != current_user.id:
+        from app.database.models.enums import NotificationType
+        from app.database.models.notification import Notification
+
+        # Check if already liked to prevent spamming notifications on toggle/re-vote
+        existing_like_notif = await db.scalar(
+            select(Notification).where(
+                (Notification.receiver_id == post.author_id)
+                & (Notification.sender_id == current_user.id)
+                & (Notification.type == NotificationType.like)
+                & (Notification.action_url == f"/posts/{post.id}")
+            )
+        )
+        if not existing_like_notif:
+            notif = Notification(
+                sender_id=current_user.id,
+                receiver_id=post.author_id,
+                type=NotificationType.like,
+                action_url=f"/posts/{post.id}",
+                data={
+                    "post_id": str(post.id),
+                    "post_content": post.title,
+                    "message": f"{current_user.first_name or current_user.username} liked your post",
+                },
+            )
+            db.add(notif)
 
     await db.commit()
 

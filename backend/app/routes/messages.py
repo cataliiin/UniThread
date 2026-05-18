@@ -92,6 +92,22 @@ async def create_message(
     )
     db.add(message)
     await db.flush()
+
+    # Wire Message Notification to the recipient
+    from app.database.models.enums import NotificationType
+    from app.database.models.notification import Notification
+
+    notif = Notification(
+        sender_id=current_user.id,
+        receiver_id=recipient.id,
+        type=NotificationType.message,
+        action_url="/messages",
+        data={
+            "message": f"{current_user.first_name or current_user.username} sent you a message",
+        },
+    )
+    db.add(notif)
+
     await db.commit()
 
     message.sender = current_user

@@ -5,11 +5,12 @@
 	import { communityState } from '$lib/stores/community.svelte';
 	import { user } from '$lib/stores/user.svelte';
 	import { toasts } from '$lib/stores/toast.svelte';
-	import { CommunityAdminService, StorageService } from '$lib/api/services';
+	import { invitationsState } from '$lib/stores/invitations.svelte';
+	import { CommunityAdminService, StorageService, SearchService } from '$lib/api/services';
 	import { api } from '$lib/api/client';
 	import Feed from '$lib/components/Feed.svelte';
 	import CreatePostModal from '$lib/components/CreatePostModal.svelte';
-	import { Link2, X, Copy, Trash2, Loader2, Plus } from 'lucide-svelte';
+	import { Link2, X, Copy, Trash2, Loader2, Plus, Search, UserPlus } from 'lucide-svelte';
 	import type { components } from '$lib/api/openapi-generated-schema';
 
 	type CommunityInviteLinkResponse = components['schemas']['CommunityInviteLinkResponse'];
@@ -20,6 +21,11 @@
 	let isAdmin = $derived(communityState.isAdmin);
 	let isOwner = $derived(communityState.isOwner);
 	let userRole = $derived(communityState.userRole);
+	let pendingInvitation = $derived(
+		invitationsState.invitations.find(
+			(inv) => inv.community_id === community?.id && inv.status === 'pending'
+		)
+	);
 
 	let menuOpen = $state(false);
 	let leaveConfirm = $state(false);
@@ -31,6 +37,54 @@
 	let linksLoading = $state(false);
 	let creatingLink = $state(false);
 	let modalOpen = $state(false);
+
+	// Direct Invitation States
+	let activeInviteTab = $state<'links' | 'direct'>('links');
+	let searchUserQuery = $state('');
+	let searchedUsers = $state<any[]>([]);
+	let searchLoading = $state(false);
+	let invitingUsers = $state<Record<string, boolean>>({});
+	let invitedUserIds = $state<Set<string>>(new Set());
+
+	let searchDebounceTimeout: any;
+
+	function searchUsers() {
+		if (searchDebounceTimeout) clearTimeout(searchDebounceTimeout);
+		if (searchUserQuery.trim().length < 2) {
+			searchedUsers = [];
+			return;
+		}
+
+		searchLoading = true;
+		searchDebounceTimeout = setTimeout(async () => {
+			try {
+				const res = await SearchService.globalSearch(searchUserQuery, 'users', 10);
+				searchedUsers = res.users || [];
+			} catch (err) {
+				console.error(err);
+			} finally {
+				searchLoading = false;
+			}
+		}, 300);
+	}
+
+	async function sendDirectInvite(userId: string) {
+		if (!community) return;
+		invitingUsers[userId] = true;
+		try {
+			await CommunityAdminService.createDirectInvitation(community.id, {
+				invited_user: userId
+			});
+			const nextSet = new Set(invitedUserIds);
+			nextSet.add(userId);
+			invitedUserIds = nextSet;
+			toasts.show('Invitation sent successfully!', 'success');
+		} catch (error: any) {
+			toasts.show(error.message || 'Failed to send invitation', 'error');
+		} finally {
+			invitingUsers[userId] = false;
+		}
+	}
 
 	function getImageUrl(key: string | null): string | null {
 		if (!key) return null;
@@ -106,9 +160,26 @@
 		toasts.show('Invite link copied to clipboard!', 'success');
 	}
 
+	async function loadDirectInvitations() {
+		if (!community) return;
+		try {
+			const invites = await CommunityAdminService.listDirectInvitations(community.id);
+			const newSet = new Set<string>();
+			for (const invite of invites) {
+				if (invite.status === 'pending') {
+					newSet.add(invite.invited_user);
+				}
+			}
+			invitedUserIds = newSet;
+		} catch (err) {
+			console.error('Failed to load direct invitations:', err);
+		}
+	}
+
 	function openInviteLinksModal() {
 		showInviteLinksModal = true;
 		loadInviteLinks();
+		loadDirectInvitations();
 		closeMenu();
 	}
 
@@ -118,11 +189,12 @@
 			await Promise.all([
 				communityState.fetchCommunity(community.id),
 				communityState.fetchMembers(community.id),
-				communityState.fetchMyCommunities()
+				communityState.fetchMyCommunities(),
+				invitationsState.fetchInvitations()
 			]);
 			
 			// After members are loaded, communityState.isAdmin correctly reflects admin rights
-			if (communityState.isAdmin) {
+			if (communityState.isAdmin && community.type !== 'public') {
 				await communityState.fetchJoinRequests(community.id);
 			}
 		}
@@ -255,6 +327,7 @@
 									Apply to Join
 								{/if}
 							</button>
+
 						{/if}
 					{:else if (community.user_membership_status === 'approved' || isAdmin || isOwner)}
 						<!-- Create Post Button (Popup) -->
@@ -275,11 +348,12 @@
 					{/if}
 
 					<!-- Members Button -->
-					<a
-						href="/communities/{community.id}/members"
-						id="btn-members"
-						class="flex items-center gap-2 rounded-xl border border-border bg-sidebar px-4 py-2 text-sm font-medium text-foreground transition-all duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
-					>
+					{#if community.type === 'public' || community.type === 'request' || community.user_membership_status === 'approved' || isOwner || (community.type === 'invite' && pendingInvitation)}
+						<a
+							href="/communities/{community.id}/members"
+							id="btn-members"
+							class="flex items-center gap-2 rounded-xl border border-border bg-sidebar px-4 py-2 text-sm font-medium text-foreground transition-all duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+						>
 						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 							<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
 							<circle cx="9" cy="7" r="4"/>
@@ -287,9 +361,10 @@
 						</svg>
 						Members
 					</a>
+					{/if}
 
 					<!-- Requests Button (Admin Only) -->
-					{#if isAdmin}
+					{#if isAdmin && community.type !== 'public'}
 						<a
 							href="/communities/{community.id}/requests"
 							class="relative flex items-center gap-2 rounded-xl border border-border bg-sidebar px-4 py-2 text-sm font-medium text-foreground transition-all duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
@@ -370,8 +445,8 @@
 										onclick={openInviteLinksModal}
 										class="flex w-full items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted"
 									>
-										<Link2 class="h-3.75 w-3.75" />
-										Invite Links
+										<UserPlus class="h-3.75 w-3.75" />
+										Invite Members
 									</button>
 									<div class="my-1 border-t border-border"></div>
 								{/if}
@@ -455,15 +530,80 @@
 								<path d="M7 11V7a5 5 0 0 1 10 0v4"/>
 							</svg>
 						</div>
-						<h3 class="text-lg font-semibold text-foreground">This community is private</h3>
-						<p class="mt-2 text-sm text-muted-foreground">You must be an approved member to see posts.</p>
-						{#if !community.user_membership_status}
-							<button
-								onclick={handleJoin}
-								class="mt-6 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:brightness-110"
-							>
-								Apply to Join
-							</button>
+						{#if community.type === 'invite' && pendingInvitation}
+							<h3 class="text-lg font-semibold text-foreground">You are invited to join this community</h3>
+							<p class="mt-2 text-sm text-muted-foreground">Accept the invitation to view posts and participate.</p>
+							<div class="mt-6 flex justify-center gap-3">
+								<button
+									onclick={async () => {
+										if (!pendingInvitation) return;
+										const ok = await invitationsState.acceptInvitation(pendingInvitation.id);
+										if (ok) await invalidateAll();
+									}}
+									class="rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:brightness-110"
+								>
+									Accept Invitation
+								</button>
+								<button
+									onclick={async () => {
+										if (!pendingInvitation) return;
+										const ok = await invitationsState.declineInvitation(pendingInvitation.id);
+										if (ok) goto('/communities');
+									}}
+									class="rounded-xl border border-border bg-sidebar/60 px-6 py-2.5 text-sm font-semibold text-foreground transition-all hover:bg-muted"
+								>
+									Decline
+								</button>
+							</div>
+						{:else}
+							<h3 class="text-lg font-semibold text-foreground">This community is private</h3>
+							<p class="mt-2 text-sm text-muted-foreground">
+								{#if community.type === 'invite'}
+									Joining this community requires a direct invitation.
+								{:else}
+									You must be an approved member to see posts.
+								{/if}
+							</p>
+							{#if !community.user_membership_status && community.type !== 'invite'}
+								<button
+									onclick={handleJoin}
+									class="mt-6 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:brightness-110"
+								>
+									Apply to Join
+								</button>
+							{/if}
+
+							<!-- Premium Members Preview for request communities or when invited -->
+							{#if communityState.members && communityState.members.length > 0}
+								<div class="mt-6 border-t border-border/60 pt-6">
+									<p class="text-xs font-semibold tracking-wider uppercase text-muted-foreground mb-3">Community Members</p>
+									<div class="flex flex-wrap justify-center gap-2 max-w-md mx-auto">
+										{#each communityState.members.slice(0, 8) as m}
+											<a 
+												href="/profile/{m.user_id}" 
+												class="group relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted transition-all duration-300 hover:scale-110 hover:border-primary" 
+												title={m.name || m.username}
+											>
+												{#if m.avatar_url}
+													<img src={m.avatar_url} alt="" class="h-full w-full object-cover" />
+												{:else}
+													<span class="text-xs font-bold text-foreground">
+														{(m.name || m.username).charAt(0).toUpperCase()}
+													</span>
+												{/if}
+											</a>
+										{/each}
+										{#if communityState.members.length > 8}
+											<div class="flex h-10 w-10 items-center justify-center rounded-full bg-muted border border-border text-xs font-bold text-muted-foreground">
+												+{communityState.members.length - 8}
+											</div>
+										{/if}
+									</div>
+									<a href="/communities/{community.id}/members" class="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+										View all members →
+									</a>
+								</div>
+							{/if}
 						{/if}
 					</div>
 				{/if}
@@ -486,79 +626,180 @@
 />
 </div>
 
-<!-- Invite Links Modal -->
+<!-- Invite & Share Modal -->
 {#if showInviteLinksModal}
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-		<div class="w-full max-w-md rounded-2xl border border-border bg-card shadow-xl">
-			<div class="flex items-center justify-between border-b border-border p-6">
+		<div class="w-full max-w-md rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
+			<!-- Header -->
+			<div class="flex items-center justify-between p-6 pb-4">
 				<h2 class="flex items-center gap-2 text-lg font-bold text-foreground">
-					<Link2 class="h-5 w-5" />
-					Invite Links
+					<UserPlus class="h-5 w-5 text-primary" />
+					Invite to Community
 				</h2>
 				<button
 					onclick={() => {
 						showInviteLinksModal = false;
 						inviteLinks = [];
+						searchUserQuery = '';
+						searchedUsers = [];
 					}}
-					class="text-muted-foreground transition-colors hover:text-foreground"
+					class="text-muted-foreground transition-colors hover:text-foreground p-1 rounded-lg hover:bg-muted"
 					aria-label="Close"
 				>
 					<X class="h-5 w-5" />
 				</button>
 			</div>
-			<div class="space-y-4 p-6">
-				<button
-					onclick={createInviteLink}
-					disabled={creatingLink || linksLoading}
-					class="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-60"
-				>
-					{#if creatingLink}
-						<Loader2 class="mr-2 h-4 w-4 animate-spin inline" />
-						Creating...
-					{:else}
-						+ Generate New Link
-					{/if}
-				</button>
 
-				<div class="space-y-3 max-h-64 overflow-y-auto">
-					{#if linksLoading}
-						<div class="flex items-center justify-center py-8">
-							<div class="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-						</div>
-					{:else if inviteLinks.length === 0}
-						<p class="text-sm text-muted-foreground text-center py-6">
-							No invite links yet. Create one to share!
-						</p>
-					{:else}
-						{#each inviteLinks as link (link.id)}
-							<div class="rounded-lg border border-border bg-sidebar/50 p-3">
-								<div class="flex items-start justify-between gap-2 mb-2">
-									<div class="flex-1 min-w-0">
-										<code class="text-xs font-mono text-foreground break-all">
-											{link.code}
-										</code>
-										<p class="text-xs text-muted-foreground mt-1">
-											Used {link.use_count}{#if link.max_uses}/{link.max_uses}{/if}
-										</p>
-									</div>
-									<button
-										onclick={() => copyInviteLink(link.code)}
-										class="shrink-0 text-muted-foreground transition-colors hover:text-foreground p-1"
-										title="Copy link"
-									>
-										<Copy class="h-4 w-4" />
-									</button>
+			<!-- Tab Selectors -->
+			<div class="flex border-b border-border px-6">
+				<button
+					onclick={() => activeInviteTab = 'links'}
+					class="flex-1 pb-3 text-sm font-semibold transition-colors border-b-2 {activeInviteTab === 'links' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}"
+				>
+					Invite Links
+				</button>
+				<button
+					onclick={() => {
+						activeInviteTab = 'direct';
+						loadDirectInvitations();
+					}}
+					class="flex-1 pb-3 text-sm font-semibold transition-colors border-b-2 {activeInviteTab === 'direct' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}"
+				>
+					Direct Invitations
+				</button>
+			</div>
+
+			<!-- Body -->
+			<div class="p-6">
+				{#if activeInviteTab === 'links'}
+					<div class="space-y-4">
+						<button
+							onclick={createInviteLink}
+							disabled={creatingLink || linksLoading}
+							class="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:brightness-110 disabled:opacity-60 shadow-lg shadow-primary/20"
+						>
+							{#if creatingLink}
+								<Loader2 class="mr-2 h-4 w-4 animate-spin inline" />
+								Creating...
+							{:else}
+								+ Generate New Link
+							{/if}
+						</button>
+
+						<div class="space-y-3 max-h-64 overflow-y-auto pr-1">
+							{#if linksLoading}
+								<div class="flex items-center justify-center py-8">
+									<div class="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
 								</div>
-								<button
-									onclick={() => deleteInviteLink(link.id)}
-									class="w-full text-xs text-destructive transition-colors hover:text-destructive/80 mt-2"
-								>
-									Delete
-								</button>
-							</div>
-						{/each}
-					{/if}
-				</div>
+							{:else if inviteLinks.length === 0}
+								<p class="text-sm text-muted-foreground text-center py-6">
+									No invite links yet. Create one to share!
+								</p>
+							{:else}
+								{#each inviteLinks as link (link.id)}
+									<div class="rounded-xl border border-border bg-sidebar/40 p-3.5 flex flex-col gap-2">
+										<div class="flex items-start justify-between gap-2">
+											<div class="flex-1 min-w-0">
+												<code class="text-xs font-mono text-foreground break-all select-all bg-muted px-1.5 py-0.5 rounded">
+													{link.code}
+												</code>
+												<p class="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
+													<span>Used {link.use_count}</span>
+													{#if link.max_uses}
+														<span class="text-muted-foreground/50">•</span>
+														<span>Max uses: {link.max_uses}</span>
+													{/if}
+												</p>
+											</div>
+											<div class="flex items-center gap-1">
+												<button
+													onclick={() => copyInviteLink(link.code)}
+													class="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-muted"
+													title="Copy link"
+												>
+													<Copy class="h-4 w-4" />
+												</button>
+												<button
+													onclick={() => deleteInviteLink(link.id)}
+													class="text-muted-foreground hover:text-destructive transition-colors p-1.5 rounded-lg hover:bg-muted"
+													title="Delete link"
+												>
+													<Trash2 class="h-4 w-4" />
+												</button>
+											</div>
+										</div>
+									</div>
+								{/each}
+							{/if}
+						</div>
+					</div>
+				{:else}
+					<!-- Direct Invitation Search -->
+					<div class="space-y-4">
+						<div class="relative">
+							<Search class="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+							<input
+								type="text"
+								placeholder="Search students to invite..."
+								bind:value={searchUserQuery}
+								oninput={searchUsers}
+								class="w-full rounded-xl border border-border bg-sidebar/50 pl-10 pr-4 py-2.5 text-sm text-foreground focus:border-primary focus:outline-hidden transition-all placeholder:text-muted-foreground"
+							/>
+						</div>
+
+						<div class="space-y-3 max-h-64 overflow-y-auto pr-1">
+							{#if searchLoading}
+								<div class="flex items-center justify-center py-8">
+									<Loader2 class="h-6 w-6 animate-spin text-primary" />
+								</div>
+							{:else if searchedUsers.length === 0}
+								{#if searchUserQuery.trim().length >= 2}
+									<p class="text-xs text-muted-foreground text-center py-8">
+										No students found matching "{searchUserQuery}"
+									</p>
+								{:else}
+									<div class="text-center py-8 px-4 text-muted-foreground">
+										<Search class="h-8 w-8 mx-auto mb-2 opacity-40 text-muted-foreground" />
+										<p class="text-xs">Search for users in your university to invite them directly.</p>
+									</div>
+								{/if}
+							{:else}
+								{#each searchedUsers as u (u.id)}
+									<div class="flex items-center justify-between rounded-xl border border-border bg-sidebar/40 p-3">
+										<div class="flex items-center gap-3">
+											<div class="h-9 w-9 overflow-hidden rounded-xl bg-muted border border-border flex items-center justify-center font-bold text-foreground text-sm shrink-0">
+												{#if u.avatar_key}
+													<img src={getImageUrl(u.avatar_key)} alt="" class="h-full w-full object-cover" />
+												{:else}
+													<span>{u.first_name ? u.first_name.charAt(0).toUpperCase() : u.username.charAt(0).toUpperCase()}</span>
+												{/if}
+											</div>
+											<div class="text-left min-w-0">
+												<p class="text-xs font-semibold text-foreground truncate">
+													{u.first_name ? `${u.first_name} ${u.last_name || ''}` : u.username}
+												</p>
+												<p class="text-[10px] text-muted-foreground truncate">@{u.username}</p>
+											</div>
+										</div>
+										<button
+											onclick={() => sendDirectInvite(u.id)}
+											disabled={invitingUsers[u.id] || invitedUserIds.has(u.id)}
+											class="rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm hover:brightness-110 disabled:opacity-60 transition-all shrink-0"
+										>
+											{#if invitingUsers[u.id]}
+												<Loader2 class="h-3 w-3 animate-spin inline" />
+											{:else if invitedUserIds.has(u.id)}
+												Invited
+											{:else}
+												Invite
+											{/if}
+										</button>
+									</div>
+								{/each}
+							{/if}
+						</div>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>

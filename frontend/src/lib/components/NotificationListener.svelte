@@ -14,6 +14,9 @@
 	async function checkNotifications() {
 		if (!user?.isAuthenticated) return;
 
+		// Fetch notifications from backend DB
+		await notifications.fetchNotifications();
+
 		const oldCount = lastPendingCount;
 		await invitationsState?.fetchInvitations();
 		const newCount = invitationsState?.pendingCount || 0;

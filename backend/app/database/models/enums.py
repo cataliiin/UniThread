@@ -27,3 +27,17 @@ class MarketplaceCategory(str, enum.Enum):
     housing = "housing"
     services = "services"
     other = "other"
+
+
+class NotificationType(str, enum.Enum):
+    invitation = "invitation"
+    message = "message"
+    post = "post"
+    like = "like"
+    comment = "comment"
+    accept_invitation = "accept_invitation"
+    decline_invitation = "decline_invitation"
+    join_request = "join_request"
+    accept_join_request = "accept_join_request"
+    decline_join_request = "decline_join_request"
+

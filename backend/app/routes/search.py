@@ -88,11 +88,7 @@ async def global_search(
                     (Community.name.ilike(search_term, escape="\\"))
                     | (Community.description.ilike(search_term, escape="\\"))
                 )
-                & (
-                    (Community.type != CommunityType.invite)
-                    | (Community.owner_id == current_user.id)
-                    | (current_user_member.status == MemberStatus.approved)
-                )
+                & (Community.type != CommunityType.invite)
             )
             .limit(actual_limit)
         )
